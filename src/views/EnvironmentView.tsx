@@ -33,7 +33,7 @@ export default function EnvironmentView() {
       initial="initial"
       animate="animate"
       exit="exit"
-      className="flex-1 flex flex-col lg:h-[calc(100vh-64px)] lg:overflow-hidden"
+      className="flex-1 flex flex-col pt-2 lg:h-[calc(100vh-64px)] lg:overflow-hidden"
     >
       {/* Top Bar */}
       <motion.div

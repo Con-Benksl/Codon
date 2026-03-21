@@ -73,6 +73,14 @@
     border: 1px solid rgba(63, 72, 78, 0.15);
   }
 
+  /* 移动端降低模糊半径，减轻 GPU 压力 */
+  @media (max-width: 767px) {
+    .glass-panel {
+      backdrop-filter: blur(6px);
+      background: rgba(28, 32, 36, 0.75);
+    }
+  }
+
   .hazard-glow {
     box-shadow: 0 0 15px rgba(255, 180, 161, 0.2);
     animation: hazardBreathe 2.5s ease-in-out infinite;

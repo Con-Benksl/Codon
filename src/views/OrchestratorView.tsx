@@ -44,7 +44,7 @@ export default function OrchestratorView() {
         variants={stagger(70)}
         initial="hidden"
         animate="show"
-        className="mb-12 flex flex-col md:flex-row justify-between items-end gap-6"
+        className="mb-8 md:mb-12 pt-2 flex flex-col md:flex-row justify-between items-start md:items-end gap-4 md:gap-6"
       >
         <div className="space-y-4">
           <motion.div variants={fadeSlideUp} className="flex gap-2">
@@ -84,7 +84,7 @@ export default function OrchestratorView() {
       >
         <div className="glass-panel p-6 rounded-2xl relative overflow-hidden group">
           <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-          <div className="flex flex-col lg:flex-row items-center gap-6">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4 lg:gap-6">
             <div className="flex items-center gap-3 shrink-0">
               <Thermometer className="text-primary" size={32} />
               <h3 className="font-headline font-bold text-lg uppercase tracking-tight">火星环境约束参数</h3>
@@ -155,7 +155,7 @@ export default function OrchestratorView() {
               <motion.p variants={fadeSlideUp} className="text-on-surface-variant font-body leading-relaxed max-w-xl italic">
                 "正在初始化火星岩石自养生物设计的深度任务分解。主要目标：设计用于高氯酸盐还原和太阳辐射防护的代谢途径。"
               </motion.p>
-              <motion.div variants={fadeSlideUp} className="flex gap-4 justify-center md:justify-start">
+              <motion.div variants={fadeSlideUp} className="flex gap-3 md:gap-4 justify-center md:justify-start">
                 <div className="text-center">
                   <span className="block text-[10px] text-outline font-headline uppercase">逻辑节点</span>
                   <span className="text-lg font-headline font-bold text-on-surface">1,240</span>

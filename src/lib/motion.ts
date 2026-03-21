@@ -49,19 +49,18 @@ export const fadeSlideRight: Variants = {
 };
 
 // ── View transition (page level) ──
+// filter:blur 在移动端触发 layout repaint 极慢，已移除
 export const viewTransition: Variants = {
-  initial: { opacity: 0, y: 16, filter: "blur(4px)" },
+  initial: { opacity: 0, y: 12 },
   animate: {
     opacity: 1,
     y: 0,
-    filter: "blur(0px)",
-    transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] },
+    transition: { duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] },
   },
   exit: {
     opacity: 0,
-    y: -8,
-    filter: "blur(4px)",
-    transition: { duration: 0.25, ease: [0.55, 0.06, 0.68, 0.19] },
+    y: -6,
+    transition: { duration: 0.2, ease: [0.55, 0.06, 0.68, 0.19] },
   },
 };
 

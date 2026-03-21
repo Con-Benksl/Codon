@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { motion } from "motion/react";
 import { X, ExternalLink, Circle, ArrowUp, ArrowDown, Minus } from "lucide-react";
 import type { AgentDetail } from "../data/agentDetails";
@@ -64,7 +64,9 @@ export default function DetailPanel({ agent, onClose }: DetailPanelProps) {
   const accent = accentMap[agent.color];
   const Icon = agent.icon;
   const status = statusMap[agent.status];
+  const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Esc 关闭
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -73,15 +75,29 @@ export default function DetailPanel({ agent, onClose }: DetailPanelProps) {
     return () => document.removeEventListener("keydown", handler);
   }, [onClose]);
 
+  // 打开时滚动内容区到顶部
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: 0 });
+  }, [agent.id]);
+
+  // 锁定背景滚动，防止穿透
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
+
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop — 去掉 backdrop-blur，纯色遮罩更流畅 */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        transition={{ duration: 0.2 }}
-        className="fixed inset-0 bg-background/60 backdrop-blur-sm z-50"
+        transition={{ duration: 0.18 }}
+        className="fixed inset-0 bg-background/75 z-50"
         onClick={onClose}
       />
 
@@ -124,8 +140,8 @@ export default function DetailPanel({ agent, onClose }: DetailPanelProps) {
           </div>
         </div>
 
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        {/* Scrollable Content — overscroll-contain 防止滚动穿透到背景页 */}
+        <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain p-6 space-y-6">
           {/* Description */}
           <p className="text-sm text-on-surface-variant leading-relaxed">{agent.description}</p>
 

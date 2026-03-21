@@ -46,29 +46,34 @@ export default function Layout() {
     setDrawerOpen(false);
   };
 
-  /** 侧边栏导航内容，桌面/移动抽屉共用 */
-  const sideNavContent = (
+  /**
+   * 侧边栏导航内容
+   * @param showLabels — 抽屉模式传 true，始终显示标签；桌面悬浮模式传 false
+   */
+  const renderSideNav = (showLabels: boolean) => (
     <>
-      <div className="p-4 flex flex-col gap-6 flex-1">
+      <div className="p-4 flex flex-col gap-4 flex-1">
         <NavItem
           icon={LayoutGrid}
           label="协调者 (Orchestrator)"
           active={activeView === "orchestrator"}
+          alwaysShowLabel={showLabels}
           onClick={() => goTo("orchestrator")}
         />
         <NavItem
           icon={Zap}
           label="环境 (Environment)"
           active={activeView === "environment"}
+          alwaysShowLabel={showLabels}
           onClick={() => goTo("environment")}
         />
-        <NavItem icon={FlaskConical} label="合成 (Synthesis)" disabled />
-        <NavItem icon={Microscope} label="仿真 (Simulation)" disabled />
-        <NavItem icon={Rocket} label="输出 (Output)" disabled />
+        <NavItem icon={FlaskConical} label="合成 (Synthesis)" disabled alwaysShowLabel={showLabels} />
+        <NavItem icon={Microscope} label="仿真 (Simulation)" disabled alwaysShowLabel={showLabels} />
+        <NavItem icon={Rocket} label="输出 (Output)" disabled alwaysShowLabel={showLabels} />
       </div>
       <div className="p-4 border-t border-outline-variant/10 flex flex-col gap-2">
-        <NavItem icon={Terminal} label="诊断 (Diagnostics)" disabled />
-        <NavItem icon={Settings} label="设置 (Settings)" disabled />
+        <NavItem icon={Terminal} label="诊断 (Diagnostics)" disabled alwaysShowLabel={showLabels} />
+        <NavItem icon={Settings} label="设置 (Settings)" disabled alwaysShowLabel={showLabels} />
       </div>
     </>
   );
@@ -82,9 +87,9 @@ export default function Layout() {
       {/* TopAppBar */}
       <header className="fixed top-0 w-full z-50 flex justify-between items-center px-4 md:px-6 h-16 bg-surface-container/60 backdrop-blur-xl border-b border-outline-variant/15 shadow-[0_20px_50px_rgba(78,168,217,0.08)]">
         <div className="flex items-center gap-3">
-          {/* 汉堡菜单 — 仅移动端 */}
+          {/* 汉堡菜单 — 仅移动端，点击打开抽屉 */}
           <button
-            className="md:hidden p-2 rounded-lg hover:bg-surface-variant/50 transition-all"
+            className="md:hidden p-2 rounded-lg hover:bg-surface-variant/50 active:bg-surface-variant transition-all"
             onClick={() => setDrawerOpen(true)}
             aria-label="打开导航菜单"
           >
@@ -147,7 +152,7 @@ export default function Layout() {
           <button className="hidden md:block p-2 rounded-full hover:bg-surface-variant/50 transition-all duration-200">
             <Globe size={20} className="text-on-surface-variant" />
           </button>
-          <button className="p-2 rounded-full hover:bg-surface-variant/50 transition-all duration-200 relative">
+          <button className="p-2 rounded-full hover:bg-surface-variant/50 active:bg-surface-variant transition-all duration-200 relative">
             <Bell size={20} className="text-on-surface-variant" />
             <span className="absolute top-2 right-2 w-2 h-2 bg-secondary rounded-full" />
           </button>
@@ -160,7 +165,7 @@ export default function Layout() {
         </div>
       </header>
 
-      {/* 移动端抽屉导航 */}
+      {/* 移动端侧边栏抽屉 */}
       <AnimatePresence>
         {drawerOpen && (
           <>
@@ -170,7 +175,7 @@ export default function Layout() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="fixed inset-0 bg-background/70 backdrop-blur-sm z-50 md:hidden"
+              className="fixed inset-0 bg-background/70 z-50 md:hidden"
               onClick={() => setDrawerOpen(false)}
               aria-hidden="true"
             />
@@ -179,70 +184,51 @@ export default function Layout() {
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
-              transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="fixed left-0 top-0 h-full w-72 z-50 bg-background border-r border-outline-variant/15 flex flex-col md:hidden"
+              transition={{ type: "spring", damping: 28, stiffness: 280 }}
+              className="fixed left-0 top-0 h-full w-72 z-50 bg-background border-r border-outline-variant/20 flex flex-col md:hidden shadow-2xl"
               aria-label="主导航菜单"
             >
+              {/* 抽屉头部 */}
               <div className="flex items-center justify-between px-4 h-16 border-b border-outline-variant/15 shrink-0">
-                <span className="text-lg font-black tracking-tighter text-primary italic font-headline">
+                <span className="text-base font-black tracking-tighter text-primary italic font-headline">
                   MARTIAN BIOLAB AI
                 </span>
                 <button
                   onClick={() => setDrawerOpen(false)}
-                  className="p-2 rounded-lg hover:bg-surface-variant/50 transition-all"
+                  className="p-2 rounded-lg hover:bg-surface-variant/50 active:bg-surface-variant transition-all"
                   aria-label="关闭导航菜单"
                 >
                   <X size={18} className="text-on-surface-variant" />
                 </button>
               </div>
-              {sideNavContent}
+              {/* 当前页面指示器 */}
+              <div className="px-4 py-3 border-b border-outline-variant/10">
+                <p className="text-[10px] text-on-surface-variant font-headline uppercase tracking-widest">
+                  当前：
+                  <span className="text-primary ml-1">
+                    {activeView === "orchestrator" ? "协调者视图" : "环境监测视图"}
+                  </span>
+                </p>
+              </div>
+              {renderSideNav(true)}
             </motion.aside>
           </>
         )}
       </AnimatePresence>
 
-      {/* 桌面端侧边栏 — 仅 md+ 显示 */}
+      {/* 桌面端侧边栏 — 仅 md+ 显示，hover 展开 */}
       <aside className="hidden md:flex fixed left-0 top-16 h-[calc(100vh-64px)] z-40 flex-col bg-background border-r border-outline-variant/15 w-20 hover:w-64 transition-all duration-300 group overflow-hidden">
-        {sideNavContent}
+        {renderSideNav(false)}
       </aside>
 
       {/* 主内容区 */}
-      <main className="ml-0 md:ml-20 pt-16 md:pt-20 pb-20 md:pb-8 px-4 md:px-8 min-h-screen">
+      <main className="ml-0 md:ml-20 pt-16 md:pt-20 pb-8 px-4 md:px-8 min-h-screen">
         <AnimatePresence mode="wait">
           <div key={location.pathname}>
             <Outlet />
           </div>
         </AnimatePresence>
       </main>
-
-      {/* 移动端底部导航栏 — 仅 md 以下显示 */}
-      <nav
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface-container/90 backdrop-blur-xl border-t border-outline-variant/15 flex items-center justify-around h-16"
-        aria-label="底部导航"
-      >
-        <button
-          onClick={() => goTo("orchestrator")}
-          className={`flex flex-col items-center gap-1 px-8 py-2 rounded-xl transition-all ${
-            activeView === "orchestrator"
-              ? "text-tertiary"
-              : "text-on-surface-variant opacity-60"
-          }`}
-        >
-          <LayoutGrid size={20} />
-          <span className="text-[10px] font-headline uppercase tracking-widest">协调者</span>
-        </button>
-        <button
-          onClick={() => goTo("environment")}
-          className={`flex flex-col items-center gap-1 px-8 py-2 rounded-xl transition-all ${
-            activeView === "environment"
-              ? "text-tertiary"
-              : "text-on-surface-variant opacity-60"
-          }`}
-        >
-          <Zap size={20} />
-          <span className="text-[10px] font-headline uppercase tracking-widest">环境层</span>
-        </button>
-      </nav>
 
       {/* Mars 状态球 — 仅 xl+ 显示 */}
       <MarsStatusGlobe

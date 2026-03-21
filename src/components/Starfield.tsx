@@ -414,11 +414,52 @@ export default function Starfield() {
     doResize();
     window.addEventListener("resize", resize);
 
-    const onMouse = (e: MouseEvent) => {
-      targetMouseRef.current.x = e.clientX - window.innerWidth / 2;
-      targetMouseRef.current.y = e.clientY - window.innerHeight / 2;
-    };
-    window.addEventListener("mousemove", onMouse);
+    // ── 输入源：桌面鼠标 / 移动端陀螺仪 ──
+    let inputCleanup = () => {};
+    const isTouch = window.matchMedia("(pointer: coarse)").matches;
+
+    if (!isTouch) {
+      // 桌面：鼠标视差
+      const onMouse = (e: MouseEvent) => {
+        targetMouseRef.current.x = e.clientX - window.innerWidth / 2;
+        targetMouseRef.current.y = e.clientY - window.innerHeight / 2;
+      };
+      window.addEventListener("mousemove", onMouse);
+      inputCleanup = () => window.removeEventListener("mousemove", onMouse);
+    } else {
+      // 移动端：陀螺仪视差
+      // gamma: 左右倾斜 (±90°), beta: 前后倾斜 (±180°)
+      const onOrientation = (e: DeviceOrientationEvent) => {
+        if (e.gamma === null || e.beta === null) return;
+        const { w, h } = sizeRef.current;
+        // 映射到与鼠标相似的偏移量范围，45° 为手持自然角度基准
+        targetMouseRef.current.x = e.gamma * (w / 90) * 0.5;
+        targetMouseRef.current.y = (e.beta - 45) * (h / 180) * 0.5;
+      };
+
+      // iOS 13+ 需要用户授权才能访问陀螺仪
+      type DOEWithPerm = typeof DeviceOrientationEvent & {
+        requestPermission?: () => Promise<PermissionState>;
+      };
+      const DOE = DeviceOrientationEvent as DOEWithPerm;
+
+      if (typeof DOE.requestPermission === "function") {
+        DOE.requestPermission()
+          .then((state) => {
+            if (state === "granted") {
+              window.addEventListener("deviceorientation", onOrientation, true);
+            }
+          })
+          .catch(() => {
+            // 静默失败，不影响其他功能
+          });
+      } else {
+        // Android 和旧版 iOS：直接监听，无需授权
+        window.addEventListener("deviceorientation", onOrientation, true);
+      }
+      inputCleanup = () =>
+        window.removeEventListener("deviceorientation", onOrientation, true);
+    }
 
     let running = true;
     let lastFrameRef = performance.now();
@@ -443,7 +484,7 @@ export default function Starfield() {
       clearTimeout(resizeTimer);
       cancelAnimationFrame(rafRef.current);
       window.removeEventListener("resize", resize);
-      window.removeEventListener("mousemove", onMouse);
+      inputCleanup();
       document.removeEventListener("visibilitychange", onVisibilityChange);
       mql.removeEventListener("change", onMotionChange);
     };
