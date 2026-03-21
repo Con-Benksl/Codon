@@ -59,16 +59,17 @@ export default function OrchestratorView() {
             生物群落合成 <span className="text-primary italic">协调者</span>
           </motion.h2>
         </div>
+        {/* 移动端撑满全宽 + justify-around 均匀分布，桌面端紧凑右对齐 */}
         <motion.div
           variants={fadeSlideUp}
-          className="glass-panel p-4 rounded-xl flex items-center gap-6 border-l-4 border-l-tertiary"
+          className="glass-panel p-4 rounded-xl flex items-center justify-around md:justify-start w-full md:w-auto gap-0 md:gap-6 border-l-4 border-l-tertiary"
         >
-          <div className="text-right">
+          <div className="text-center md:text-right">
             <p className="text-[10px] font-headline text-on-surface-variant uppercase tracking-widest">大气压力</p>
             <p className="text-xl font-headline font-bold text-tertiary">0.61 kPa</p>
           </div>
           <div className="h-10 w-px bg-outline-variant/20" />
-          <div className="text-right">
+          <div className="text-center md:text-right">
             <p className="text-[10px] font-headline text-on-surface-variant uppercase tracking-widest">辐射通量</p>
             <p className="text-xl font-headline font-bold text-secondary">450 mSv/yr</p>
           </div>
