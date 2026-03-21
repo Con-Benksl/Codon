@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Thermometer, Radiation, Wind } from "lucide-react";
+import FallbackImage from "./FallbackImage";
+import ProceduralMarsGlobe from "./ProceduralMarsGlobe";
 
 interface MarsStatusGlobeProps {
   activeView: string;
@@ -95,13 +97,13 @@ export default function MarsStatusGlobe({ activeView, onNavigate }: MarsStatusGl
           transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
         />
 
-        {/* Spinning image */}
+        {/* Spinning image with procedural fallback */}
         <div className="absolute inset-0 rounded-full overflow-hidden">
-          <img
+          <FallbackImage
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuCLOnBpzwdG-9pxlP3Pho-Kze-P_c05g3uGAbBqKmt7JJ45b-qosrm5J1nSsLjjBsmOVck9cpX4nbm2ZopOykyDf4SN4eAF_q-4FzbeW-qB3kCvrEULNHUiYHBxLmC4IwWRPM_yqz9NwPpRGAkMn6JHjaGF8Qp4rAnEwn6FiSVpqVZlQTGZVrc8lGKPH7NC2PN-talRQBHvrBB1gzqPgB-0jT5kb8mowOdIBx3_LxfYiC9UwOb0zdE_MMP8sB_h-mXVzftdZ-UBqRM"
             alt="Mars Globe"
             className="w-[200%] h-full object-cover opacity-60 mix-blend-screen mars-orbit"
-            referrerPolicy="no-referrer"
+            fallbackElement={<ProceduralMarsGlobe className="w-full h-full opacity-60 mix-blend-screen" />}
           />
         </div>
 

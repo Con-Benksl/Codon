@@ -15,7 +15,7 @@ import {
   Download,
   Share2,
 } from "lucide-react";
-import { Badge, AnalysisCard, DesignCard, DetailPanel } from "../components";
+import { Badge, AnalysisCard, DesignCard, DetailPanel, FallbackImage } from "../components";
 import { agentDetails } from "../data/agentDetails";
 import {
   stagger,
@@ -54,7 +54,7 @@ export default function OrchestratorView() {
           </motion.div>
           <motion.h2
             variants={fadeSlideUp}
-            className="text-5xl font-black font-headline text-on-background tracking-tighter max-w-2xl leading-none"
+            className="text-3xl md:text-5xl font-black font-headline text-on-background tracking-tighter max-w-2xl leading-none"
           >
             生物群落合成 <span className="text-primary italic">协调者</span>
           </motion.h2>
@@ -128,17 +128,16 @@ export default function OrchestratorView() {
           initial="hidden"
           animate="show"
           transition={{ delay: 0.35 }}
-          className="glass-panel p-8 rounded-3xl w-full max-w-4xl border-t-2 border-t-primary/40 glow-primary relative overflow-hidden"
+          className="glass-panel p-4 md:p-8 rounded-3xl w-full max-w-4xl border-t-2 border-t-primary/40 glow-primary relative overflow-hidden"
         >
           <div className="flex flex-col md:flex-row gap-8 items-center">
             <div className="relative">
               <div className="w-32 h-32 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center p-2 relative">
                 <div className="absolute inset-0 border-t-2 border-primary rounded-full animate-spin [animation-duration:3s]" />
-                <img
+                <FallbackImage
                   src="https://picsum.photos/seed/synthetic-biology/400/400"
                   alt="Synthetic Biology Core"
                   className="w-full h-full rounded-full object-cover"
-                  referrerPolicy="no-referrer"
                 />
               </div>
               <div className="absolute -bottom-2 -right-2 bg-primary text-on-primary px-2 py-1 rounded text-[10px] font-bold uppercase">Alpha-01</div>
@@ -304,7 +303,7 @@ export default function OrchestratorView() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
           {...inViewport}
-          className="glass-panel p-10 rounded-[2rem] border-t-2 border-t-tertiary/40 relative overflow-hidden"
+          className="glass-panel p-6 md:p-10 rounded-[2rem] border-t-2 border-t-tertiary/40 relative overflow-hidden"
         >
           <div className="flex flex-col lg:flex-row gap-12 items-center">
             <motion.div
@@ -317,7 +316,7 @@ export default function OrchestratorView() {
               <motion.div variants={fadeSlideUp} className="inline-flex items-center gap-2 px-3 py-1 bg-tertiary/10 border border-tertiary/20 text-tertiary text-[10px] font-headline tracking-widest uppercase rounded">
                 反幻觉安全层
               </motion.div>
-              <motion.h3 variants={fadeSlideUp} className="text-4xl font-headline font-black tracking-tighter text-on-surface uppercase leading-none">
+              <motion.h3 variants={fadeSlideUp} className="text-2xl md:text-4xl font-headline font-black tracking-tighter text-on-surface uppercase leading-none">
                 核查层 <span className="text-tertiary italic">&amp; 保真度</span> 智能体
               </motion.h3>
               <motion.p variants={fadeSlideUp} className="text-on-surface-variant font-body text-lg leading-relaxed max-w-2xl">

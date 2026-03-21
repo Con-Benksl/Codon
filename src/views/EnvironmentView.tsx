@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion } from "motion/react";
 import {
   Activity,
@@ -10,7 +11,7 @@ import {
   MapPin,
   Search,
 } from "lucide-react";
-import { EnvironmentalCard } from "../components";
+import { EnvironmentalCard, FallbackImage, ProceduralMarsGlobe } from "../components";
 import {
   stagger,
   fadeSlideUp,
@@ -21,41 +22,95 @@ import {
   inViewport,
 } from "../lib/motion";
 
+type MobileTab = "env" | "geo";
+
 export default function EnvironmentView() {
+  const [mobileTab, setMobileTab] = useState<MobileTab>("env");
+
   return (
     <motion.div
       variants={viewTransition}
       initial="initial"
       animate="animate"
       exit="exit"
-      className="flex-1 flex flex-col h-[calc(100vh-64px)] overflow-hidden"
+      className="flex-1 flex flex-col lg:h-[calc(100vh-64px)] lg:overflow-hidden"
     >
       {/* Top Bar */}
       <motion.div
         variants={stagger(50)}
         initial="hidden"
         animate="show"
-        className="flex justify-between items-center mb-6"
+        className="flex justify-between items-center mb-4 md:mb-6"
       >
-        <div className="flex items-center gap-4">
-          <motion.span variants={fadeSlideUp} className="text-xl font-black tracking-tighter text-primary italic font-headline">ARES MONITORING</motion.span>
-          <div className="h-4 w-[1px] bg-outline-variant/30" />
-          <motion.span variants={fadeSlideUp} className="font-headline tracking-tight uppercase text-sm font-bold text-primary border-b-2 border-primary pb-1">SOL 1242</motion.span>
-          <motion.span variants={fadeSlideUp} className="font-headline tracking-tight uppercase text-sm font-bold text-on-surface-variant hover:text-primary transition-colors cursor-pointer">18.4°N 77.5°E</motion.span>
-          <motion.span variants={fadeSlideUp} className="font-headline tracking-tight uppercase text-sm font-bold text-on-surface-variant hover:text-primary transition-colors cursor-pointer">SYSTEM: OPTIMAL</motion.span>
+        <div className="flex flex-wrap items-center gap-2 md:gap-4">
+          <motion.span
+            variants={fadeSlideUp}
+            className="text-lg md:text-xl font-black tracking-tighter text-primary italic font-headline"
+          >
+            ARES MONITORING
+          </motion.span>
+          <div className="h-4 w-[1px] bg-outline-variant/30 hidden md:block" />
+          <motion.span
+            variants={fadeSlideUp}
+            className="font-headline tracking-tight uppercase text-xs md:text-sm font-bold text-primary border-b-2 border-primary pb-1"
+          >
+            SOL 1242
+          </motion.span>
+          <motion.span
+            variants={fadeSlideUp}
+            className="hidden md:block font-headline tracking-tight uppercase text-sm font-bold text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
+          >
+            18.4°N 77.5°E
+          </motion.span>
+          <motion.span
+            variants={fadeSlideUp}
+            className="hidden md:block font-headline tracking-tight uppercase text-sm font-bold text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
+          >
+            SYSTEM: OPTIMAL
+          </motion.span>
         </div>
       </motion.div>
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Left Sidebar */}
+      {/* 移动端标签切换 — 仅 lg 以下显示 */}
+      <div className="flex lg:hidden gap-2 mb-4">
+        <button
+          onClick={() => setMobileTab("env")}
+          className={`flex-1 py-2 rounded-lg font-headline text-xs uppercase tracking-widest font-bold transition-all ${
+            mobileTab === "env"
+              ? "bg-primary/20 text-primary border border-primary/30"
+              : "bg-surface-container-low text-on-surface-variant border border-outline-variant/15"
+          }`}
+        >
+          环境参数
+        </button>
+        <button
+          onClick={() => setMobileTab("geo")}
+          className={`flex-1 py-2 rounded-lg font-headline text-xs uppercase tracking-widest font-bold transition-all ${
+            mobileTab === "geo"
+              ? "bg-[#d4a843]/20 text-[#d4a843] border border-[#d4a843]/30"
+              : "bg-surface-container-low text-on-surface-variant border border-outline-variant/15"
+          }`}
+        >
+          地质证据
+        </button>
+      </div>
+
+      {/* 主内容布局：移动端纵向标签 / 桌面端三列 */}
+      <div className="flex flex-col lg:flex-row lg:flex-1 lg:overflow-hidden gap-4 lg:gap-0">
+
+        {/* 左侧：环境参数面板 */}
         <motion.section
           variants={stagger(80)}
           initial="hidden"
           animate="show"
-          className="w-80 h-full pr-6 flex flex-col gap-4 overflow-y-auto"
+          className={`w-full lg:w-80 lg:h-full lg:pr-6 flex-col gap-4 overflow-y-auto ${
+            mobileTab === "env" ? "flex" : "hidden"
+          } lg:flex`}
         >
-          <motion.div variants={fadeSlideLeft} className="mb-4">
-            <h1 className="text-2xl font-black font-headline text-on-surface leading-tight tracking-tighter">火星环境约束<br />监测面板</h1>
+          <motion.div variants={fadeSlideLeft} className="mb-2 lg:mb-4">
+            <h1 className="text-xl md:text-2xl font-black font-headline text-on-surface leading-tight tracking-tighter">
+              火星环境约束<br />监测面板
+            </h1>
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: 48 }}
@@ -93,6 +148,7 @@ export default function EnvironmentView() {
             index={2}
           />
 
+          {/* 化学成分 */}
           <motion.div
             initial={{ opacity: 0, x: -16 }}
             animate={{ opacity: 1, x: 0 }}
@@ -127,14 +183,40 @@ export default function EnvironmentView() {
               ))}
             </div>
           </motion.div>
+
+          {/* 移动端生存概率卡片 — 仅 lg 以下显示 */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.6 }}
+            className="flex items-center gap-4 glass-panel rounded-xl p-4 border border-tertiary/20 glow-tertiary lg:hidden"
+          >
+            <div className="text-center shrink-0">
+              <span className="text-3xl font-headline font-black text-tertiary">78%</span>
+              <p className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest mt-1">生存概率</p>
+            </div>
+            <div className="flex-1">
+              <p className="text-[10px] font-bold text-on-surface uppercase tracking-widest mb-2 font-headline">
+                Chroococcidiopsis
+              </p>
+              <div className="h-2 bg-surface-container-highest rounded-full overflow-hidden">
+                <motion.div
+                  className="h-full bg-tertiary rounded-full"
+                  initial={{ width: 0 }}
+                  animate={{ width: "78%" }}
+                  transition={{ duration: 1.2, delay: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
+                />
+              </div>
+            </div>
+          </motion.div>
         </motion.section>
 
-        {/* Central Globe */}
+        {/* 中央地球仪 — 仅 lg+ 显示 */}
         <motion.section
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.7, delay: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="flex-1 relative flex items-center justify-center"
+          className="hidden lg:flex flex-1 relative items-center justify-center"
         >
           <div className="relative w-[500px] h-[500px]">
             {/* Outer Rings */}
@@ -158,11 +240,11 @@ export default function EnvironmentView() {
               transition={{ duration: 0.8, delay: 0.3, ease: [0.34, 1.56, 0.64, 1] }}
               className="absolute inset-0 rounded-full bg-gradient-to-br from-[#1c2024] via-[#0a0f13] to-[#101418] shadow-[inset_0_0_100px_rgba(78,168,217,0.2)] flex items-center justify-center overflow-hidden border border-outline-variant/20"
             >
-              <img
+              <FallbackImage
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuCDzC7Bs9-IsSGTTeA6OhYGruNOnvn2CfGFYik6HZjSjtHYz92a_mwe5kmY-Mv16OSmE68mDblHv177iGU2wd5qHfy6MMIVVLCsOxkOAoy9gg0XJVYhbeuBgLuyzmb4vGXwEfesPf0bDgLnqoIHDobJZD8FXiDvN336zolAT2XMsKHCDf2TMwT6ExdouvS5aFOtn_FWtvkLhUakmnACZOw2vUnSuYDJUBwQypMjw7yxDLLqFWS4OxmACw52-KCNlpjhWZ-9mnDSqwY"
                 alt="Mars Surface"
                 className="w-full h-full object-cover mix-blend-overlay opacity-80"
-                referrerPolicy="no-referrer"
+                fallbackElement={<ProceduralMarsGlobe className="w-full h-full mix-blend-overlay opacity-80" />}
               />
               <div className="absolute inset-0 bg-gradient-to-tr from-secondary/10 via-transparent to-primary/10" />
             </motion.div>
@@ -204,7 +286,7 @@ export default function EnvironmentView() {
             </motion.div>
           </div>
 
-          {/* Survival Gauge */}
+          {/* Survival Gauge — 桌面端悬浮在地球仪下方 */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -239,12 +321,14 @@ export default function EnvironmentView() {
           </motion.div>
         </motion.section>
 
-        {/* Right Sidebar: Geo-Evidence */}
+        {/* 右侧：地质证据面板 */}
         <motion.section
           initial={{ opacity: 0, x: 24 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="w-80 h-full pl-6 flex flex-col gap-4 overflow-hidden border-l border-outline-variant/10 glass-panel"
+          className={`w-full lg:w-80 lg:h-full lg:pl-6 flex-col gap-4 overflow-hidden border-t lg:border-t-0 lg:border-l border-outline-variant/10 glass-panel pt-4 lg:pt-0 ${
+            mobileTab === "geo" ? "flex" : "hidden"
+          } lg:flex`}
         >
           <div className="mb-4">
             <div className="flex items-center gap-2 text-[#d4a843] mb-1">
@@ -312,12 +396,12 @@ export default function EnvironmentView() {
         </motion.section>
       </div>
 
-      {/* Bottom Navigation */}
+      {/* 底部位置导航 */}
       <motion.nav
         variants={stagger(80)}
         initial="hidden"
         animate="show"
-        className="flex justify-center gap-8 items-center mt-6 pb-2"
+        className="flex justify-center gap-4 md:gap-8 items-center mt-4 md:mt-6 pb-2"
       >
         {[
           { icon: MapPin, label: "Jezero", active: true },
@@ -330,7 +414,7 @@ export default function EnvironmentView() {
             variants={fadeSlideUp}
             whileHover={{ y: -2, transition: { duration: 0.15 } }}
             whileTap={{ scale: 0.95 }}
-            className={`flex flex-col items-center justify-center px-6 py-2 rounded-xl transition-all cursor-pointer ${
+            className={`flex flex-col items-center justify-center px-4 md:px-6 py-2 rounded-xl transition-all cursor-pointer ${
               loc.active
                 ? "bg-gradient-to-br from-primary/20 to-primary/5 text-primary shadow-[0_0_15px_rgba(78,168,217,0.3)]"
                 : "text-on-surface-variant opacity-60 hover:text-primary hover:opacity-100"

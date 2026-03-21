@@ -7,3 +7,6 @@ export { default as DetailPanel } from "./DetailPanel";
 export { default as Starfield } from "./Starfield";
 export { default as AmbientGlow } from "./AmbientGlow";
 export { default as MarsStatusGlobe } from "./MarsStatusGlobe";
+export { default as FallbackImage } from "./FallbackImage";
+export { default as Avatar } from "./Avatar";
+export { default as ProceduralMarsGlobe } from "./ProceduralMarsGlobe";

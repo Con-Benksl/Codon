@@ -5,8 +5,8 @@ import { useRef, useEffect, useCallback } from "react";
 interface PersistentStar {
   x: number;
   y: number;
-  size: number;
-  color: string;
+  sizeIdx: number;    // index into sprite sheet row
+  colorIdx: number;   // index into sprite sheet column
   twinkleSpeed: number;
   twinklePhase: number;
   parallaxFactor: number;
@@ -15,8 +15,8 @@ interface PersistentStar {
 interface TransientStar {
   x: number;
   y: number;
-  size: number;
-  color: string;
+  sizeIdx: number;
+  colorIdx: number;
   birthTime: number;
   lifetime: number;
   fadeIn: number;
@@ -34,28 +34,97 @@ interface Nebula {
   alpha: number;
 }
 
+interface SpriteSheet {
+  canvas: HTMLCanvasElement;
+  cellSize: number;
+  glowCanvas: HTMLCanvasElement;
+  glowCellSize: number;
+}
+
 /* ── Constants ── */
 
 const STAR_COLORS = ["#ffffff", "#ffe8d0", "#d0e8ff", "#e8d0ff", "#d0ffee"];
+const STAR_SIZES = [0.6, 1.0, 1.6, 2.4];  // 4 size buckets
+const GLOW_SIZES = STAR_SIZES.filter(s => s > 1.4);  // only large stars get glow
 const PERSISTENT_COUNT = 90;
 const TRANSIENT_COUNT = 280;
+const GLOW_THRESHOLD_IDX = 2;  // sizeIdx >= 2 gets glow (sizes 1.6, 2.4)
+
+// FPS adaptive degradation
+const TARGET_FRAME_MS = 16.67;  // 60fps
+const SLOW_FRAME_MS = 20;       // below ~50fps
+const DEGRADED_TRANSIENT_COUNT = 140;  // halve transient stars when slow
 
 /* ── Helpers ── */
 
-function pick<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
+function pickIdx(len: number): number {
+  return Math.floor(Math.random() * len);
 }
 
 function rand(min: number, max: number) {
   return Math.random() * (max - min) + min;
 }
 
+/* ── Sprite Sheet Builder ── */
+// Pre-render all star variations into an offscreen canvas once.
+// Layout: rows = sizes, cols = colors. Each cell is a radial-gradient dot.
+
+function buildSpriteSheet(): SpriteSheet {
+  const padding = 2;
+  const maxSize = Math.max(...STAR_SIZES);
+  const cellSize = Math.ceil(maxSize * 2 + padding * 2);
+
+  // Core sprites
+  const canvas = document.createElement("canvas");
+  canvas.width = cellSize * STAR_COLORS.length;
+  canvas.height = cellSize * STAR_SIZES.length;
+  const ctx = canvas.getContext("2d")!;
+
+  for (let si = 0; si < STAR_SIZES.length; si++) {
+    for (let ci = 0; ci < STAR_COLORS.length; ci++) {
+      const cx = ci * cellSize + cellSize / 2;
+      const cy = si * cellSize + cellSize / 2;
+      const r = STAR_SIZES[si];
+      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+      grad.addColorStop(0, STAR_COLORS[ci]);
+      grad.addColorStop(0.6, STAR_COLORS[ci]);
+      grad.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = grad;
+      ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+    }
+  }
+
+  // Glow sprites (only for large stars)
+  const glowMaxR = maxSize * 5;
+  const glowCellSize = Math.ceil(glowMaxR * 2 + padding * 2);
+  const glowCanvas = document.createElement("canvas");
+  glowCanvas.width = glowCellSize;  // only white glow, 1 column
+  glowCanvas.height = glowCellSize * GLOW_SIZES.length;
+  const gctx = glowCanvas.getContext("2d")!;
+
+  for (let gi = 0; gi < GLOW_SIZES.length; gi++) {
+    const cx = glowCellSize / 2;
+    const cy = gi * glowCellSize + glowCellSize / 2;
+    const glowR = GLOW_SIZES[gi] * 5;
+    const grad = gctx.createRadialGradient(cx, cy, 0, cx, cy, glowR);
+    grad.addColorStop(0, "rgba(255,255,255,0.12)");
+    grad.addColorStop(0.5, "rgba(255,255,255,0.03)");
+    grad.addColorStop(1, "rgba(255,255,255,0)");
+    gctx.fillStyle = grad;
+    gctx.fillRect(cx - glowR, cy - glowR, glowR * 2, glowR * 2);
+  }
+
+  return { canvas, cellSize, glowCanvas, glowCellSize };
+}
+
+/* ── Star Factories ── */
+
 function createPersistentStars(w: number, h: number): PersistentStar[] {
   return Array.from({ length: PERSISTENT_COUNT }, () => ({
     x: Math.random() * w,
     y: Math.random() * h,
-    size: rand(0.6, 2.4),
-    color: pick(STAR_COLORS),
+    sizeIdx: pickIdx(STAR_SIZES.length),
+    colorIdx: pickIdx(STAR_COLORS.length),
     twinkleSpeed: rand(0.0008, 0.003),
     twinklePhase: rand(0, Math.PI * 2),
     parallaxFactor: rand(0.003, 0.015),
@@ -66,8 +135,8 @@ function spawnTransient(w: number, h: number, t: number): TransientStar {
   return {
     x: Math.random() * w,
     y: Math.random() * h,
-    size: rand(0.3, 1.6),
-    color: pick(STAR_COLORS),
+    sizeIdx: pickIdx(STAR_SIZES.length - 1),  // transient stars are smaller (0-2)
+    colorIdx: pickIdx(STAR_COLORS.length),
     birthTime: t + rand(0, 1500),
     lifetime: rand(1800, 6000),
     fadeIn: rand(400, 1200),
@@ -79,7 +148,6 @@ function spawnTransient(w: number, h: number, t: number): TransientStar {
 function createTransientStars(w: number, h: number): TransientStar[] {
   return Array.from({ length: TRANSIENT_COUNT }, () => {
     const s = spawnTransient(w, h, 0);
-    // stagger initial births so they don't all appear at once
     s.birthTime = -rand(0, 6000);
     return s;
   });
@@ -100,6 +168,7 @@ function createNebulae(w: number, h: number): Nebula[] {
 export default function Starfield() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const staticCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const spriteRef = useRef<SpriteSheet | null>(null);
   const persistentRef = useRef<PersistentStar[]>([]);
   const transientRef = useRef<TransientStar[]>([]);
   const mouseRef = useRef({ x: 0, y: 0 });
@@ -107,6 +176,17 @@ export default function Starfield() {
   const rafRef = useRef<number>(0);
   const reducedMotionRef = useRef(false);
   const sizeRef = useRef({ w: 0, h: 0 });
+  const visibleRef = useRef(true);
+  const degradedRef = useRef(false);
+  const frameTimesRef = useRef<number[]>([]);
+
+  /* Build sprite sheet lazily (once) */
+  const getSprites = useCallback((): SpriteSheet => {
+    if (!spriteRef.current) {
+      spriteRef.current = buildSpriteSheet();
+    }
+    return spriteRef.current;
+  }, []);
 
   /* Draw static layer (nebulae + milky way) to offscreen canvas — only once per resize */
   const drawStatic = useCallback((w: number, h: number) => {
@@ -163,9 +243,25 @@ export default function Starfield() {
     ctx.globalCompositeOperation = "source-over";
   }, []);
 
-  /* Draw dynamic layer every frame */
+  /* FPS monitoring — track last N frames and degrade if needed */
+  const trackFrameTime = useCallback((deltaMs: number) => {
+    const times = frameTimesRef.current;
+    times.push(deltaMs);
+    if (times.length > 30) times.shift();
+
+    // Check every 30 frames
+    if (times.length === 30) {
+      const avg = times.reduce((a, b) => a + b, 0) / times.length;
+      degradedRef.current = avg > SLOW_FRAME_MS;
+    }
+  }, []);
+
+  /* Draw dynamic layer every frame — using sprite drawImage instead of createRadialGradient */
   const drawFrame = useCallback((ctx: CanvasRenderingContext2D, t: number) => {
     const { w, h } = sizeRef.current;
+    const sprites = getSprites();
+    const { canvas: spriteCanvas, cellSize, glowCanvas, glowCellSize } = sprites;
+
     ctx.clearRect(0, 0, w, h);
 
     // Blit static layer
@@ -191,30 +287,38 @@ export default function Starfield() {
       const px = s.x + mx * s.parallaxFactor;
       const py = s.y + my * s.parallaxFactor;
 
-      // Soft glow for larger stars
-      if (s.size > 1.4) {
-        const glowR = s.size * 5;
-        const grad = ctx.createRadialGradient(px, py, 0, px, py, glowR);
-        grad.addColorStop(0, `rgba(255,255,255,${twinkle * 0.12})`);
-        grad.addColorStop(0.5, `rgba(255,255,255,${twinkle * 0.03})`);
-        grad.addColorStop(1, "rgba(255,255,255,0)");
-        ctx.fillStyle = grad;
-        ctx.fillRect(px - glowR, py - glowR, glowR * 2, glowR * 2);
+      // Soft glow for larger stars — use pre-rendered glow sprite
+      if (s.sizeIdx >= GLOW_THRESHOLD_IDX) {
+        const glowIdx = s.sizeIdx - GLOW_THRESHOLD_IDX;
+        const srcY = glowIdx * glowCellSize;
+        const glowR = STAR_SIZES[s.sizeIdx] * 5;
+        ctx.globalAlpha = twinkle;
+        ctx.drawImage(
+          glowCanvas,
+          0, srcY, glowCellSize, glowCellSize,
+          px - glowR - 1, py - glowR - 1, glowCellSize, glowCellSize
+        );
       }
 
-      // Core dot with soft edge
-      const coreR = s.size;
-      const core = ctx.createRadialGradient(px, py, 0, px, py, coreR);
-      core.addColorStop(0, s.color);
-      core.addColorStop(0.6, s.color);
-      core.addColorStop(1, "rgba(0,0,0,0)");
+      // Core dot — use pre-rendered sprite
+      const srcX = s.colorIdx * cellSize;
+      const srcY = s.sizeIdx * cellSize;
+      const r = STAR_SIZES[s.sizeIdx];
       ctx.globalAlpha = twinkle;
-      ctx.fillStyle = core;
-      ctx.fillRect(px - coreR, py - coreR, coreR * 2, coreR * 2);
+      ctx.drawImage(
+        spriteCanvas,
+        srcX, srcY, cellSize, cellSize,
+        px - r - 1, py - r - 1, cellSize, cellSize
+      );
     }
 
     // ── Transient stars (random appear/disappear) ──
-    for (const s of transientRef.current) {
+    const isDegraded = degradedRef.current;
+    const transientLimit = isDegraded ? DEGRADED_TRANSIENT_COUNT : transientRef.current.length;
+    const transients = transientRef.current;
+
+    for (let i = 0; i < Math.min(transientLimit, transients.length); i++) {
+      const s = transients[i];
       const age = t - s.birthTime;
 
       // Not born yet
@@ -246,19 +350,20 @@ export default function Starfield() {
       const px = s.x + mx * s.parallaxFactor;
       const py = s.y + my * s.parallaxFactor;
 
-      // Soft radial dot
-      const r = s.size;
-      const grad = ctx.createRadialGradient(px, py, 0, px, py, r);
-      grad.addColorStop(0, s.color);
-      grad.addColorStop(0.5, s.color);
-      grad.addColorStop(1, "rgba(0,0,0,0)");
+      // Use pre-rendered sprite instead of creating gradient each frame
+      const srcX = s.colorIdx * cellSize;
+      const srcY = s.sizeIdx * cellSize;
+      const r = STAR_SIZES[s.sizeIdx];
       ctx.globalAlpha = alpha;
-      ctx.fillStyle = grad;
-      ctx.fillRect(px - r, py - r, r * 2, r * 2);
+      ctx.drawImage(
+        spriteCanvas,
+        srcX, srcY, cellSize, cellSize,
+        px - r - 1, py - r - 1, cellSize, cellSize
+      );
     }
 
     ctx.globalAlpha = 1;
-  }, []);
+  }, [getSprites]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -266,6 +371,7 @@ export default function Starfield() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    // Reduced motion media query
     const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
     reducedMotionRef.current = mql.matches;
     const onMotionChange = (e: MediaQueryListEvent) => {
@@ -273,7 +379,18 @@ export default function Starfield() {
     };
     mql.addEventListener("change", onMotionChange);
 
-    const resize = () => {
+    // Visibility change — pause rendering when tab is hidden
+    const onVisibilityChange = () => {
+      visibleRef.current = document.visibilityState === "visible";
+      if (visibleRef.current) {
+        // Resume animation loop
+        lastFrameRef = performance.now();
+        rafRef.current = requestAnimationFrame(loop);
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    const doResize = () => {
       const dpr = window.devicePixelRatio || 1;
       const w = window.innerWidth;
       const h = window.innerHeight;
@@ -288,7 +405,13 @@ export default function Starfield() {
       drawStatic(w, h);
     };
 
-    resize();
+    let resizeTimer: ReturnType<typeof setTimeout>;
+    const resize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(doResize, 150);
+    };
+
+    doResize();
     window.addEventListener("resize", resize);
 
     const onMouse = (e: MouseEvent) => {
@@ -298,8 +421,18 @@ export default function Starfield() {
     window.addEventListener("mousemove", onMouse);
 
     let running = true;
+    let lastFrameRef = performance.now();
+
     const loop = (t: number) => {
       if (!running) return;
+      // Skip rendering when tab is not visible
+      if (!visibleRef.current) return;
+
+      // Track frame time for adaptive degradation
+      const delta = t - lastFrameRef;
+      lastFrameRef = t;
+      trackFrameTime(delta);
+
       drawFrame(ctx, t);
       rafRef.current = requestAnimationFrame(loop);
     };
@@ -307,12 +440,14 @@ export default function Starfield() {
 
     return () => {
       running = false;
+      clearTimeout(resizeTimer);
       cancelAnimationFrame(rafRef.current);
       window.removeEventListener("resize", resize);
       window.removeEventListener("mousemove", onMouse);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       mql.removeEventListener("change", onMotionChange);
     };
-  }, [drawFrame, drawStatic]);
+  }, [drawFrame, drawStatic, trackFrameTime]);
 
   return (
     <canvas
