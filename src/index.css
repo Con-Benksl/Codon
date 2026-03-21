@@ -1,0 +1,122 @@
+@import "tailwindcss";
+
+@theme {
+  --font-headline: "Space Grotesk", "Noto Sans SC", sans-serif;
+  --font-body: "Manrope", "Noto Sans SC", sans-serif;
+
+  --color-on-surface-variant: #bfc8d0;
+  --color-secondary: #ffb4a1;
+  --color-surface-container: #1c2024;
+  --color-on-tertiary-container: #003f23;
+  --color-inverse-surface: #e0e3e8;
+  --color-surface-bright: #353a3e;
+  --color-surface-container-high: #262a2f;
+  --color-on-secondary-container: #ffaf9a;
+  --color-on-primary: #00344b;
+  --color-on-primary-fixed-variant: #004c6b;
+  --color-tertiary-fixed: #81fab4;
+  --color-background: #101418;
+  --color-on-tertiary-fixed-variant: #00522f;
+  --color-tertiary: #64dd99;
+  --color-surface-container-highest: #31353a;
+  --color-error: #ffb4ab;
+  --color-surface-container-lowest: #0a0f13;
+  --color-surface-tint: #81cfff;
+  --color-secondary-fixed-dim: #ffb4a1;
+  --color-on-error-container: #ffdad6;
+  --color-on-primary-fixed: #001e2d;
+  --color-outline: #899299;
+  --color-surface: #101418;
+  --color-primary: #81cfff;
+  --color-primary-fixed: #c6e7ff;
+  --color-tertiary-fixed-dim: #64dd99;
+  --color-error-container: #93000a;
+  --color-surface-variant: #31353a;
+  --color-inverse-primary: #00658c;
+  --color-surface-container-low: #181c20;
+  --color-on-secondary-fixed: #3c0800;
+  --color-on-surface: #e0e3e8;
+  --color-on-background: #e0e3e8;
+  --color-surface-dim: #101418;
+  --color-on-secondary: #611300;
+  --color-secondary-container: #992300;
+  --color-on-tertiary-fixed: #002110;
+  --color-on-secondary-fixed-variant: #891e00;
+  --color-outline-variant: #3f484e;
+  --color-tertiary-container: #35b475;
+  --color-on-primary-container: #003a53;
+  --color-inverse-on-surface: #2d3135;
+  --color-on-error: #690005;
+  --color-on-tertiary: #00391f;
+  --color-primary-fixed-dim: #81cfff;
+  --color-primary-container: #4ea8d9;
+  --color-secondary-fixed: #ffdbd2;
+}
+
+@layer base {
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+
+  body {
+    @apply bg-background text-on-background font-body;
+    scrollbar-width: none;
+  }
+
+  *::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    background: rgba(28, 32, 36, 0.6);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(63, 72, 78, 0.15);
+  }
+
+  .hazard-glow {
+    box-shadow: 0 0 15px rgba(255, 180, 161, 0.2);
+    animation: hazardBreathe 2.5s ease-in-out infinite;
+  }
+
+  @keyframes hazardBreathe {
+    0%, 100% { box-shadow: 0 0 15px rgba(255, 180, 161, 0.15); }
+    50% { box-shadow: 0 0 25px rgba(255, 180, 161, 0.35); }
+  }
+
+  .glow-primary {
+    box-shadow: 0 0 20px rgba(129, 207, 255, 0.15);
+    animation: primaryBreathe 3s ease-in-out infinite;
+  }
+
+  @keyframes primaryBreathe {
+    0%, 100% { box-shadow: 0 0 20px rgba(129, 207, 255, 0.12); }
+    50% { box-shadow: 0 0 30px rgba(129, 207, 255, 0.25); }
+  }
+
+  .glow-tertiary {
+    box-shadow: 0 0 20px rgba(100, 221, 153, 0.15);
+    animation: tertiaryBreathe 3s ease-in-out infinite;
+  }
+
+  @keyframes tertiaryBreathe {
+    0%, 100% { box-shadow: 0 0 20px rgba(100, 221, 153, 0.12); }
+    50% { box-shadow: 0 0 30px rgba(100, 221, 153, 0.25); }
+  }
+
+  .mars-orbit {
+    animation: spin 120s linear infinite;
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
