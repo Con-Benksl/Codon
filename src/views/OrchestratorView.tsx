@@ -56,7 +56,7 @@ export default function OrchestratorView() {
             variants={fadeSlideUp}
             className="text-3xl md:text-5xl font-black font-headline text-on-background tracking-tighter max-w-2xl leading-none"
           >
-            生物群落合成 <span className="text-primary italic">协调者</span>
+            生物群落合成 <span className="text-primary">协调者</span>
           </motion.h2>
         </div>
         {/* 移动端撑满全宽 + justify-around 均匀分布，桌面端紧凑右对齐 */}

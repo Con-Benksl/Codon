@@ -46,7 +46,7 @@ export default function EnvironmentalCard({ title, icon: Icon, value, unit, desc
               transition={{ duration: 1, delay: 0.4 + index * 0.08, ease: [0.25, 0.46, 0.45, 0.94] }}
             />
           </div>
-          <div className="flex justify-between mt-2 text-[9px] text-on-surface-variant uppercase tracking-tighter">
+          <div className="flex justify-between mt-2 text-[11px] text-on-surface-variant uppercase tracking-tighter">
             <span>{progress.min}</span>
             <span>{progress.max}</span>
           </div>

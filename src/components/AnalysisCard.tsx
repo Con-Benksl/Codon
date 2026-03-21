@@ -20,6 +20,7 @@ export default function AnalysisCard({ icon: Icon, title, description, progress,
     <motion.div
       ref={ref}
       {...cardHover}
+      whileTap={onClick ? { scale: 0.96, boxShadow: "0 0 0 2px rgba(255,180,161,0.35)", opacity: 0.9, transition: { duration: 0.08 } } : undefined}
       onClick={onClick}
       className={`glass-panel p-5 rounded-xl border-l-2 border-l-secondary${onClick ? " cursor-pointer" : ""}`}
     >

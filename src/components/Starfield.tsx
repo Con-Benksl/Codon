@@ -119,8 +119,8 @@ function buildSpriteSheet(): SpriteSheet {
 
 /* ── Star Factories ── */
 
-function createPersistentStars(w: number, h: number): PersistentStar[] {
-  return Array.from({ length: PERSISTENT_COUNT }, () => ({
+function createPersistentStars(w: number, h: number, count = PERSISTENT_COUNT): PersistentStar[] {
+  return Array.from({ length: count }, () => ({
     x: Math.random() * w,
     y: Math.random() * h,
     sizeIdx: pickIdx(STAR_SIZES.length),
@@ -145,8 +145,8 @@ function spawnTransient(w: number, h: number, t: number): TransientStar {
   };
 }
 
-function createTransientStars(w: number, h: number): TransientStar[] {
-  return Array.from({ length: TRANSIENT_COUNT }, () => {
+function createTransientStars(w: number, h: number, count = TRANSIENT_COUNT): TransientStar[] {
+  return Array.from({ length: count }, () => {
     const s = spawnTransient(w, h, 0);
     s.birthTime = -rand(0, 6000);
     return s;
@@ -390,8 +390,15 @@ export default function Starfield() {
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
 
+    // ── 设备检测：移动端使用更少星星数 ──
+    const isTouch = window.matchMedia("(pointer: coarse)").matches;
+    // 移动端：60 persistent + 150 transient；桌面：90 + 280
+    const pCount = isTouch ? 60 : PERSISTENT_COUNT;
+    const tCount = isTouch ? 150 : TRANSIENT_COUNT;
+
     const doResize = () => {
-      const dpr = window.devicePixelRatio || 1;
+      // 限制 DPR ≤ 2，防止高 DPR 设备（iPhone DPR 3）canvas 过大导致帧率崩溃
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const w = window.innerWidth;
       const h = window.innerHeight;
       canvas.width = w * dpr;
@@ -400,8 +407,8 @@ export default function Starfield() {
       canvas.style.height = `${h}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       sizeRef.current = { w, h };
-      persistentRef.current = createPersistentStars(w, h);
-      transientRef.current = createTransientStars(w, h);
+      persistentRef.current = createPersistentStars(w, h, pCount);
+      transientRef.current = createTransientStars(w, h, tCount);
       drawStatic(w, h);
     };
 
@@ -416,7 +423,6 @@ export default function Starfield() {
 
     // ── 输入源：桌面鼠标 / 移动端陀螺仪 ──
     let inputCleanup = () => {};
-    const isTouch = window.matchMedia("(pointer: coarse)").matches;
 
     if (!isTouch) {
       // 桌面：鼠标视差

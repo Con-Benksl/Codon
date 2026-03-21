@@ -59,6 +59,7 @@
   body {
     @apply bg-background text-on-background font-body;
     scrollbar-width: none;
+    overflow-x: hidden; /* 禁止移动端横向滚动 */
   }
 
   *::-webkit-scrollbar {
@@ -67,6 +68,32 @@
 }
 
 @layer utilities {
+  /* ── Safe Area Insets (iPhone 刘海 / 灵动岛 / Home 条) ─────────────────── */
+  /* 仅在 viewport-fit=cover 时生效 */
+  .safe-h-header {
+    /* Header 高度 = 4rem + 顶部安全区 */
+    height: calc(4rem + env(safe-area-inset-top, 0px));
+  }
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  /* 主内容区顶部偏移 = header 高度 + 安全区；md+ 恢复固定值 */
+  .safe-pt-main {
+    padding-top: calc(4rem + env(safe-area-inset-top, 0px));
+  }
+  @media (min-width: 768px) {
+    .safe-pt-main {
+      padding-top: 5rem; /* 等同 md:pt-20，桌面无刘海 */
+    }
+  }
+  /* 底部内边距 = 2rem + 底部安全区（Home 条） */
+  .safe-pb-main {
+    padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
+  }
+
   .glass-panel {
     background: rgba(28, 32, 36, 0.6);
     backdrop-filter: blur(12px);
@@ -118,6 +145,21 @@
   @keyframes spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
+  }
+}
+
+/* 移动端 Glow 动画降频：减少 box-shadow repaint 频率 */
+@media (max-width: 767px) {
+  .glow-primary  { animation-duration: 5s; }
+  .glow-tertiary { animation-duration: 5s; }
+  .hazard-glow   { animation-duration: 4s; }
+}
+
+/* 纯触控设备（手机/平板）禁用 Framer Motion whileHover 的 CSS transform 残留 */
+@media (hover: none) {
+  .glass-panel:hover,
+  [class*="glass-panel"]:hover {
+    transform: none !important;
   }
 }
 

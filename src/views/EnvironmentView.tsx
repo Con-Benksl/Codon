@@ -71,27 +71,41 @@ export default function EnvironmentView() {
         </div>
       </motion.div>
 
-      {/* 移动端标签切换 — 仅 lg 以下显示 */}
+      {/* 移动端标签切换 — 仅 lg 以下显示；layoutId 实现滑动指示器动画 */}
       <div className="flex lg:hidden gap-2 mb-4">
         <button
           onClick={() => setMobileTab("env")}
-          className={`flex-1 py-2 rounded-lg font-headline text-xs uppercase tracking-widest font-bold transition-all ${
+          className={`relative flex-1 py-3 min-h-[44px] rounded-lg font-headline text-xs uppercase tracking-widest font-bold transition-colors ${
             mobileTab === "env"
-              ? "bg-primary/20 text-primary border border-primary/30"
+              ? "text-primary"
               : "bg-surface-container-low text-on-surface-variant border border-outline-variant/15"
           }`}
         >
-          环境参数
+          {mobileTab === "env" && (
+            <motion.div
+              layoutId="tab-indicator"
+              className="absolute inset-0 rounded-lg bg-primary/15 border border-primary/30"
+              transition={{ type: "spring", damping: 30, stiffness: 300 }}
+            />
+          )}
+          <span className="relative z-10">环境参数</span>
         </button>
         <button
           onClick={() => setMobileTab("geo")}
-          className={`flex-1 py-2 rounded-lg font-headline text-xs uppercase tracking-widest font-bold transition-all ${
+          className={`relative flex-1 py-3 min-h-[44px] rounded-lg font-headline text-xs uppercase tracking-widest font-bold transition-colors ${
             mobileTab === "geo"
-              ? "bg-[#d4a843]/20 text-[#d4a843] border border-[#d4a843]/30"
+              ? "text-[#d4a843]"
               : "bg-surface-container-low text-on-surface-variant border border-outline-variant/15"
           }`}
         >
-          地质证据
+          {mobileTab === "geo" && (
+            <motion.div
+              layoutId="tab-indicator"
+              className="absolute inset-0 rounded-lg bg-[#d4a843]/15 border border-[#d4a843]/30"
+              transition={{ type: "spring", damping: 30, stiffness: 300 }}
+            />
+          )}
+          <span className="relative z-10">地质证据</span>
         </button>
       </div>
 

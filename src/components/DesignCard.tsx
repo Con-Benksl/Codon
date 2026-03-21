@@ -20,6 +20,7 @@ export default function DesignCard({ icon: Icon, title, description, steps, tag,
     <motion.div
       ref={ref}
       {...cardHover}
+      whileTap={onClick ? { scale: 0.96, boxShadow: "0 0 0 2px rgba(129,207,255,0.35)", opacity: 0.9, transition: { duration: 0.08 } } : undefined}
       onClick={onClick}
       className={`glass-panel p-5 rounded-xl border-l-2 border-l-primary${onClick ? " cursor-pointer" : ""}`}
     >

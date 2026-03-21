@@ -107,8 +107,20 @@ export default function DetailPanel({ agent, onClose }: DetailPanelProps) {
         animate={{ x: 0, opacity: 1 }}
         exit={{ x: "100%", opacity: 0 }}
         transition={{ type: "spring", damping: 30, stiffness: 300 }}
-        className={`fixed right-0 top-0 h-full w-full max-w-[560px] z-50 bg-surface-container border-l border-outline-variant/15 ${accent.glow} flex flex-col`}
+        /* 右滑关闭手势：drag="x" 仅允许向右拖，松手后若偏移 > 80px 或速度 > 400px/s 则关闭 */
+        drag="x"
+        dragConstraints={{ left: 0 }}
+        dragElastic={{ left: 0, right: 0.3 }}
+        onDragEnd={(_, info) => {
+          if (info.offset.x > 80 || info.velocity.x > 400) onClose();
+        }}
+        className={`fixed right-0 top-0 h-full w-full max-w-[560px] z-50 bg-surface-container border-l border-outline-variant/15 ${accent.glow} flex flex-col relative`}
       >
+        {/* 右滑把手 — 仅移动端显示，提示可右滑关闭 */}
+        <div className="md:hidden absolute left-1.5 top-1/2 -translate-y-1/2 pointer-events-none z-10">
+          <div className="w-1 h-10 rounded-full bg-outline-variant/50" />
+        </div>
+
         {/* Header */}
         <div className={`p-6 border-b border-outline-variant/15 border-l-4 ${accent.border}`}>
           <div className="flex items-start justify-between mb-4">
@@ -140,8 +152,8 @@ export default function DetailPanel({ agent, onClose }: DetailPanelProps) {
           </div>
         </div>
 
-        {/* Scrollable Content — overscroll-contain 防止滚动穿透到背景页 */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain p-6 space-y-6">
+        {/* Scrollable Content — overscroll-contain 防止滚动穿透；touch-action: pan-y 让竖向滚动不触发父级横向 drag */}
+        <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain p-6 space-y-6" style={{ touchAction: "pan-y" }}>
           {/* Description */}
           <p className="text-sm text-on-surface-variant leading-relaxed">{agent.description}</p>
 

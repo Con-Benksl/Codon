@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   LayoutGrid,
   Zap,
@@ -41,6 +41,11 @@ export default function Layout() {
   const navigate = useNavigate();
   const activeView = viewRouteMap[location.pathname] ?? "orchestrator";
 
+  // 切换路由时滚回顶部，保证两个视图滚动位置互相独立
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [location.pathname]);
+
   const goTo = (view: ViewKey) => {
     navigate(routeFromView[view]);
     setDrawerOpen(false);
@@ -71,7 +76,7 @@ export default function Layout() {
         <NavItem icon={Microscope} label="仿真 (Simulation)" disabled alwaysShowLabel={showLabels} />
         <NavItem icon={Rocket} label="输出 (Output)" disabled alwaysShowLabel={showLabels} />
       </div>
-      <div className="p-4 border-t border-outline-variant/10 flex flex-col gap-2">
+      <div className="p-4 border-t border-outline-variant/10 flex flex-col gap-2 safe-bottom">
         <NavItem icon={Terminal} label="诊断 (Diagnostics)" disabled alwaysShowLabel={showLabels} />
         <NavItem icon={Settings} label="设置 (Settings)" disabled alwaysShowLabel={showLabels} />
       </div>
@@ -84,8 +89,8 @@ export default function Layout() {
       <Starfield />
       <AmbientGlow />
 
-      {/* TopAppBar */}
-      <header className="fixed top-0 w-full z-50 flex justify-between items-center px-4 md:px-6 h-16 bg-surface-container/60 backdrop-blur-xl border-b border-outline-variant/15 shadow-[0_20px_50px_rgba(78,168,217,0.08)]">
+      {/* TopAppBar — safe-h-header 让高度包含刘海安全区；safe-top 将内容推到安全区下方 */}
+      <header className="fixed top-0 w-full z-50 flex justify-between items-center px-4 md:px-6 safe-h-header safe-top bg-surface-container/60 backdrop-blur-xl border-b border-outline-variant/15 shadow-[0_20px_50px_rgba(78,168,217,0.08)]">
         <div className="flex items-center gap-3">
           {/* 汉堡菜单 — 仅移动端，点击打开抽屉 */}
           <button
@@ -146,13 +151,13 @@ export default function Layout() {
         </nav>
 
         <div className="flex items-center gap-2 md:gap-4">
-          <button className="hidden md:block p-2 rounded-full hover:bg-surface-variant/50 transition-all duration-200">
+          <button className="hidden md:block p-3 rounded-full hover:bg-surface-variant/50 transition-all duration-200">
             <Network size={20} className="text-primary" />
           </button>
-          <button className="hidden md:block p-2 rounded-full hover:bg-surface-variant/50 transition-all duration-200">
+          <button className="hidden md:block p-3 rounded-full hover:bg-surface-variant/50 transition-all duration-200">
             <Globe size={20} className="text-on-surface-variant" />
           </button>
-          <button className="p-2 rounded-full hover:bg-surface-variant/50 active:bg-surface-variant transition-all duration-200 relative">
+          <button className="p-3 rounded-full hover:bg-surface-variant/50 active:bg-surface-variant transition-all duration-200 relative">
             <Bell size={20} className="text-on-surface-variant" />
             <span className="absolute top-2 right-2 w-2 h-2 bg-secondary rounded-full" />
           </button>
@@ -179,17 +184,23 @@ export default function Layout() {
               onClick={() => setDrawerOpen(false)}
               aria-hidden="true"
             />
-            {/* 抽屉主体 */}
+            {/* 抽屉主体 — drag="x" 左滑关闭（dragConstraints.right=0 禁止右滑超出） */}
             <motion.aside
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "spring", damping: 28, stiffness: 280 }}
+              drag="x"
+              dragConstraints={{ right: 0 }}
+              dragElastic={{ right: 0, left: 0.3 }}
+              onDragEnd={(_, info) => {
+                if (info.offset.x < -60 || info.velocity.x < -400) setDrawerOpen(false);
+              }}
               className="fixed left-0 top-0 h-full w-72 z-50 bg-background border-r border-outline-variant/20 flex flex-col md:hidden shadow-2xl"
               aria-label="主导航菜单"
             >
-              {/* 抽屉头部 */}
-              <div className="flex items-center justify-between px-4 h-16 border-b border-outline-variant/15 shrink-0">
+              {/* 抽屉头部 — 高度与主 Header 同步，包含顶部安全区 */}
+              <div className="flex items-center justify-between px-4 safe-h-header safe-top border-b border-outline-variant/15 shrink-0">
                 <span className="text-base font-black tracking-tighter text-primary italic font-headline">
                   MARTIAN BIOLAB AI
                 </span>
@@ -221,8 +232,8 @@ export default function Layout() {
         {renderSideNav(false)}
       </aside>
 
-      {/* 主内容区 */}
-      <main className="ml-0 md:ml-20 pt-16 md:pt-20 pb-8 px-4 md:px-8 min-h-screen">
+      {/* 主内容区 — safe-pt-main 包含 header + 刘海安全区；safe-pb-main 包含 Home 条 */}
+      <main className="ml-0 md:ml-20 safe-pt-main safe-pb-main px-4 md:px-8 min-h-screen">
         <AnimatePresence mode="wait">
           <div key={location.pathname}>
             <Outlet />

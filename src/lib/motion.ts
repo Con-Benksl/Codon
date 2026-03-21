@@ -67,7 +67,8 @@ export const viewTransition: Variants = {
 // ── Card hover preset ──
 export const cardHover = {
   whileHover: { y: -4, transition: { duration: 0.2 } },
-  whileTap: { scale: 0.98, transition: { duration: 0.1 } },
+  // scale 更大 + 更快，触控设备 tap 反馈更清晰
+  whileTap: { scale: 0.96, opacity: 0.88, transition: { duration: 0.08 } },
 };
 
 // ── Button press preset ──
