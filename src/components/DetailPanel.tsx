@@ -114,7 +114,7 @@ export default function DetailPanel({ agent, onClose }: DetailPanelProps) {
         onDragEnd={(_, info) => {
           if (info.offset.x > 80 || info.velocity.x > 400) onClose();
         }}
-        className={`fixed right-0 top-0 h-full w-full max-w-[560px] z-50 bg-surface-container border-l border-outline-variant/15 ${accent.glow} flex flex-col relative`}
+        className={`fixed right-0 top-0 h-full w-full max-w-[560px] z-50 bg-surface-container border-l border-outline-variant/15 ${accent.glow} flex flex-col`}
       >
         {/* 右滑把手 — 仅移动端显示，提示可右滑关闭 */}
         <div className="md:hidden absolute left-1.5 top-1/2 -translate-y-1/2 pointer-events-none z-10">

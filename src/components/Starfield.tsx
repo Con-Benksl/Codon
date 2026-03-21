@@ -396,6 +396,9 @@ export default function Starfield() {
     const pCount = isTouch ? 60 : PERSISTENT_COUNT;
     const tCount = isTouch ? 150 : TRANSIENT_COUNT;
 
+    // 记录上次建星时的宽度，仅宽度变化（横竖屏切换）才重建
+    let starsCreatedW = 0;
+
     const doResize = () => {
       // 限制 DPR ≤ 2，防止高 DPR 设备（iPhone DPR 3）canvas 过大导致帧率崩溃
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -407,9 +410,15 @@ export default function Starfield() {
       canvas.style.height = `${h}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       sizeRef.current = { w, h };
-      persistentRef.current = createPersistentStars(w, h, pCount);
-      transientRef.current = createTransientStars(w, h, tCount);
-      drawStatic(w, h);
+
+      // 仅宽度变化（真实方向改变）才重建星星分布
+      // 高度变化由手机浏览器地址栏显示/隐藏触发，不重建，避免画面闪烁
+      if (Math.abs(w - starsCreatedW) > 10) {
+        starsCreatedW = w;
+        persistentRef.current = createPersistentStars(w, h, pCount);
+        transientRef.current = createTransientStars(w, h, tCount);
+        drawStatic(w, h);
+      }
     };
 
     let resizeTimer: ReturnType<typeof setTimeout>;
