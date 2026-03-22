@@ -38,7 +38,7 @@ npm install
 npm run dev
 ```
 
-默认运行于 `marssynbioagent.cn`
+默认运行于 [marssynbioagent.cn](https://marssynbioagent.cn)
 
 ```bash
 npm run build    # 生产构建
