@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { useNavigate } from "react-router-dom";
 import {
   FlaskConical,
   RefreshCw,
@@ -14,6 +15,8 @@ import {
   Terminal,
   Download,
   Share2,
+  X,
+  Plus,
 } from "lucide-react";
 import { Badge, AnalysisCard, DesignCard, DetailPanel, FallbackImage } from "../components";
 import { agentDetails } from "../data/agentDetails";
@@ -27,9 +30,40 @@ import {
   inViewport,
 } from "../lib/motion";
 
+const INITIAL_CONSTRAINTS = ["UV-B/C 辐射暴露", "高氯酸盐 (ClO4-)", "95% CO2 饱和度", "FE2O3 粉尘浓度"];
+
 export default function OrchestratorView() {
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
+  const [constraints, setConstraints] = useState<string[]>(INITIAL_CONSTRAINTS);
+  const [inputValue, setInputValue] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
   const activeAgent = selectedAgent ? agentDetails[selectedAgent] : null;
+
+  const addConstraint = () => {
+    const val = inputValue.trim();
+    if (val && !constraints.includes(val)) {
+      setConstraints((prev) => [...prev, val]);
+    }
+    setInputValue("");
+  };
+
+  const removeConstraint = (tag: string) => {
+    setConstraints((prev) => prev.filter((c) => c !== tag));
+  };
+
+  // 实时跳动的统计数字
+  const [stats, setStats] = useState({ nodes: 1240, confidence: 98.4, latency: 14 });
+  useEffect(() => {
+    const id = setInterval(() => {
+      setStats({
+        nodes: 1240 + Math.floor(Math.random() * 10 - 4),
+        confidence: parseFloat((98.4 + (Math.random() * 0.3 - 0.15)).toFixed(1)),
+        latency: 14 + Math.floor(Math.random() * 4 - 2),
+      });
+    }, 3500);
+    return () => clearInterval(id);
+  }, []);
 
   return (
     <motion.div
@@ -96,19 +130,48 @@ export default function OrchestratorView() {
               animate="show"
               className="flex flex-wrap gap-2 flex-1"
             >
-              {["UV-B/C 辐射暴露", "高氯酸盐 (ClO4-)", "95% CO2 饱和度", "FE2O3 粉尘浓度"].map((tag, i) => (
-                <motion.span
-                  key={tag}
-                  variants={fadeSlideUp}
-                  whileHover={{ scale: 1.04, transition: { duration: 0.15 } }}
-                  className="px-4 py-2 bg-surface-container-highest rounded-full border border-outline-variant/30 text-xs font-headline flex items-center gap-2"
-                >
-                  <span className={`w-2 h-2 rounded-full ${["bg-secondary", "bg-tertiary", "bg-primary", "bg-orange-400"][i]}`} /> {tag}
-                </motion.span>
-              ))}
-              <div className="flex items-center gap-2 px-4 py-2">
-                <Search size={14} className="text-outline-variant" />
-                <input className="bg-transparent border-none focus:ring-0 text-xs font-headline text-outline placeholder:text-outline-variant/50 w-32" placeholder="添加约束..." type="text" />
+              <AnimatePresence mode="popLayout">
+                {constraints.map((tag, i) => (
+                  <motion.span
+                    key={tag}
+                    layout
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.7 }}
+                    transition={{ duration: 0.2 }}
+                    whileHover={{ scale: 1.04, transition: { duration: 0.15 } }}
+                    className="px-3 py-2 bg-surface-container-highest rounded-full border border-outline-variant/30 text-xs font-headline flex items-center gap-2 group"
+                  >
+                    <span className={`w-2 h-2 rounded-full ${["bg-secondary", "bg-tertiary", "bg-primary", "bg-orange-400", "bg-purple-400"][i % 5]}`} />
+                    {tag}
+                    <button
+                      onClick={() => removeConstraint(tag)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity ml-1 hover:text-secondary"
+                      aria-label={`移除 ${tag}`}
+                    >
+                      <X size={10} />
+                    </button>
+                  </motion.span>
+                ))}
+              </AnimatePresence>
+              <div className="flex items-center gap-2 px-3 py-2 bg-surface-container-highest rounded-full border border-dashed border-outline-variant/40 hover:border-primary/50 transition-colors">
+                <Search size={12} className="text-outline-variant shrink-0" />
+                <input
+                  ref={inputRef}
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") addConstraint();
+                  }}
+                  className="bg-transparent border-none focus:outline-none text-xs font-headline text-outline placeholder:text-outline-variant/50 w-24"
+                  placeholder="添加约束..."
+                  type="text"
+                />
+                {inputValue.trim() && (
+                  <button onClick={addConstraint} className="text-primary hover:brightness-125">
+                    <Plus size={12} />
+                  </button>
+                )}
               </div>
             </motion.div>
             <motion.button
@@ -159,17 +222,41 @@ export default function OrchestratorView() {
               <motion.div variants={fadeSlideUp} className="flex gap-3 md:gap-4 justify-center md:justify-start">
                 <div className="text-center">
                   <span className="block text-[10px] text-outline font-headline uppercase">逻辑节点</span>
-                  <span className="text-lg font-headline font-bold text-on-surface">1,240</span>
+                  <motion.span
+                    key={stats.nodes}
+                    initial={{ opacity: 0.4, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="text-lg font-headline font-bold text-on-surface block"
+                  >
+                    {stats.nodes.toLocaleString()}
+                  </motion.span>
                 </div>
                 <div className="h-8 w-px bg-outline-variant/30" />
                 <div className="text-center">
                   <span className="block text-[10px] text-outline font-headline uppercase">置信度</span>
-                  <span className="text-lg font-headline font-bold text-on-surface">98.4%</span>
+                  <motion.span
+                    key={stats.confidence}
+                    initial={{ opacity: 0.4, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="text-lg font-headline font-bold text-on-surface block"
+                  >
+                    {stats.confidence}%
+                  </motion.span>
                 </div>
                 <div className="h-8 w-px bg-outline-variant/30" />
                 <div className="text-center">
                   <span className="block text-[10px] text-outline font-headline uppercase">延迟</span>
-                  <span className="text-lg font-headline font-bold text-on-surface">14ms</span>
+                  <motion.span
+                    key={stats.latency}
+                    initial={{ opacity: 0.4, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="text-lg font-headline font-bold text-on-surface block"
+                  >
+                    {stats.latency}ms
+                  </motion.span>
                 </div>
               </motion.div>
             </motion.div>
@@ -399,6 +486,7 @@ export default function OrchestratorView() {
             </motion.button>
             <motion.button
               {...buttonPress}
+              onClick={() => navigate("/output")}
               className="px-6 py-2 bg-primary/20 text-primary border border-primary/30 rounded font-headline font-bold text-[10px] uppercase tracking-widest hover:bg-primary/30 transition-all"
             >
               执行生物打印

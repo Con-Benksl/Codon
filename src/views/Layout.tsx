@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
+import type { LucideIcon } from "lucide-react";
 import {
   LayoutGrid,
   Zap,
@@ -22,63 +23,81 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { NavItem, Starfield, AmbientGlow, MarsStatusGlobe, Avatar } from "../components";
 
-type ViewKey = "orchestrator" | "environment";
+// ── 导航配置 — 单一数据源，添加新视图只需增加一项 ──
+interface NavConfig {
+  key: string;
+  path: string;
+  label: string;
+  labelShort: string;   // 顶部导航/抽屉当前页显示
+  icon: LucideIcon;
+  disabled?: boolean;
+  group: "main" | "util";
+}
 
-const viewRouteMap: Record<string, ViewKey> = {
-  "/": "orchestrator",
-  "/orchestrator": "orchestrator",
-  "/environment": "environment",
-};
+const NAV_ITEMS: NavConfig[] = [
+  { key: "orchestrator", path: "/orchestrator", label: "协调者 (Orchestrator)", labelShort: "协调者", icon: LayoutGrid, group: "main" },
+  { key: "environment",  path: "/environment",  label: "环境 (Environment)",    labelShort: "环境层",  icon: Zap,         group: "main" },
+  { key: "synthesis",    path: "/synthesis",    label: "合成 (Synthesis)",      labelShort: "合成层",  icon: FlaskConical, group: "main" },
+  { key: "simulation",   path: "/simulation",   label: "仿真 (Simulation)",     labelShort: "仿真层",  icon: Microscope,  group: "main" },
+  { key: "output",       path: "/output",       label: "输出 (Output)",         labelShort: "输出层",  icon: Rocket,      group: "main" },
+  { key: "diagnostics",  path: "/diagnostics",  label: "诊断 (Diagnostics)",    labelShort: "诊断",    icon: Terminal,    group: "util", disabled: true },
+  { key: "settings",     path: "/settings",     label: "设置 (Settings)",       labelShort: "设置",    icon: Settings,    group: "util", disabled: true },
+];
 
-const routeFromView: Record<ViewKey, string> = {
-  orchestrator: "/orchestrator",
-  environment: "/environment",
-};
+const MAIN_NAV = NAV_ITEMS.filter((n) => n.group === "main");
+const UTIL_NAV = NAV_ITEMS.filter((n) => n.group === "util");
+
+function getActiveKey(pathname: string): string {
+  const match = NAV_ITEMS.find((n) => pathname === n.path || pathname.startsWith(n.path + "/"));
+  return match?.key ?? "orchestrator";
+}
 
 export default function Layout() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const activeView = viewRouteMap[location.pathname] ?? "orchestrator";
+  const activeKey = getActiveKey(location.pathname);
+  const activeNav = NAV_ITEMS.find((n) => n.key === activeKey)!;
 
-  // 切换路由时滚回顶部，保证两个视图滚动位置互相独立
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [location.pathname]);
 
-  const goTo = (view: ViewKey) => {
-    navigate(routeFromView[view]);
-    setDrawerOpen(false);
+  const goTo = (item: NavConfig) => {
+    if (!item.disabled) {
+      navigate(item.path);
+      setDrawerOpen(false);
+    }
   };
 
-  /**
-   * 侧边栏导航内容
-   * @param showLabels — 抽屉模式传 true，始终显示标签；桌面悬浮模式传 false
-   */
   const renderSideNav = (showLabels: boolean) => (
     <>
       <div className="p-4 flex flex-col gap-4 flex-1">
-        <NavItem
-          icon={LayoutGrid}
-          label="协调者 (Orchestrator)"
-          active={activeView === "orchestrator"}
-          alwaysShowLabel={showLabels}
-          onClick={() => goTo("orchestrator")}
-        />
-        <NavItem
-          icon={Zap}
-          label="环境 (Environment)"
-          active={activeView === "environment"}
-          alwaysShowLabel={showLabels}
-          onClick={() => goTo("environment")}
-        />
-        <NavItem icon={FlaskConical} label="合成 (Synthesis)" disabled alwaysShowLabel={showLabels} />
-        <NavItem icon={Microscope} label="仿真 (Simulation)" disabled alwaysShowLabel={showLabels} />
-        <NavItem icon={Rocket} label="输出 (Output)" disabled alwaysShowLabel={showLabels} />
+        {MAIN_NAV.map((item) => (
+          <Fragment key={item.key}>
+            <NavItem
+              icon={item.icon}
+              label={item.label}
+              active={activeKey === item.key}
+              disabled={item.disabled}
+              alwaysShowLabel={showLabels}
+              onClick={() => goTo(item)}
+            />
+          </Fragment>
+        ))}
       </div>
       <div className="p-4 border-t border-outline-variant/10 flex flex-col gap-2 safe-bottom">
-        <NavItem icon={Terminal} label="诊断 (Diagnostics)" disabled alwaysShowLabel={showLabels} />
-        <NavItem icon={Settings} label="设置 (Settings)" disabled alwaysShowLabel={showLabels} />
+        {UTIL_NAV.map((item) => (
+          <Fragment key={item.key}>
+            <NavItem
+              icon={item.icon}
+              label={item.label}
+              disabled={item.disabled}
+              alwaysShowLabel={showLabels}
+              onClick={() => goTo(item)}
+            />
+          </Fragment>
+        ))}
       </div>
     </>
   );
@@ -110,44 +129,26 @@ export default function Layout() {
           </h1>
         </div>
 
-        {/* 顶部导航 — 仅中大屏 */}
+        {/* 顶部导航 — 仅中大屏，由 MAIN_NAV 驱动 */}
         <nav className="hidden md:flex items-center gap-8 font-headline tracking-tighter text-sm uppercase">
-          <button
-            onClick={() => goTo("orchestrator")}
-            className={`transition-colors ${
-              activeView === "orchestrator"
-                ? "text-primary border-b-2 border-primary pb-1"
-                : "text-on-surface-variant hover:text-primary"
-            }`}
-          >
-            协调者
-          </button>
-          <button
-            onClick={() => goTo("environment")}
-            className={`transition-colors ${
-              activeView === "environment"
-                ? "text-primary border-b-2 border-primary pb-1"
-                : "text-on-surface-variant hover:text-primary"
-            }`}
-          >
-            环境层
-          </button>
-          <button
-            disabled
-            aria-disabled="true"
-            title="设计层（即将推出）"
-            className="text-on-surface-variant/40 cursor-not-allowed select-none"
-          >
-            设计层
-          </button>
-          <button
-            disabled
-            aria-disabled="true"
-            title="核查层（即将推出）"
-            className="text-on-surface-variant/40 cursor-not-allowed select-none"
-          >
-            核查层
-          </button>
+          {MAIN_NAV.map((item) => (
+            <button
+              key={item.key}
+              onClick={() => goTo(item)}
+              disabled={item.disabled}
+              aria-disabled={item.disabled}
+              title={item.disabled ? `${item.labelShort}（即将推出）` : undefined}
+              className={`transition-colors ${
+                item.disabled
+                  ? "text-on-surface-variant/40 cursor-not-allowed select-none"
+                  : activeKey === item.key
+                  ? "text-primary border-b-2 border-primary pb-1"
+                  : "text-on-surface-variant hover:text-primary"
+              }`}
+            >
+              {item.labelShort}
+            </button>
+          ))}
         </nav>
 
         <div className="flex items-center gap-2 md:gap-4">
@@ -216,9 +217,7 @@ export default function Layout() {
               <div className="px-4 py-3 border-b border-outline-variant/10">
                 <p className="text-[10px] text-on-surface-variant font-headline uppercase tracking-widest">
                   当前：
-                  <span className="text-primary ml-1">
-                    {activeView === "orchestrator" ? "协调者视图" : "环境监测视图"}
-                  </span>
+                  <span className="text-primary ml-1">{activeNav.labelShort}视图</span>
                 </p>
               </div>
               {renderSideNav(true)}
@@ -243,8 +242,8 @@ export default function Layout() {
 
       {/* Mars 状态球 — 仅 xl+ 显示 */}
       <MarsStatusGlobe
-        activeView={activeView}
-        onNavigate={() => goTo("environment")}
+        activeView={activeKey as "orchestrator" | "environment"}
+        onNavigate={() => goTo(NAV_ITEMS.find((n) => n.key === "environment")!)}
       />
     </div>
   );

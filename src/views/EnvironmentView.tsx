@@ -23,9 +23,119 @@ import {
 } from "../lib/motion";
 
 type MobileTab = "env" | "geo";
+type LocationKey = "jezero" | "valles" | "gale" | "utopia";
+
+interface LocationData {
+  label: string;
+  coords: string;
+  system: string;
+  temperature: { value: string; unit: string; description: string; progress: number };
+  radiation: { value: string; unit: string; description: string };
+  pressure: { value: string; unit: string; description: string };
+  chemicals: { label: string; value: string; color: string; isHazard?: boolean }[];
+  survival: number;
+  survivalOrganism: string;
+  geoSources: { source: string; id: string; title: string; loc: string; isSim?: boolean }[];
+  systemLog: string[];
+}
+
+const LOCATIONS: Record<LocationKey, LocationData> = {
+  jezero: {
+    label: "Jezero",
+    coords: "18.4°N 77.5°E",
+    system: "OPTIMAL",
+    temperature: { value: "-60°", unit: "至 +20°C", description: "平均气温监测中。极端温差对生物膜稳定性构成严峻挑战。", progress: 40 },
+    radiation: { value: "100x", unit: "地球等级", description: "UV-B/C 穿透率过高，生物DNA极易损伤。极端危险状况 EXTREME HAZARD" },
+    pressure: { value: "0.6", unit: "kPa", description: "平均海拔压力监测中。稀薄大气警告：需密封加压环境以维持生命。" },
+    chemicals: [
+      { label: "CO2 (二氧化碳)", value: "95.3%", color: "#d4a843" },
+      { label: "N2 (氮气)", value: "2.7%", color: "#d4a84399" },
+      { label: "高氯酸盐 (Perchlorates)", value: "0.8%", color: "#ffb4a1", isHazard: true },
+    ],
+    survival: 78,
+    survivalOrganism: "Chroococcidiopsis",
+    geoSources: [
+      { source: "NASA PDS", id: "5542-X", title: "Jezero 火山口高氯酸盐沉积分析报告", loc: "18.4°N 77.5°E" },
+      { source: "PHOENIX MISSION", id: "PHX-L0", title: "北极冰盖下层卤水化学成分实测数据", loc: "68.2°N 125.7°W" },
+      { source: "CURIOSITY DATA", id: "MSL-RAD", title: "Gale Crater 紫外线通量全年度监测曲线", loc: "-4.6°S 137.4°E" },
+      { source: "XENO-LAB ALPHA", id: "LAB-77", title: "合成生物细胞对极寒环境的适应性模拟", loc: "SIMULATION MODE", isSim: true },
+    ],
+    systemLog: ["> 正在同步轨道遥感数据...", "> 分析 Jezero 地质样本 0014...", "> 环境稳定性评估：88.4%"],
+  },
+  valles: {
+    label: "Valles Marineris",
+    coords: "-13.9°S 301.0°E",
+    system: "MONITORING",
+    temperature: { value: "-45°", unit: "至 +5°C", description: "峡谷地形形成局部热效应，谷底温度较高原偏高约 15°C。", progress: 55 },
+    radiation: { value: "80x", unit: "地球等级", description: "峡谷深处地形屏蔽可减少约 20% 表面辐射，相对较优。" },
+    pressure: { value: "1.2", unit: "kPa", description: "谷底大气压力为全星最高区域之一，生命维持潜力较强。" },
+    chemicals: [
+      { label: "CO2 (二氧化碳)", value: "94.1%", color: "#d4a843" },
+      { label: "N2 (氮气)", value: "3.2%", color: "#d4a84399" },
+      { label: "高氯酸盐 (Perchlorates)", value: "0.5%", color: "#ffb4a1", isHazard: true },
+    ],
+    survival: 64,
+    survivalOrganism: "D. radiodurans",
+    geoSources: [
+      { source: "MRO HiRISE", id: "MRO-VM1", title: "Valles Marineris 峡谷壁层状沉积分析", loc: "-13.9°S 301.0°E" },
+      { source: "ESA MARS EXPRESS", id: "MEX-004", title: "深层地下盐水存在的雷达证据", loc: "-13.9°S 301.0°E" },
+      { source: "OMEGA SPECTROMETER", id: "OMG-22", title: "峡谷底部硫酸盐矿物分布图谱", loc: "-14.2°S 300.8°E" },
+      { source: "XENO-LAB BETA", id: "LAB-81", title: "深峡谷热梯度对工程菌生长的影响模拟", loc: "SIMULATION MODE", isSim: true },
+    ],
+    systemLog: ["> 深度雷达扫描 Valles 地下盐水层...", "> 峡谷壁热梯度模型更新中...", "> 地质压力评估：12.5 MPa"],
+  },
+  gale: {
+    label: "Gale Crater",
+    coords: "-4.6°S 137.4°E",
+    system: "ANALYZING",
+    temperature: { value: "-55°", unit: "至 +15°C", description: "Gale 火山口内存在明显的日间暖化效应，温度梯度较平缓。", progress: 45 },
+    radiation: { value: "95x", unit: "地球等级", description: "中等辐射暴露，Curiosity 实测数据校准中，背景辐射相对稳定。" },
+    pressure: { value: "0.85", unit: "kPa", description: "火山口盆地内气压略高于全球均值，大气成分相对富集。" },
+    chemicals: [
+      { label: "CO2 (二氧化碳)", value: "95.7%", color: "#d4a843" },
+      { label: "N2 (氮气)", value: "1.9%", color: "#d4a84399" },
+      { label: "高氯酸盐 (Perchlorates)", value: "0.6%", color: "#ffb4a1", isHazard: true },
+    ],
+    survival: 71,
+    survivalOrganism: "Synechocystis",
+    geoSources: [
+      { source: "CURIOSITY DATA", id: "MSL-001", title: "Sharp 山层状沉积岩有机分子探测记录", loc: "-4.6°S 137.4°E" },
+      { source: "NASA PDS", id: "PDS-GAL", title: "Gale Crater 全年辐射通量监测数据集", loc: "-4.6°S 137.4°E" },
+      { source: "MSL-REMS", id: "REMS-44", title: "地面气象站温湿度与气压长期记录", loc: "-4.5°S 137.3°E" },
+      { source: "XENO-LAB GAMMA", id: "LAB-93", title: "光合固碳效率在 Gale 大气条件下的模拟", loc: "SIMULATION MODE", isSim: true },
+    ],
+    systemLog: ["> Curiosity RAD 实时数据流同步中...", "> 有机分子信号模式交叉验证...", "> 宜居性综合评分：74.1%"],
+  },
+  utopia: {
+    label: "Utopia Planitia",
+    coords: "49.7°N 117.8°E",
+    system: "WARNING",
+    temperature: { value: "-80°", unit: "至 -10°C", description: "高纬度平原区域，极寒条件严苛，周期性干冰霜覆盖。", progress: 20 },
+    radiation: { value: "115x", unit: "地球等级", description: "北方平原缺乏地形屏蔽，辐射暴露高于全球均值，危险级别极高。" },
+    pressure: { value: "0.5", unit: "kPa", description: "大气极为稀薄，季节性变化剧烈，生命维持条件苛刻。" },
+    chemicals: [
+      { label: "CO2 (二氧化碳)", value: "96.1%", color: "#d4a843" },
+      { label: "N2 (氮气)", value: "2.1%", color: "#d4a84399" },
+      { label: "高氯酸盐 (Perchlorates)", value: "1.2%", color: "#ffb4a1", isHazard: true },
+    ],
+    survival: 42,
+    survivalOrganism: "T. gammatolerans",
+    geoSources: [
+      { source: "VIKING 2", id: "VK2-UP", title: "Utopia Planitia 土壤样本高氯酸盐首次检测报告", loc: "49.7°N 117.8°E" },
+      { source: "ZHURONG ROVER", id: "ZHR-05", title: "天问一号着陆区地下冰层分布雷达图", loc: "25.1°N 109.9°E" },
+      { source: "MRO SHARAD", id: "SHA-09", title: "北方平原地下冰体积估算与分布模型", loc: "49.7°N 117.8°E" },
+      { source: "XENO-LAB DELTA", id: "LAB-102", title: "极端低温下嗜冷菌休眠-复苏周期模拟", loc: "SIMULATION MODE", isSim: true },
+    ],
+    systemLog: ["> Zhurong 探测器数据流接入...", "> 地下冰层深度扫描：估算 1.2m 处...", "> 极端环境适应难度：CRITICAL"],
+  },
+};
+
+const LOCATION_ORDER: LocationKey[] = ["jezero", "valles", "gale", "utopia"];
 
 export default function EnvironmentView() {
   const [mobileTab, setMobileTab] = useState<MobileTab>("env");
+  const [activeLocation, setActiveLocation] = useState<LocationKey>("jezero");
+  const loc = LOCATIONS[activeLocation];
 
   return (
     <motion.div
@@ -57,16 +167,22 @@ export default function EnvironmentView() {
             SOL 1242
           </motion.span>
           <motion.span
+            key={`coords-${activeLocation}`}
             variants={fadeSlideUp}
             className="hidden md:block font-headline tracking-tight uppercase text-sm font-bold text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
           >
-            18.4°N 77.5°E
+            {loc.coords}
           </motion.span>
           <motion.span
+            key={`system-${activeLocation}`}
             variants={fadeSlideUp}
-            className="hidden md:block font-headline tracking-tight uppercase text-sm font-bold text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
+            className={`hidden md:block font-headline tracking-tight uppercase text-sm font-bold transition-colors cursor-pointer ${
+              loc.system === "OPTIMAL" ? "text-tertiary" :
+              loc.system === "WARNING" ? "text-secondary" :
+              "text-primary"
+            }`}
           >
-            SYSTEM: OPTIMAL
+            SYSTEM: {loc.system}
           </motion.span>
         </div>
       </motion.div>
@@ -136,29 +252,29 @@ export default function EnvironmentView() {
           <EnvironmentalCard
             title="温度约束 (TEMPER)"
             icon={Thermometer}
-            value="-60°"
-            unit="至 +20°C"
-            description="平均气温监测中。极端温差对生物膜稳定性构成严峻挑战。"
-            progress={{ current: 40, min: "-120°C (MIN)", max: "30°C (MAX)" }}
+            value={loc.temperature.value}
+            unit={loc.temperature.unit}
+            description={loc.temperature.description}
+            progress={{ current: loc.temperature.progress, min: "-120°C (MIN)", max: "30°C (MAX)" }}
             index={0}
           />
 
           <EnvironmentalCard
             title="辐射水平 (RAD)"
             icon={AlertTriangle}
-            value="100x"
-            unit="地球等级"
+            value={loc.radiation.value}
+            unit={loc.radiation.unit}
             color="secondary"
-            description="UV-B/C 穿透率过高，生物DNA极易损伤。极端危险状况 EXTREME HAZARD"
+            description={loc.radiation.description}
             index={1}
           />
 
           <EnvironmentalCard
             title="大气压力 (PRES)"
             icon={Minimize2}
-            value="0.6"
-            unit="kPa"
-            description="平均海拔压力监测中。稀薄大气警告：需密封加压环境以维持生命。"
+            value={loc.pressure.value}
+            unit={loc.pressure.unit}
+            description={loc.pressure.description}
             index={2}
           />
 
@@ -174,11 +290,7 @@ export default function EnvironmentView() {
               <FlaskConical size={16} className="text-[#d4a843]" />
             </div>
             <div className="space-y-3">
-              {[
-                { label: "CO2 (二氧化碳)", value: "95.3%", color: "#d4a843" },
-                { label: "N2 (氮气)", value: "2.7%", color: "#d4a84399" },
-                { label: "高氯酸盐 (Perchlorates)", value: "0.8%", color: "#ffb4a1", isHazard: true },
-              ].map((item, i) => (
+              {loc.chemicals.map((item, i) => (
                 <div key={item.label}>
                   <div className="flex justify-between text-[10px] mb-1">
                     <span className={item.isHazard ? "text-secondary" : "text-on-surface"}>{item.label}</span>
@@ -200,24 +312,25 @@ export default function EnvironmentView() {
 
           {/* 移动端生存概率卡片 — 仅 lg 以下显示 */}
           <motion.div
+            key={`survival-mobile-${activeLocation}`}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.6 }}
             className="flex items-center gap-4 glass-panel rounded-xl p-4 border border-tertiary/20 glow-tertiary lg:hidden"
           >
             <div className="text-center shrink-0">
-              <span className="text-3xl font-headline font-black text-tertiary">78%</span>
+              <span className="text-3xl font-headline font-black text-tertiary">{loc.survival}%</span>
               <p className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest mt-1">生存概率</p>
             </div>
             <div className="flex-1">
               <p className="text-[10px] font-bold text-on-surface uppercase tracking-widest mb-2 font-headline">
-                Chroococcidiopsis
+                {loc.survivalOrganism}
               </p>
               <div className="h-2 bg-surface-container-highest rounded-full overflow-hidden">
                 <motion.div
                   className="h-full bg-tertiary rounded-full"
                   initial={{ width: 0 }}
-                  animate={{ width: "78%" }}
+                  animate={{ width: `${loc.survival}%` }}
                   transition={{ duration: 1.2, delay: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
                 />
               </div>
@@ -302,6 +415,7 @@ export default function EnvironmentView() {
 
           {/* Survival Gauge — 桌面端悬浮在地球仪下方 */}
           <motion.div
+            key={`gauge-${activeLocation}`}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.8 }}
@@ -320,17 +434,24 @@ export default function EnvironmentView() {
                   strokeWidth="4"
                   strokeDasharray="351"
                   initial={{ strokeDashoffset: 351 }}
-                  animate={{ strokeDashoffset: 77 }}
-                  transition={{ duration: 1.5, delay: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
+                  animate={{ strokeDashoffset: 351 * (1 - loc.survival / 100) }}
+                  transition={{ duration: 1.5, delay: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
                 />
               </svg>
               <div className="text-center">
-                <span className="text-3xl font-headline font-black text-tertiary">78%</span>
+                <motion.span
+                  key={loc.survival}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-3xl font-headline font-black text-tertiary block"
+                >
+                  {loc.survival}%
+                </motion.span>
                 <p className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest mt-1">生存概率</p>
               </div>
             </div>
             <h3 className="text-[10px] font-bold text-on-surface mt-4 tracking-widest bg-surface-container-high px-4 py-1 rounded-full border border-outline-variant/20 uppercase">
-              Chroococcidiopsis Survival Probability
+              {loc.survivalOrganism} Survival Probability
             </h3>
           </motion.div>
         </motion.section>
@@ -364,12 +485,7 @@ export default function EnvironmentView() {
             animate="show"
             className="flex-1 flex flex-col gap-3 overflow-y-auto pr-2"
           >
-            {[
-              { source: "NASA PDS", id: "5542-X", title: "Jezero 火山口高氯酸盐沉积分析报告", loc: "18.4°N 77.5°E" },
-              { source: "PHOENIX MISSION", id: "PHX-L0", title: "北极冰盖下层卤水化学成分实测数据", loc: "68.2°N 125.7°W" },
-              { source: "CURIOSITY DATA", id: "MSL-RAD", title: "Gale Crater 紫外线通量全年度监测曲线", loc: "-4.6°S 137.4°E" },
-              { source: "XENO-LAB ALPHA", id: "LAB-77", title: "合成生物细胞对极寒环境的适应性模拟", loc: "SIMULATION MODE", isSim: true },
-            ].map((item) => (
+            {loc.geoSources.map((item) => (
               <motion.div
                 key={item.id}
                 variants={fadeSlideRight}
@@ -401,9 +517,9 @@ export default function EnvironmentView() {
             </div>
             <div className="bg-surface-container-lowest p-2 rounded border border-outline-variant/10">
               <p className="text-[9px] font-mono text-tertiary leading-tight">
-                &gt; 正在同步轨道遥感数据...<br />
-                &gt; 分析 Jezero 地质样本 0014...<br />
-                &gt; 环境稳定性评估：88.4%
+                {loc.systemLog.map((line, i) => (
+                  <span key={i}>{line}{i < loc.systemLog.length - 1 && <br />}</span>
+                ))}
               </p>
             </div>
           </motion.div>
@@ -417,26 +533,27 @@ export default function EnvironmentView() {
         animate="show"
         className="flex justify-center gap-4 md:gap-8 items-center mt-4 md:mt-6 pb-2"
       >
-        {[
-          { icon: MapPin, label: "Jezero", active: true },
-          { icon: Mountain, label: "Valles" },
-          { icon: Activity, label: "Gale" },
-          { icon: Search, label: "Utopia" },
-        ].map((loc) => (
-          <motion.div
-            key={loc.label}
+        {([
+          { key: "jezero" as LocationKey, icon: MapPin, label: "Jezero" },
+          { key: "valles" as LocationKey, icon: Mountain, label: "Valles" },
+          { key: "gale" as LocationKey, icon: Activity, label: "Gale" },
+          { key: "utopia" as LocationKey, icon: Search, label: "Utopia" },
+        ]).map((item) => (
+          <motion.button
+            key={item.key}
             variants={fadeSlideUp}
             whileHover={{ y: -2, transition: { duration: 0.15 } }}
             whileTap={{ scale: 0.95 }}
+            onClick={() => setActiveLocation(item.key)}
             className={`flex flex-col items-center justify-center px-4 md:px-6 py-2 rounded-xl transition-all cursor-pointer ${
-              loc.active
+              activeLocation === item.key
                 ? "bg-gradient-to-br from-primary/20 to-primary/5 text-primary shadow-[0_0_15px_rgba(78,168,217,0.3)]"
                 : "text-on-surface-variant opacity-60 hover:text-primary hover:opacity-100"
             }`}
           >
-            <loc.icon size={20} />
-            <span className="font-headline text-[10px] uppercase font-bold tracking-widest mt-1">{loc.label}</span>
-          </motion.div>
+            <item.icon size={20} />
+            <span className="font-headline text-[10px] uppercase font-bold tracking-widest mt-1">{item.label}</span>
+          </motion.button>
         ))}
       </motion.nav>
     </motion.div>
