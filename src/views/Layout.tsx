@@ -233,17 +233,7 @@ export default function Layout() {
 
       {/* 主内容区 — safe-pt-main 包含 header + 刘海安全区；safe-pb-main 包含 Home 条 */}
       <main className="ml-0 md:ml-20 safe-pt-main safe-pb-main px-4 md:px-8 min-h-screen">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={location.pathname}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-          >
-            <Outlet />
-          </motion.div>
-        </AnimatePresence>
+        <Outlet />
       </main>
 
       {/* Mars 状态球 — 仅 xl+ 显示 */}
