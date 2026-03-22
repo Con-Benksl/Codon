@@ -1,45 +1,47 @@
-﻿# MARTIAN BIOLAB AI
+# MARTIAN BIOLAB AI
 
-**鐏槦瀹氭鐢熺墿浣?澶氭櫤鑳戒綋璁捐绯荤粺**
+**火星定植生物体 多智能体设计系统**
 
-涓€涓潰鍚戠伀鏄熺敓鐗╁畾妞嶄换鍔＄殑鍓嶇璁捐鍘熷瀷锛屾ā鎷熷鏅鸿兘浣撳崗浣滄祦绋嬶紝娑电洊浠庣幆澧冨垎鏋愩€佸熀鍥犲悎鎴愯閰嶃€佺幆澧冧豢鐪熷埌鏈€缁堣緭鍑洪獙璇佺殑瀹屾暣鐢熺墿宸ョ▼璁捐閾捐矾銆?
+一个面向火星生物定植任务的前端设计原型，模拟多智能体协作流程，涵盖从环境分析、基因合成装配、环境仿真到最终输出验证的完整生物工程设计链路。
+
 ---
 
-## 鎶€鏈爤
+## 技术栈
 
 - **React 19** + **TypeScript 5**
-- **Vite 6** 鏋勫缓宸ュ叿
-- **Tailwind CSS v4** + 鑷畾涔夎璁?Token
-- **Framer Motion (motion/react)** 鍔ㄧ敾绯荤粺
-- **React Router v7** 璺敱绠＄悊
-- **Lucide React** 鍥炬爣搴?
+- **Vite 6** 构建工具
+- **Tailwind CSS v4** + 自定义设计 Token
+- **Framer Motion (motion/react)** 动画系统
+- **React Router v7** 路由管理
+- **Lucide React** 图标库
+
 ---
 
-## 瑙嗗浘妯″潡
+## 视图模块
 
-| 璺敱 | 瑙嗗浘 | 鍔熻兘 |
+| 路由 | 视图 | 功能 |
 |------|------|------|
-| `/orchestrator` | 鍗忚皟鑰?| 澶氭櫤鑳戒綋浠诲姟缂栨帓銆佺害鏉熺鐞嗐€佺郴缁熺姸鎬佺洃鎺?|
-| `/environment` | 鐜灞?| 鐏槦鍦扮偣閫夋嫨銆佺幆澧冨弬鏁板垎鏋愶紙Jezero / Valles Marineris / Gale / Utopia锛?|
-| `/synthesis` | 鍚堟垚灞?| 鍩哄洜妯″潡瑁呴厤鐢诲竷銆丼BOL 鍙鍖栥€佺紪璇戦獙璇?|
-| `/simulation` | 浠跨湡灞?| 鐜鍙傛暟璋冭妭銆佸鐗╃瀛樻椿鐜囦豢鐪熴€丼OL 鏃堕棿杞?|
-| `/output` | 杈撳嚭灞?| 澶氬眰娆¤璁￠獙璇併€佹墦鍗伴槦鍒椼€佸鏍煎紡瀵煎嚭 |
+| `/orchestrator` | 协调者 | 多智能体任务编排、约束管理、系统状态监控 |
+| `/environment` | 环境层 | 火星地点选择、环境参数分析（Jezero / Valles Marineris / Gale / Utopia） |
+| `/synthesis` | 合成层 | 基因模块装配画布、SBOL 可视化、编译验证 |
+| `/simulation` | 仿真层 | 环境参数调节、多物种存活率仿真、SOL 时间轴 |
+| `/output` | 输出层 | 多层次设计验证、打印队列、多格式导出 |
 
 ---
 
-## 鏈湴杩愯
+## 本地运行
 
-**鍓嶆彁锛?* Node.js 18+
+**前提：** Node.js 18+
 
 ```bash
 npm install
 npm run dev
 ```
 
-榛樿杩愯浜?`www.marssynbioagent.cn`
+默认运行于 `marssynbioagent.cn`
 
 ```bash
-npm run build    # 鐢熶骇鏋勫缓
-npm run preview  # 棰勮鏋勫缓浜х墿
-npm run clean    # 娓呯悊 dist 鐩綍
+npm run build    # 生产构建
+npm run preview  # 预览构建产物
+npm run clean    # 清理 dist 目录
 ```
