@@ -12,7 +12,7 @@ export default defineConfig(() => {
       },
     },
     // appType: 'spa' 让 dev / preview 服务器对所有未知路由回退到 index.html
-    appType: 'spa',
+    appType: 'spa' as const,
     server: {
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modify — file watching is disabled to prevent flickering during agent edits.

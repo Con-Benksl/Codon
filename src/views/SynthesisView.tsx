@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Dna,
@@ -78,6 +78,11 @@ export default function SynthesisView() {
   const [selectedModule, setSelectedModule] = useState<GeneModule | null>(MODULE_LIBRARY[0]);
   const [compileState, setCompileState] = useState<"idle" | "running" | "done">("idle");
   const [validationPassed, setValidationPassed] = useState<string[]>([]);
+  const timerIds = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  useEffect(() => {
+    return () => { timerIds.current.forEach(clearTimeout); };
+  }, []);
 
   const addToCanvas = (mod: GeneModule) => {
     if (!canvasModules.find((m) => m.id === mod.id)) {
@@ -99,14 +104,17 @@ export default function SynthesisView() {
   };
 
   const handleCompile = () => {
+    timerIds.current.forEach(clearTimeout);
+    timerIds.current = [];
     setCompileState("running");
     setValidationPassed([]);
     const checks = [...VALIDATION_CHECKS];
     checks.forEach((check, i) => {
-      setTimeout(() => {
+      const id = setTimeout(() => {
         setValidationPassed((prev) => [...prev, check.id]);
         if (i === checks.length - 1) setCompileState("done");
       }, 500 + i * 600);
+      timerIds.current.push(id);
     });
   };
 

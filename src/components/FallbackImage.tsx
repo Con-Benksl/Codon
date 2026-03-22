@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import type { ReactNode, CSSProperties } from "react";
 
 interface FallbackImageProps {
@@ -24,6 +24,12 @@ export default function FallbackImage({
 }: FallbackImageProps) {
   const [imgSrc, setImgSrc] = useState(src);
   const [hasError, setHasError] = useState(false);
+
+  // Reset state when src prop changes (prevents stale fallback state)
+  useEffect(() => {
+    setImgSrc(src);
+    setHasError(false);
+  }, [src]);
 
   const handleError = useCallback(() => {
     if (fallbackSrc && imgSrc !== fallbackSrc) {

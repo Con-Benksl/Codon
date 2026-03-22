@@ -4,12 +4,14 @@ import { Thermometer, Radiation, Wind } from "lucide-react";
 import FallbackImage from "./FallbackImage";
 import ProceduralMarsGlobe from "./ProceduralMarsGlobe";
 
+type NavKey = "orchestrator" | "environment" | "synthesis" | "simulation" | "output" | "diagnostics" | "settings";
+
 interface MarsStatusGlobeProps {
-  activeView: string;
+  activeView: NavKey;
   onNavigate: () => void;
 }
 
-const viewTheme = {
+const viewTheme: Record<NavKey, { glow: string; border: string; ring: string; text: string; bg: string }> = {
   orchestrator: {
     glow: "rgba(78,168,217,0.35)",
     border: "border-primary/30",
@@ -24,7 +26,42 @@ const viewTheme = {
     text: "text-tertiary",
     bg: "from-tertiary/20 to-tertiary/5",
   },
-} as const;
+  synthesis: {
+    glow: "rgba(78,168,217,0.25)",
+    border: "border-primary/20",
+    ring: "border-primary/10",
+    text: "text-primary",
+    bg: "from-primary/15 to-primary/5",
+  },
+  simulation: {
+    glow: "rgba(255,180,161,0.25)",
+    border: "border-secondary/20",
+    ring: "border-secondary/10",
+    text: "text-secondary",
+    bg: "from-secondary/15 to-secondary/5",
+  },
+  output: {
+    glow: "rgba(100,221,153,0.25)",
+    border: "border-tertiary/20",
+    ring: "border-tertiary/10",
+    text: "text-tertiary",
+    bg: "from-tertiary/15 to-tertiary/5",
+  },
+  diagnostics: {
+    glow: "rgba(78,168,217,0.15)",
+    border: "border-primary/15",
+    ring: "border-primary/8",
+    text: "text-primary",
+    bg: "from-primary/10 to-primary/5",
+  },
+  settings: {
+    glow: "rgba(78,168,217,0.15)",
+    border: "border-primary/15",
+    ring: "border-primary/8",
+    text: "text-primary",
+    bg: "from-primary/10 to-primary/5",
+  },
+};
 
 const metrics = [
   { icon: Thermometer, label: "表面温度", value: "-60°C", color: "text-primary" },
@@ -34,7 +71,7 @@ const metrics = [
 
 export default function MarsStatusGlobe({ activeView, onNavigate }: MarsStatusGlobeProps) {
   const [hovered, setHovered] = useState(false);
-  const theme = viewTheme[activeView as keyof typeof viewTheme] ?? viewTheme.orchestrator;
+  const theme = viewTheme[activeView];
 
   return (
     <motion.div

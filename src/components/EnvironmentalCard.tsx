@@ -40,9 +40,9 @@ export default function EnvironmentalCard({ title, icon: Icon, value, unit, desc
         <>
           <div className="relative h-2 w-full bg-surface-container-lowest rounded-full overflow-hidden">
             <motion.div
-              className="absolute inset-y-0 bg-gradient-to-r from-primary to-primary-container rounded-full"
-              initial={{ left: "20%", right: "100%" }}
-              animate={{ left: "20%", right: "40%" }}
+              className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-primary-container rounded-full"
+              initial={{ width: "0%" }}
+              animate={{ width: `${progress.current}%` }}
               transition={{ duration: 1, delay: 0.4 + index * 0.08, ease: [0.25, 0.46, 0.45, 0.94] }}
             />
           </div>

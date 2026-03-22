@@ -1,5 +1,4 @@
 import { useState } from "react";
-import FallbackImage from "./FallbackImage";
 
 interface AvatarProps {
   src?: string;
