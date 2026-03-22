@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.env
+*.db
+*.sqlite3
+alembic/versions/*.py
+!alembic/versions/__init__.py
+exports/
+.pytest_cache/

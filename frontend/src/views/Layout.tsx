@@ -162,12 +162,18 @@ export default function Layout() {
             <Bell size={20} className="text-on-surface-variant" />
             <span className="absolute top-2 right-2 w-2 h-2 bg-secondary rounded-full" />
           </button>
-          <Avatar
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuC0ORAVkaDRfKC82WQH48o6Rjy5A95bZ4XjbHS3YXCDhMCiHR3YoxMrA6rwY87HwOwJWMPfqa5A04Oa70ZGs03X-KYZYXA10i3duNza9ItcrgEMx27wjFiQ6RqX68VSKLgyX7OC0s04IL54AwM2efdCbIcM91_zDVq2obIhIAKstq-qGcrd_BLCRba696_E52aEmk4wHJFAEzXLV5r9SJHNjFe__o7MzFmfwks_fQqrXkpogdoWs2E3BQyUfUtSw2oM-JXTbRtINWU"
-            alt="User Profile"
-            name="Mars Operator"
-            size={32}
-          />
+          <button
+            onClick={() => navigate('/login')}
+            className="rounded-full hover:ring-2 hover:ring-primary/30 transition-all"
+            aria-label="用户登录"
+          >
+            <Avatar
+              src="https://lh3.googleusercontent.com/aida-public/AB6AXuC0ORAVkaDRfKC82WQH48o6Rjy5A95bZ4XjbHS3YXCDhMCiHR3YoxMrA6rwY87HwOwJWMPfqa5A04Oa70ZGs03X-KYZYXA10i3duNza9ItcrgEMx27wjFiQ6RqX68VSKLgyX7OC0s04IL54AwM2efdCbIcM91_zDVq2obIhIAKstq-qGcrd_BLCRba696_E52aEmk4wHJFAEzXLV5r9SJHNjFe__o7MzFmfwks_fQqrXkpogdoWs2E3BQyUfUtSw2oM-JXTbRtINWU"
+              alt="User Profile"
+              name="Mars Operator"
+              size={32}
+            />
+          </button>
         </div>
       </header>
 
