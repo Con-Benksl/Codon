@@ -28,7 +28,7 @@ fi
 
 echo "Running database migrations..."
 for i in $(seq 1 30); do
-  if alembic upgrade head; then
+  if python -m alembic upgrade head; then
     echo "Database migrations completed"
     break
   fi
@@ -43,4 +43,4 @@ for i in $(seq 1 30); do
 done
 
 echo "Starting FastAPI on port ${PORT:-8000}..."
-exec uvicorn app.main:app --host 0.0.0.0 --port "${PORT:-8000}"
+exec python -m uvicorn app.main:app --host 0.0.0.0 --port "${PORT:-8000}"
