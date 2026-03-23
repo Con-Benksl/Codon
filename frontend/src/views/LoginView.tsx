@@ -36,17 +36,21 @@ export default function LoginView() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     setLoading(true);
 
     try {
       if (isRegister) {
         await register({ email, username, password });
+        setSuccess('\u6ce8\u518c\u6210\u529f\uff0c\u6b63\u5728\u81ea\u52a8\u767b\u5f55...');
+        await new Promise((resolve) => setTimeout(resolve, 1000));
 
         try {
           await login(email, password);
@@ -57,13 +61,14 @@ export default function LoginView() {
               '\u6ce8\u518c\u6210\u529f\uff0c\u8bf7\u624b\u52a8\u767b\u5f55\u3002'
             )
           );
+          setIsRegister(false);
           return;
         }
       } else {
         await login(email, password);
       }
 
-      navigate('/projects');
+      navigate('/orchestrator');
     } catch (err: any) {
       setError(
         getErrorMessage(
@@ -163,6 +168,12 @@ export default function LoginView() {
             </div>
           )}
 
+          {success && (
+            <div className="p-4 bg-green-500/15 border border-green-400/40 rounded-lg">
+              <p className="text-green-300 text-sm font-medium">{success}</p>
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={loading}
@@ -183,6 +194,7 @@ export default function LoginView() {
               onClick={() => {
                 setIsRegister(!isRegister);
                 setError('');
+                setSuccess('');
               }}
               className="text-sm text-on-surface-variant hover:text-primary transition-colors"
             >

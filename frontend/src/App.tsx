@@ -19,7 +19,7 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<LoginView />} />
         <Route element={<Layout />}>
-          <Route index element={<Navigate to="/projects" replace />} />
+          <Route index element={<Navigate to="/orchestrator" replace />} />
           <Route path="projects" element={<ProjectsView />} />
           <Route path="orchestrator" element={<OrchestratorView />} />
           <Route path="environment" element={<EnvironmentView />} />
