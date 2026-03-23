@@ -3,7 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { Plus, X, Loader2, Dna, FolderOpen } from 'lucide-react';
 import { createProject, deleteProject, getProjects, type Project } from '../api';
-import { stagger, fadeSlideUp } from '../lib/motion';
+import { stagger } from '../lib/motion';
+
+// 不使用 opacity:0 初始态，避免 Framer Motion 未加载时内容不可见
+const slideUp = {
+  hidden: { y: 20 },
+  show: { y: 0, transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] as const } },
+};
 import { ProjectCard } from '../components';
 
 export default function ProjectsView() {
@@ -71,8 +77,8 @@ export default function ProjectsView() {
 
       {/* Header */}
       <motion.div
-        initial={{ opacity: 0, y: -16 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ y: -12 }}
+        animate={{ y: 0 }}
         transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
         className="flex items-end justify-between mb-8"
       >
@@ -114,7 +120,7 @@ export default function ProjectsView() {
           ].map(stat => (
             <motion.div
               key={stat.label}
-              variants={fadeSlideUp}
+              variants={slideUp}
               className="glass-panel rounded-xl px-4 py-3 flex flex-col gap-0.5"
             >
               <span className={`text-xl font-headline font-bold ${stat.color}`}>
@@ -138,8 +144,8 @@ export default function ProjectsView() {
       {/* Empty state */}
       {!loading && projects.length === 0 && (
         <motion.div
-          initial={{ opacity: 0, scale: 0.96 }}
-          animate={{ opacity: 1, scale: 1 }}
+          initial={{ scale: 0.96 }}
+          animate={{ scale: 1 }}
           transition={{ duration: 0.4 }}
           className="flex flex-col items-center justify-center py-24 gap-4"
         >
@@ -174,7 +180,7 @@ export default function ProjectsView() {
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 list-none p-0"
         >
           {projects.map(project => (
-            <motion.li key={project.id} variants={fadeSlideUp}>
+            <motion.li key={project.id} variants={slideUp}>
               <ProjectCard
                 project={project}
                 onOpen={handleOpen}

@@ -18,6 +18,7 @@ import {
   Network,
   Menu,
   X,
+  FolderOpen,
 } from "lucide-react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
@@ -35,6 +36,7 @@ interface NavConfig {
 }
 
 const NAV_ITEMS: NavConfig[] = [
+  { key: "projects",     path: "/projects",     label: "项目 (Projects)",         labelShort: "项目",    icon: FolderOpen,  group: "main" },
   { key: "orchestrator", path: "/orchestrator", label: "协调者 (Orchestrator)", labelShort: "协调者", icon: LayoutGrid, group: "main" },
   { key: "environment",  path: "/environment",  label: "环境 (Environment)",    labelShort: "环境层",  icon: Zap,         group: "main" },
   { key: "synthesis",    path: "/synthesis",    label: "合成 (Synthesis)",      labelShort: "合成层",  icon: FlaskConical, group: "main" },
