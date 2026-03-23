@@ -46,8 +46,8 @@ const NAV_ITEMS: NavConfig[] = [
   { key: "synthesis",    path: "/synthesis",    label: "合成 (Synthesis)",      labelShort: "合成层",  icon: FlaskConical, group: "main" },
   { key: "simulation",   path: "/simulation",   label: "仿真 (Simulation)",     labelShort: "仿真层",  icon: Microscope,  group: "main" },
   { key: "output",       path: "/output",       label: "输出 (Output)",         labelShort: "输出层",  icon: Rocket,      group: "main" },
-  { key: "diagnostics",  path: "/diagnostics",  label: "诊断 (Diagnostics)",    labelShort: "诊断",    icon: Terminal,    group: "util", disabled: true },
-  { key: "settings",     path: "/settings",     label: "设置 (Settings)",       labelShort: "设置",    icon: Settings,    group: "util", disabled: true },
+  { key: "diagnostics",  path: "/diagnostics",  label: "诊断 (Diagnostics)",    labelShort: "诊断",    icon: Terminal,    group: "util" },
+  { key: "settings",     path: "/settings",     label: "设置 (Settings)",       labelShort: "设置",    icon: Settings,    group: "util" },
 ];
 
 const MAIN_NAV = NAV_ITEMS.filter((n) => n.group === "main");

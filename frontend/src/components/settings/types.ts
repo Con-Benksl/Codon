@@ -1,0 +1,40 @@
+﻿export type SettingsSectionKey = "user" | "display" | "notifications" | "simulation" | "system";
+
+export interface SettingsState {
+  twoFactor: boolean;
+  biometric: boolean;
+  themePreset: string;
+  accentColor: string;
+  language: string;
+  dataUnits: string;
+  dateFormat: string;
+  reducedMotion: boolean;
+  autoCollapseSidebar: boolean;
+  widgetMarsGlobe: boolean;
+  widgetStatusBar: boolean;
+  widgetWeatherFeed: boolean;
+  widgetAgentCount: boolean;
+  widgetSolCalendar: boolean;
+  widgetQuickActions: boolean;
+  inAppAlerts: boolean;
+  audioAlerts: boolean;
+  desktopPush: boolean;
+  criticalAlerts: boolean;
+  warningAlerts: boolean;
+  infoAlerts: boolean;
+  agentEvents: boolean;
+  quietHoursEnabled: boolean;
+  quietFrom: string;
+  quietTo: string;
+  timeScale: number;
+  gravity: number;
+  atmosphere: string;
+  growthModel: string;
+  mutationRate: number;
+  batchSize: number;
+  autoSave: boolean;
+  apiEndpoint: string;
+  authToken: string;
+  timeoutSeconds: number;
+  retryLimit: number;
+}
