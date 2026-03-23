@@ -1,8 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app import models  # noqa: F401
 from app.api.v1 import agents, auth, projects
 from app.config import get_settings
+from app.database import Base, engine
 
 settings = get_settings()
 
@@ -27,6 +29,11 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["\u8ba4\u8bc1"])
 app.include_router(projects.router, prefix="/api/v1/projects", tags=["\u9879\u76ee"])
 app.include_router(agents.router, prefix="/api/v1/agents", tags=["\u667a\u80fd\u4f53"])
+
+
+@app.on_event("startup")
+async def ensure_tables():
+    Base.metadata.create_all(bind=engine)
 
 
 @app.get("/")
