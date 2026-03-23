@@ -1,10 +1,34 @@
-import { useState } from 'react';
-import { login, register } from '../api/auth';
+import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Starfield, AmbientGlow } from '../components';
 import { Rocket, Mail, Lock, User } from 'lucide-react';
 
-const INPUT_CLASS = "w-full pl-12 pr-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-lg text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all";
+import { login, register } from '../api/auth';
+import { Starfield, AmbientGlow } from '../components';
+
+const INPUT_CLASS =
+  'w-full pl-12 pr-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-lg text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all';
+
+type ApiDetailItem = {
+  msg?: string;
+};
+
+const getErrorMessage = (detail: unknown, fallback: string) => {
+  if (Array.isArray(detail)) {
+    const messages = detail
+      .map((item) => (typeof item === 'object' && item ? (item as ApiDetailItem).msg : ''))
+      .filter(Boolean);
+
+    if (messages.length > 0) {
+      return messages.join('; ');
+    }
+  }
+
+  if (typeof detail === 'string' && detail.trim()) {
+    return detail;
+  }
+
+  return fallback;
+};
 
 export default function LoginView() {
   const [isRegister, setIsRegister] = useState(false);
@@ -15,20 +39,38 @@ export default function LoginView() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
+
     try {
       if (isRegister) {
         await register({ email, username, password });
-        await login(email, password);
+
+        try {
+          await login(email, password);
+        } catch (loginError: any) {
+          setError(
+            getErrorMessage(
+              loginError.response?.data?.detail,
+              '\u6ce8\u518c\u6210\u529f\uff0c\u8bf7\u624b\u52a8\u767b\u5f55\u3002'
+            )
+          );
+          return;
+        }
       } else {
         await login(email, password);
       }
+
       navigate('/projects');
     } catch (err: any) {
-      setError(err.response?.data?.detail || (isRegister ? '注册失败' : '登录失败'));
+      setError(
+        getErrorMessage(
+          err.response?.data?.detail,
+          isRegister ? '\u6ce8\u518c\u5931\u8d25' : '\u767b\u5f55\u5931\u8d25'
+        )
+      );
     } finally {
       setLoading(false);
     }
@@ -48,7 +90,7 @@ export default function LoginView() {
             MARTIAN BIOLAB AI
           </h1>
           <p className="text-sm text-on-surface-variant font-headline tracking-wider uppercase">
-            {isRegister ? '创建新账户' : '登录系统'}
+            {isRegister ? '\u521b\u5efa\u8d26\u6237' : '\u767b\u5f55'}
           </p>
         </div>
 
@@ -56,10 +98,13 @@ export default function LoginView() {
           {isRegister && (
             <div>
               <label className="block text-sm font-medium text-on-surface-variant mb-2 font-headline tracking-wide">
-                用户名
+                {'\u7528\u6237\u540d'}
               </label>
               <div className="relative">
-                <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/50" />
+                <User
+                  size={18}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/50"
+                />
                 <input
                   type="text"
                   placeholder="username"
@@ -71,12 +116,16 @@ export default function LoginView() {
               </div>
             </div>
           )}
+
           <div>
             <label className="block text-sm font-medium text-on-surface-variant mb-2 font-headline tracking-wide">
-              邮箱地址
+              {'\u90ae\u7bb1'}
             </label>
             <div className="relative">
-              <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/50" />
+              <Mail
+                size={18}
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/50"
+              />
               <input
                 type="email"
                 placeholder="your@email.com"
@@ -90,13 +139,16 @@ export default function LoginView() {
 
           <div>
             <label className="block text-sm font-medium text-on-surface-variant mb-2 font-headline tracking-wide">
-              密码
+              {'\u5bc6\u7801'}
             </label>
             <div className="relative">
-              <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/50" />
+              <Lock
+                size={18}
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/50"
+              />
               <input
                 type="password"
-                placeholder="••••••••"
+                placeholder="********"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -107,7 +159,7 @@ export default function LoginView() {
 
           {error && (
             <div className="p-4 bg-error-container/20 border border-error/30 rounded-lg">
-              <p className="text-error text-sm font-medium">⚠️ {error}</p>
+              <p className="text-error text-sm font-medium">{error}</p>
             </div>
           )}
 
@@ -120,7 +172,9 @@ export default function LoginView() {
                 : 'bg-primary-container text-on-primary hover:bg-primary hover:shadow-lg hover:shadow-primary/30 active:scale-[0.98] glow-primary'
             }`}
           >
-            {loading ? (isRegister ? '注册中...' : '登录中...') : (isRegister ? '注册账户' : '登录系统')}
+            {loading
+              ? (isRegister ? '\u6ce8\u518c\u4e2d...' : '\u767b\u5f55\u4e2d...')
+              : (isRegister ? '\u6ce8\u518c' : '\u767b\u5f55')}
           </button>
 
           <div className="text-center">
@@ -132,7 +186,9 @@ export default function LoginView() {
               }}
               className="text-sm text-on-surface-variant hover:text-primary transition-colors"
             >
-              {isRegister ? '已有账户？立即登录' : '没有账户？立即注册'}
+              {isRegister
+                ? '\u5df2\u6709\u8d26\u6237\uff1f\u53bb\u767b\u5f55'
+                : '\u6ca1\u6709\u8d26\u6237\uff1f\u53bb\u6ce8\u518c'}
             </button>
           </div>
         </form>

@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
-import { getProjects, createProject, deleteProject, type Project } from '../api';
+import { useEffect, useState, type FormEvent } from 'react';
+
+import { createProject, deleteProject, getProjects, type Project } from '../api';
 
 export default function ProjectsView() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -15,13 +16,13 @@ export default function ProjectsView() {
       const data = await getProjects();
       setProjects(data);
     } catch (error) {
-      console.error('加载项目失败:', error);
+      console.error('\u52a0\u8f7d\u9879\u76ee\u5931\u8d25:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
     if (!newProjectName.trim()) return;
 
@@ -30,47 +31,50 @@ export default function ProjectsView() {
       setNewProjectName('');
       loadProjects();
     } catch (error) {
-      console.error('创建项目失败:', error);
+      console.error('\u521b\u5efa\u9879\u76ee\u5931\u8d25:', error);
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('确定删除此项目?')) return;
+    if (!confirm('\u786e\u5b9a\u5220\u9664\u6b64\u9879\u76ee\uff1f')) return;
     try {
       await deleteProject(id);
       loadProjects();
     } catch (error) {
-      console.error('删除项目失败:', error);
+      console.error('\u5220\u9664\u9879\u76ee\u5931\u8d25:', error);
     }
   };
 
-  if (loading) return <div>加载中...</div>;
+  if (loading) return <div>{'\u52a0\u8f7d\u4e2d...'}</div>;
 
   return (
     <div style={{ padding: '20px' }}>
-      <h1>我的项目</h1>
+      <h1>{'\u6211\u7684\u9879\u76ee'}</h1>
 
       <form onSubmit={handleCreate} style={{ marginBottom: '20px' }}>
         <input
           type="text"
           value={newProjectName}
           onChange={(e) => setNewProjectName(e.target.value)}
-          placeholder="项目名称"
+          placeholder="\u9879\u76ee\u540d\u79f0"
           style={{ padding: '8px', marginRight: '10px' }}
         />
-        <button type="submit">创建项目</button>
+        <button type="submit">{'\u521b\u5efa\u9879\u76ee'}</button>
       </form>
 
       <div>
         {projects.length === 0 ? (
-          <p>暂无项目</p>
+          <p>{'\u6682\u65e0\u9879\u76ee'}</p>
         ) : (
           projects.map((project) => (
-            <div key={project.id} style={{ border: '1px solid #ccc', padding: '10px', marginBottom: '10px' }}>
+            <div
+              key={project.id}
+              style={{ border: '1px solid #ccc', padding: '10px', marginBottom: '10px' }}
+            >
               <h3>{project.name}</h3>
-              <p>状态: {project.status}</p>
-              <p>创建时间: {new Date(project.created_at).toLocaleString()}</p>
-              <button onClick={() => handleDelete(project.id)}>删除</button>
+              <p>{'\u72b6\u6001'}: {project.status}</p>
+              <p>{'\u521b\u5efa\u65f6\u95f4'}: {new Date(project.created_at).toLocaleString()}</p>
+              <button onClick={() => handleDelete(project.id)}>{'\u5220\u9664'}</button>
             </div>
           ))
         )}

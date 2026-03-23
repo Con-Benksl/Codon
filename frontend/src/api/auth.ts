@@ -1,7 +1,7 @@
 import { apiClient } from './client';
 
 export interface LoginRequest {
-  username: string; // 实际是 email
+  username: string; // 实际上传邮箱
   password: string;
 }
 
@@ -27,13 +27,11 @@ export const register = async (data: RegisterRequest) => {
 
 // 登录
 export const login = async (email: string, password: string) => {
-  const formData = new FormData();
-  formData.append('username', email);
-  formData.append('password', password);
+  const params = new URLSearchParams();
+  params.append('username', email);
+  params.append('password', password);
 
-  const response = await apiClient.post('/auth/login', formData, {
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-  });
+  const response = await apiClient.post('/auth/login', params);
 
   const { access_token } = response.data;
   localStorage.setItem('access_token', access_token);
@@ -46,7 +44,7 @@ export const getCurrentUser = async (): Promise<User> => {
   return response.data;
 };
 
-// 登出
+// 退出登录
 export const logout = () => {
   localStorage.removeItem('access_token');
 };

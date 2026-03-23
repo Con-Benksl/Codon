@@ -9,7 +9,7 @@ export const apiClient = axios.create({
   },
 });
 
-// 请求拦截器：添加 token
+// 请求拦截器：自动附带 token
 apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('access_token');
   if (token) {
@@ -18,7 +18,7 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// 响应拦截器：处理错误
+// 响应拦截器：统一处理未登录态
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
