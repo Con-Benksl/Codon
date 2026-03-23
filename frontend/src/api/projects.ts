@@ -31,7 +31,9 @@ export const createProject = async (data: ProjectCreate): Promise<Project> => {
 
 export const getProjects = async (): Promise<Project[]> => {
   const response = await apiClient.get('/projects/');
-  return response.data;
+  // 兼容后端返回 { items: [...] } 或直接返回数组两种格式
+  const data = response.data;
+  return Array.isArray(data) ? data : (data?.items ?? data?.projects ?? data?.data ?? []);
 };
 
 export const getProject = async (id: number): Promise<Project> => {
