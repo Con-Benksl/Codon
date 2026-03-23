@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { Starfield, AmbientGlow } from '../components';
 import { Rocket, Mail, Lock, User } from 'lucide-react';
 
+const INPUT_CLASS = "w-full pl-12 pr-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-lg text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all";
+
 export default function LoginView() {
   const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState('');
@@ -64,7 +66,7 @@ export default function LoginView() {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
-                  className="w-full pl-12 pr-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-lg text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all"
+                  className={INPUT_CLASS}
                 />
               </div>
             </div>
@@ -81,7 +83,7 @@ export default function LoginView() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full pl-12 pr-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-lg text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all"
+                className={INPUT_CLASS}
               />
             </div>
           </div>
@@ -98,7 +100,7 @@ export default function LoginView() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full pl-12 pr-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-lg text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all"
+                className={INPUT_CLASS}
               />
             </div>
           </div>
