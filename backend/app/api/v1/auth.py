@@ -43,6 +43,12 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
             status_code=400,
             detail="\u90ae\u7bb1\u6216\u7528\u6237\u540d\u5df2\u5b58\u5728",
         )
+    except ValueError:
+        db.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail="\u5bc6\u7801\u4e0d\u5408\u6cd5\u6216\u8fc7\u957f",
+        )
 
 
 @router.post("/login", response_model=Token)

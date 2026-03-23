@@ -19,10 +19,15 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        return pwd_context.verify(plain_password, hashed_password)
+    except ValueError:
+        return False
 
 
 def get_password_hash(password: str) -> str:
+    if len(password.encode("utf-8")) > 72:
+        raise ValueError("PASSWORD_TOO_LONG")
     return pwd_context.hash(password)
 
 
