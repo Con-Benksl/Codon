@@ -26,6 +26,7 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { NavItem, Starfield, AmbientGlow, MarsStatusGlobe, Avatar } from "../components";
 import { getCurrentUser, logout, type User } from "../api";
+import { setNavigate } from "../lib/navigate";
 
 // ── 导航配置 — 单一数据源，添加新视图只需增加一项 ──
 interface NavConfig {
@@ -66,6 +67,10 @@ export default function Layout() {
   const navigate = useNavigate();
   const activeKey = getActiveKey(location.pathname);
   const activeNav = NAV_ITEMS.find((n) => n.key === activeKey)!;
+
+  useEffect(() => {
+    setNavigate(navigate);
+  }, [navigate]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });

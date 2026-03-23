@@ -17,7 +17,7 @@ interface ProjectCardProps {
 }
 
 export default function ProjectCard({ project, onOpen, onDelete }: ProjectCardProps) {
-  const status = STATUS_CONFIG[project.status] ?? { label: project.status.toUpperCase(), colorClass: 'text-on-surface-variant bg-surface-container border-outline-variant' };
+  const status = STATUS_CONFIG[project.status] ?? { label: String(project.status ?? 'unknown').toUpperCase(), colorClass: 'text-on-surface-variant bg-surface-container border-outline-variant' };
   const formattedDate = new Date(project.created_at).toLocaleDateString('zh-CN', {
     year: 'numeric', month: 'short', day: 'numeric',
   });
