@@ -1,5 +1,8 @@
+import json
 from functools import lru_cache
+from typing import Any
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
 
@@ -27,6 +30,28 @@ class Settings(BaseSettings):
         "http://localhost:5173",
         "http://127.0.0.1:5173",
     ]
+    # Allow Vercel preview and production domains by default.
+    CORS_ORIGIN_REGEX: str | None = r"^https://.*\.vercel\.app$"
+
+    @field_validator("CORS_ORIGINS", mode="before")
+    @classmethod
+    def parse_cors_origins(cls, value: Any) -> list[str] | Any:
+        if isinstance(value, str):
+            raw = value.strip()
+            if not raw:
+                return []
+
+            if raw.startswith("["):
+                try:
+                    parsed = json.loads(raw)
+                except json.JSONDecodeError:
+                    parsed = None
+                if isinstance(parsed, list):
+                    return [item.strip() for item in parsed if isinstance(item, str) and item.strip()]
+
+            return [item.strip() for item in raw.split(",") if item.strip()]
+
+        return value
 
     class Config:
         env_file = ".env"

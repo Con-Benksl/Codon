@@ -31,7 +31,11 @@ export const login = async (email: string, password: string) => {
   params.append('username', email);
   params.append('password', password);
 
-  const response = await apiClient.post('/auth/login', params);
+  const response = await apiClient.post('/auth/login', params, {
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+  });
 
   const { access_token } = response.data;
   localStorage.setItem('access_token', access_token);
