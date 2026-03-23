@@ -23,5 +23,16 @@ export default defineConfig(() => {
     preview: {
       host: true,
     },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+            'vendor-motion': ['motion'],
+            'vendor-utils': ['axios', 'lucide-react'],
+          },
+        },
+      },
+    },
   };
 });
