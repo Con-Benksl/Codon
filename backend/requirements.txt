@@ -21,18 +21,10 @@ python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 
 # 生物信息学
-biopython==1.81
-cobra==0.26.3
-sbol2==1.4.1
-numpy==1.23.5
-pandas==2.0.3
 
 # 导出
-weasyprint==60.2
 
 # HTTP客户端
 httpx==0.26.0
 
 # 测试
-pytest==7.4.4
-pytest-asyncio==0.23.3
