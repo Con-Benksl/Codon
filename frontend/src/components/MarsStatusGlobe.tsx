@@ -4,7 +4,7 @@ import { Thermometer, Radiation, Wind } from "lucide-react";
 import FallbackImage from "./FallbackImage";
 import ProceduralMarsGlobe from "./ProceduralMarsGlobe";
 
-type NavKey = "orchestrator" | "environment" | "synthesis" | "simulation" | "output" | "diagnostics" | "settings";
+type NavKey = "projects" | "orchestrator" | "environment" | "synthesis" | "simulation" | "output" | "diagnostics" | "settings";
 
 interface MarsStatusGlobeProps {
   activeView: NavKey;
@@ -12,6 +12,13 @@ interface MarsStatusGlobeProps {
 }
 
 const viewTheme: Record<NavKey, { glow: string; border: string; ring: string; text: string; bg: string }> = {
+  projects: {
+    glow: "rgba(129,207,255,0.30)",
+    border: "border-primary/25",
+    ring: "border-primary/12",
+    text: "text-primary",
+    bg: "from-primary/15 to-primary/5",
+  },
   orchestrator: {
     glow: "rgba(78,168,217,0.35)",
     border: "border-primary/30",

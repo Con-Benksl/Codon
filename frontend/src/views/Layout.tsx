@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect, Fragment } from "react";
+import { useState, useEffect, useRef, Fragment } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   LayoutGrid,
@@ -19,10 +19,13 @@ import {
   Menu,
   X,
   FolderOpen,
+  LogOut,
+  ChevronDown,
 } from "lucide-react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { NavItem, Starfield, AmbientGlow, MarsStatusGlobe, Avatar } from "../components";
+import { getCurrentUser, logout, type User } from "../api";
 
 // ── 导航配置 — 单一数据源，添加新视图只需增加一项 ──
 interface NavConfig {
@@ -56,6 +59,9 @@ function getActiveKey(pathname: string): string {
 
 export default function Layout() {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const activeKey = getActiveKey(location.pathname);
@@ -64,6 +70,26 @@ export default function Layout() {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [location.pathname]);
+
+  useEffect(() => {
+    getCurrentUser().then(setUser).catch(() => setUser(null));
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleLogout = () => {
+    logout();
+    setMenuOpen(false);
+    navigate("/login");
+  };
 
   const goTo = (item: NavConfig) => {
     if (!item.disabled) {
@@ -164,18 +190,77 @@ export default function Layout() {
             <Bell size={20} className="text-on-surface-variant" />
             <span className="absolute top-2 right-2 w-2 h-2 bg-secondary rounded-full" />
           </button>
-          <button
-            onClick={() => navigate('/login')}
-            className="rounded-full hover:ring-2 hover:ring-primary/30 transition-all"
-            aria-label="用户登录"
-          >
-            <Avatar
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuC0ORAVkaDRfKC82WQH48o6Rjy5A95bZ4XjbHS3YXCDhMCiHR3YoxMrA6rwY87HwOwJWMPfqa5A04Oa70ZGs03X-KYZYXA10i3duNza9ItcrgEMx27wjFiQ6RqX68VSKLgyX7OC0s04IL54AwM2efdCbIcM91_zDVq2obIhIAKstq-qGcrd_BLCRba696_E52aEmk4wHJFAEzXLV5r9SJHNjFe__o7MzFmfwks_fQqrXkpogdoWs2E3BQyUfUtSw2oM-JXTbRtINWU"
-              alt="User Profile"
-              name="Mars Operator"
-              size={32}
-            />
-          </button>
+
+          {/* User menu */}
+          <div ref={menuRef} className="relative">
+            <button
+              onClick={() => setMenuOpen((o) => !o)}
+              className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-full hover:bg-surface-variant/40 transition-all group"
+              aria-label="用户菜单"
+            >
+              <Avatar
+                alt={user?.username ?? "User"}
+                name={user?.username ?? "Mars Operator"}
+                size={32}
+              />
+              <ChevronDown
+                size={12}
+                className={`text-on-surface-variant/50 transition-transform duration-200 hidden md:block ${menuOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+
+            <AnimatePresence>
+              {menuOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -6, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -6, scale: 0.96 }}
+                  transition={{ duration: 0.15, ease: [0.25, 0.46, 0.45, 0.94] }}
+                  className="absolute right-0 top-[calc(100%+8px)] w-56 glass-panel rounded-xl border border-outline-variant/20 shadow-[0_16px_40px_rgba(0,0,0,0.4)] overflow-hidden z-50"
+                >
+                  {/* User info */}
+                  <div className="px-4 py-3 border-b border-outline-variant/15">
+                    <div className="flex items-center gap-3">
+                      <Avatar
+                        alt={user?.username ?? "User"}
+                        name={user?.username ?? "Mars Operator"}
+                        size={36}
+                      />
+                      <div className="min-w-0">
+                        <p className="font-headline font-bold text-on-surface text-xs uppercase tracking-tight truncate">
+                          {user?.username ?? "Mars Operator"}
+                        </p>
+                        <p className="text-[10px] text-on-surface-variant/60 font-body truncate mt-0.5">
+                          {user?.email ?? "—"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="p-1.5">
+                    <button
+                      onClick={() => { navigate("/projects"); setMenuOpen(false); }}
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors text-left"
+                    >
+                      <FolderOpen size={14} className="text-primary/70 shrink-0" />
+                      <span className="text-xs font-headline uppercase tracking-wider">我的项目</span>
+                    </button>
+
+                    <div className="h-px bg-outline-variant/10 my-1" />
+
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:text-secondary hover:bg-secondary/10 transition-colors text-left"
+                    >
+                      <LogOut size={14} className="shrink-0" />
+                      <span className="text-xs font-headline uppercase tracking-wider">退出登录</span>
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </header>
 
@@ -246,7 +331,7 @@ export default function Layout() {
 
       {/* Mars 状态球 — 仅 xl+ 显示 */}
       <MarsStatusGlobe
-        activeView={activeKey as "orchestrator" | "environment" | "synthesis" | "simulation" | "output" | "diagnostics" | "settings"}
+        activeView={activeKey as "projects" | "orchestrator" | "environment" | "synthesis" | "simulation" | "output" | "diagnostics" | "settings"}
         onNavigate={() => goTo(NAV_ITEMS.find((n) => n.key === "environment")!)}
       />
     </div>
