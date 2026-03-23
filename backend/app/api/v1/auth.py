@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -18,19 +19,30 @@ router = APIRouter()
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register(user: UserCreate, db: Session = Depends(get_db)):
     """Register user."""
-    db_user = db.query(User).filter(User.email == user.email).first()
-    if db_user:
+    db_user_by_email = db.query(User).filter(User.email == user.email).first()
+    if db_user_by_email:
         raise HTTPException(status_code=400, detail="\u90ae\u7bb1\u5df2\u88ab\u6ce8\u518c")
 
-    db_user = User(
-        email=user.email,
-        username=user.username,
-        hashed_password=get_password_hash(user.password),
-    )
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
-    return db_user
+    db_user_by_username = db.query(User).filter(User.username == user.username).first()
+    if db_user_by_username:
+        raise HTTPException(status_code=400, detail="\u7528\u6237\u540d\u5df2\u88ab\u4f7f\u7528")
+
+    try:
+        db_user = User(
+            email=user.email,
+            username=user.username,
+            hashed_password=get_password_hash(user.password),
+        )
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+        return db_user
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail="\u90ae\u7bb1\u6216\u7528\u6237\u540d\u5df2\u5b58\u5728",
+        )
 
 
 @router.post("/login", response_model=Token)
