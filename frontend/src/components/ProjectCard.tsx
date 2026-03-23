@@ -29,7 +29,6 @@ export default function ProjectCard({ project, onOpen, onDelete }: ProjectCardPr
       onClick={() => onOpen(project)}
       className="glass-panel rounded-xl p-5 cursor-pointer group flex flex-col gap-4"
     >
-      {/* Top row: icon + status badge */}
       <div className="flex items-start justify-between">
         <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
           <Dna size={18} className="text-primary/70" />
@@ -39,7 +38,6 @@ export default function ProjectCard({ project, onOpen, onDelete }: ProjectCardPr
         </span>
       </div>
 
-      {/* Name + description */}
       <div className="flex-1">
         <h3 className="font-headline font-bold text-on-surface text-sm uppercase tracking-tight leading-snug mb-1.5 line-clamp-1">
           {project.name}
@@ -49,7 +47,6 @@ export default function ProjectCard({ project, onOpen, onDelete }: ProjectCardPr
         </p>
       </div>
 
-      {/* Bottom row: date + actions */}
       <div className="flex items-center justify-between pt-3 border-t border-outline-variant/30">
         <span className="flex items-center gap-1.5 text-[11px] text-on-surface-variant/60 font-body">
           <Calendar size={11} />
@@ -57,7 +54,6 @@ export default function ProjectCard({ project, onOpen, onDelete }: ProjectCardPr
         </span>
 
         <div className="flex items-center gap-1">
-          {/* Delete */}
           <motion.button
             whileTap={{ scale: 0.88 }}
             onClick={(e) => onDelete(project.id, e)}
@@ -67,7 +63,6 @@ export default function ProjectCard({ project, onOpen, onDelete }: ProjectCardPr
             <Trash2 size={13} />
           </motion.button>
 
-          {/* Open */}
           <motion.button
             whileTap={{ scale: 0.92 }}
             onClick={(e) => { e.stopPropagation(); onOpen(project); }}
