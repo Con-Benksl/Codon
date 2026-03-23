@@ -68,7 +68,7 @@ export default function LoginView() {
         await login(email, password);
       }
 
-      navigate('/orchestrator');
+      navigate('/projects');
     } catch (err: any) {
       setError(
         getErrorMessage(

@@ -10,3 +10,4 @@ export { default as MarsStatusGlobe } from "./MarsStatusGlobe";
 export { default as FallbackImage } from "./FallbackImage";
 export { default as Avatar } from "./Avatar";
 export { default as ProceduralMarsGlobe } from "./ProceduralMarsGlobe";
+export { default as ProjectCard } from "./ProjectCard";
