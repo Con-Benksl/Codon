@@ -1,9 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none">
   <defs>
-    <linearGradient id="bg" x1="12" y1="10" x2="244" y2="248" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#0a1220" />
-      <stop offset="1" stop-color="#0d1b2f" />
-    </linearGradient>
     <linearGradient id="dna" x1="74" y1="208" x2="182" y2="52" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#1e3a5f" />
       <stop offset="1" stop-color="#3b82c4" />
@@ -13,10 +9,7 @@
     </filter>
   </defs>
 
-  <rect x="8" y="8" width="240" height="240" rx="48" fill="url(#bg)" />
-  <rect x="8" y="8" width="240" height="240" rx="48" stroke="#1f2f48" stroke-width="2" />
-
-  <g filter="url(#soft)">
+  <g filter="url(#soft)" transform="rotate(-18 128 128)">
     <path
       d="M76 126C104 118 152 118 180 126"
       stroke="url(#dna)"
