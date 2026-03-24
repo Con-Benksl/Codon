@@ -1,5 +1,5 @@
 import json
-from typing import Any
+from typing import Any, Dict
 
 from app.agents.base_agent import BaseAgent
 
@@ -43,7 +43,7 @@ class ExtremophileAgent(BaseAgent):
     def __init__(self):
         super().__init__("extremophile", "极端微生物")
 
-    def build_user_prompt(self, input_data: dict[str, Any]) -> str:
+    def build_user_prompt(self, input_data: Dict[str, Any]) -> str:
         constraints = input_data.get("constraints", {})
         location = input_data.get("location", "未指定")
         upstream_findings = input_data.get("upstream_findings", [])

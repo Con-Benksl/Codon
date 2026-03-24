@@ -1,5 +1,5 @@
 import json
-from typing import Any
+from typing import Any, Dict
 
 from app.agents.base_agent import BaseAgent
 
@@ -38,7 +38,7 @@ class EnvParseAgent(BaseAgent):
     def __init__(self):
         super().__init__("env-parse", "环境解析")
 
-    def build_user_prompt(self, input_data: dict[str, Any]) -> str:
+    def build_user_prompt(self, input_data: Dict[str, Any]) -> str:
         location = input_data.get("location", "Jezero Crater")
         mission_type = input_data.get("mission_type", "地表生物实验")
         extra_requirements = input_data.get("requirements", "")

@@ -1,5 +1,5 @@
 import json
-from typing import Any
+from typing import Any, Dict
 
 from app.agents.base_agent import BaseAgent
 
@@ -41,7 +41,7 @@ class StructPredictAgent(BaseAgent):
     def __init__(self):
         super().__init__("struct-predict", "结构预测")
 
-    def build_user_prompt(self, input_data: dict[str, Any]) -> str:
+    def build_user_prompt(self, input_data: Dict[str, Any]) -> str:
         gene_clusters = input_data.get("gene_clusters", [])
         candidate_organisms = input_data.get("candidate_organisms", [])
         constraints = input_data.get("constraints", {})

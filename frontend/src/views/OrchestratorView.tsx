@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -17,10 +17,16 @@ import {
   Share2,
   X,
   Plus,
+  Loader2,
+  Play,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 import { Badge, AnalysisCard, DesignCard, DetailPanel, FallbackImage } from "../components";
 import { agentDetails } from "../data/agentDetails";
 import { useLocale } from "../i18n/context";
+import { orchestrateAgents, getAgentRuns } from "../api/agents";
+import type { AgentRun } from "../api/agents";
 import {
   stagger,
   fadeSlideUp,
@@ -47,6 +53,50 @@ export default function OrchestratorView() {
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const activeAgent = selectedAgent ? agentDetails[selectedAgent] : null;
+
+  // === 编排状态 ===
+  const [isOrchestrating, setIsOrchestrating] = useState(false);
+  const [orchestrationError, setOrchestrationError] = useState<string | null>(null);
+  const [agentRuns, setAgentRuns] = useState<AgentRun[]>([]);
+  const [currentRunningAgent, setCurrentRunningAgent] = useState<string | null>(null);
+
+  // 获取某个 agent 的真实运行结果
+  const getAgentRunResult = useCallback(
+    (agentId: string): AgentRun | undefined =>
+      agentRuns.find((r) => r.agent_id === agentId),
+    [agentRuns]
+  );
+
+  // 触发编排
+  const handleOrchestrate = async () => {
+    setIsOrchestrating(true);
+    setOrchestrationError(null);
+    setAgentRuns([]);
+    setCurrentRunningAgent("env-parse");
+
+    try {
+      // 使用 project_id=1 作为默认（后续可改为用户选择）
+      const result = await orchestrateAgents({
+        project_id: 1,
+        config: {
+          location: "Jezero Crater",
+          constraints: constraints,
+        },
+      });
+
+      // 获取详细运行记录
+      if (result?.agent_runs?.length) {
+        const runs = await getAgentRuns(1);
+        setAgentRuns(runs);
+      }
+    } catch (err: any) {
+      const msg = err?.response?.data?.detail || err?.message || "编排失败";
+      setOrchestrationError(msg);
+    } finally {
+      setIsOrchestrating(false);
+      setCurrentRunningAgent(null);
+    }
+  };
 
   useEffect(() => {
     const allDefaults = [...DEFAULT_CONSTRAINTS.zh, ...DEFAULT_CONSTRAINTS.en];
@@ -191,13 +241,80 @@ export default function OrchestratorView() {
             </motion.div>
             <motion.button
               {...buttonPress}
-              className="px-6 py-2 bg-primary text-on-primary font-headline font-bold text-xs rounded-full uppercase tracking-widest hover:brightness-110 transition-all shadow-[0_0_15px_rgba(129,207,255,0.4)]"
+              onClick={handleOrchestrate}
+              disabled={isOrchestrating}
+              className={`px-6 py-2 font-headline font-bold text-xs rounded-full uppercase tracking-widest transition-all flex items-center gap-2 ${
+                isOrchestrating
+                  ? "bg-primary/50 text-on-primary/70 cursor-wait"
+                  : "bg-primary text-on-primary hover:brightness-110 shadow-[0_0_15px_rgba(129,207,255,0.4)]"
+              }`}
             >
-              {t("更新模型", "Update Model")}
+              {isOrchestrating ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" />
+                  {t("运行中...", "Running...")}
+                </>
+              ) : agentRuns.length > 0 ? (
+                <>
+                  <RefreshCw size={14} />
+                  {t("重新运行", "Re-run")}
+                </>
+              ) : (
+                <>
+                  <Play size={14} />
+                  {t("启动编排", "Run Orchestration")}
+                </>
+              )}
             </motion.button>
           </div>
         </div>
       </motion.section>
+
+      {/* === 编排状态条 === */}
+      {(isOrchestrating || agentRuns.length > 0 || orchestrationError) && (
+        <motion.section
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          className="mb-8"
+        >
+          <div className="glass-panel p-4 rounded-xl">
+            {orchestrationError ? (
+              <div className="flex items-center gap-3 text-secondary">
+                <AlertCircle size={18} />
+                <span className="text-sm font-headline">{orchestrationError}</span>
+              </div>
+            ) : isOrchestrating ? (
+              <div className="flex items-center gap-3">
+                <Loader2 size={18} className="animate-spin text-primary" />
+                <span className="text-sm font-headline text-on-surface-variant">
+                  {t("正在运行 6 个 Agent 管线（LLM 推理中，预计 2-5 分钟）...", "Running 6-agent pipeline (LLM reasoning, ~2-5 min)...")}
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3">
+                <CheckCircle2 size={18} className="text-tertiary" />
+                <span className="text-sm font-headline text-on-surface-variant">
+                  {t(
+                    `编排完成 — ${agentRuns.filter((r) => r.status === "completed").length}/${agentRuns.length} 个 Agent 成功`,
+                    `Orchestration complete — ${agentRuns.filter((r) => r.status === "completed").length}/${agentRuns.length} agents succeeded`
+                  )}
+                </span>
+                <div className="flex gap-1.5 ml-auto">
+                  {agentRuns.map((r) => (
+                    <div
+                      key={r.id}
+                      title={`${r.agent_name}: ${r.status}`}
+                      className={`w-3 h-3 rounded-full ${
+                        r.status === "completed" ? "bg-tertiary" : "bg-secondary"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </motion.section>
+      )}
 
       <section className="mb-12 flex justify-center relative">
         <div className="absolute -bottom-12 left-1/2 w-px h-12 bg-gradient-to-b from-primary to-transparent" />
@@ -511,6 +628,7 @@ export default function OrchestratorView() {
         {activeAgent && (
           <DetailPanel
             agent={activeAgent}
+            agentRun={selectedAgent ? getAgentRunResult(selectedAgent) : undefined}
             onClose={() => setSelectedAgent(null)}
           />
         )}

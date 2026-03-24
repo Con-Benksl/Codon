@@ -1,5 +1,5 @@
 import json
-from typing import Any
+from typing import Any, Dict
 
 from app.agents.base_agent import BaseAgent
 
@@ -44,7 +44,7 @@ class CircuitDesignAgent(BaseAgent):
     def __init__(self):
         super().__init__("circuit-design", "回路设计")
 
-    def build_user_prompt(self, input_data: dict[str, Any]) -> str:
+    def build_user_prompt(self, input_data: Dict[str, Any]) -> str:
         gene_clusters = input_data.get("gene_clusters", [])
         constraints = input_data.get("constraints", {})
         upstream_findings = input_data.get("upstream_findings", [])

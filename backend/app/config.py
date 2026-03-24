@@ -1,6 +1,6 @@
 import json
 from functools import lru_cache
-from typing import Any
+from typing import Any, List, Optional, Union
 
 from pydantic import field_validator
 from pydantic_settings import BaseSettings
@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     LLM_TEMPERATURE: float = 0.3
 
     # Keep local dev ports aligned with the Vite config and common alternates.
-    CORS_ORIGINS: list[str] = [
+    CORS_ORIGINS: List[str] = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://localhost:3003",
@@ -38,11 +38,11 @@ class Settings(BaseSettings):
         "http://127.0.0.1:5173",
     ]
     # Allow Vercel preview and production domains by default.
-    CORS_ORIGIN_REGEX: str | None = r"^https://.*\.vercel\.app$"
+    CORS_ORIGIN_REGEX: Optional[str] = r"^https://.*\.vercel\.app$"
 
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
-    def parse_cors_origins(cls, value: Any) -> list[str] | Any:
+    def parse_cors_origins(cls, value: Any) -> Union[List[str], Any]:
         if isinstance(value, str):
             raw = value.strip()
             if not raw:

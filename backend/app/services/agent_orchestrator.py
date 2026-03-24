@@ -1,6 +1,7 @@
-from typing import Any
+from typing import Any, Dict, List
 from sqlalchemy.orm import Session
 from datetime import datetime
+import asyncio
 import logging
 
 from app.models.agent_run import AgentRun
@@ -13,6 +14,9 @@ from app.agents.struct_predict_agent import StructPredictAgent
 
 logger = logging.getLogger(__name__)
 
+# 两次 LLM 请求之间的间隔（秒），避免触发中转 API 频率限制
+AGENT_INTERVAL = 5
+
 
 class AgentOrchestrator:
     """Agent 编排器 — 串行执行 6 个 Agent，上游输出自动注入下游输入"""
@@ -20,7 +24,7 @@ class AgentOrchestrator:
     def __init__(self, db: Session):
         self.db = db
 
-    async def orchestrate(self, project_id: int, config: dict[str, Any]) -> list:
+    async def orchestrate(self, project_id: int, config: Dict[str, Any]) -> list:
         """DAG 编排：每个 Agent 的输出会累积到共享上下文中，传给下游 Agent"""
         agents = [
             EnvParseAgent(),
@@ -33,9 +37,9 @@ class AgentOrchestrator:
 
         results = []
         # 共享上下文：累积所有上游 Agent 的输出
-        context: dict[str, Any] = {**config}
+        context: Dict[str, Any] = {**config}
         # 累积所有 findings
-        all_findings: list[str] = []
+        all_findings: List[str] = []
 
         for agent in agents:
             # 将累积的 findings 注入上下文
@@ -86,6 +90,10 @@ class AgentOrchestrator:
             # 如果 Agent 失败，记录但继续执行后续 Agent
             if output.get("status") == "failed":
                 logger.warning("Agent %s 失败，继续执行后续 Agent", agent.agent_id)
+
+            # 请求间隔，避免触发中转 API 频率限制
+            if agent is not agents[-1]:
+                await asyncio.sleep(AGENT_INTERVAL)
 
         return results
 

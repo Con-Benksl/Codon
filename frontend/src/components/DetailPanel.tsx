@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef } from "react";
 import { motion } from "motion/react";
-import { X, ExternalLink, Circle, ArrowUp, ArrowDown, Minus } from "lucide-react";
+import { X, ExternalLink, Circle, ArrowUp, ArrowDown, Minus, Sparkles } from "lucide-react";
 import type { AgentDetail } from "../data/agentDetails";
+import type { AgentRun } from "../api/agents";
 import { useLocale } from "../i18n/context";
 
 interface DetailPanelProps {
   agent: AgentDetail;
+  agentRun?: AgentRun;
   onClose: () => void;
 }
 
@@ -324,7 +326,7 @@ function applyOverride(agent: AgentDetail, overrides: Record<string, AgentOverri
   };
 }
 
-export default function DetailPanel({ agent, onClose }: DetailPanelProps) {
+export default function DetailPanel({ agent, agentRun, onClose }: DetailPanelProps) {
   const { locale } = useLocale();
   const isZh = locale === "zh";
   const displayAgent = useMemo(
@@ -422,6 +424,103 @@ export default function DetailPanel({ agent, onClose }: DetailPanelProps) {
 
         <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain p-6 space-y-6" style={{ touchAction: "pan-y" }}>
           <p className="text-sm text-on-surface-variant leading-relaxed">{displayAgent.description}</p>
+
+          {/* === LLM 真实结果 === */}
+          {agentRun?.output_data && !agentRun.output_data.error && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Sparkles size={14} className={accent.text} />
+                <h3 className="text-[10px] font-headline font-bold tracking-widest uppercase text-on-surface-variant">
+                  {isZh ? "LLM 分析结果" : "LLM Analysis Results"}
+                </h3>
+                <span className={`text-[9px] px-2 py-0.5 rounded-full ${accent.bg} ${accent.text} font-headline uppercase`}>
+                  {agentRun.status === "completed" ? (isZh ? "已完成" : "Completed") : agentRun.status}
+                </span>
+              </div>
+
+              {/* LLM Findings */}
+              {agentRun.output_data.findings?.length > 0 && (
+                <div>
+                  <h4 className="text-[10px] font-headline font-bold tracking-widest uppercase text-on-surface-variant mb-2">
+                    {isZh ? "AI 发现" : "AI Findings"}
+                  </h4>
+                  <div className="space-y-2">
+                    {agentRun.output_data.findings.map((f: string, i: number) => (
+                      <div
+                        key={`llm-finding-${i}`}
+                        className={`text-xs text-on-surface leading-relaxed pl-3 border-l-2 border-l-tertiary py-1.5 bg-tertiary/5 rounded-r-lg`}
+                      >
+                        {f}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* LLM Risk Factors (EnvParse) */}
+              {agentRun.output_data.risk_factors?.length > 0 && (
+                <div>
+                  <h4 className="text-[10px] font-headline font-bold tracking-widest uppercase text-on-surface-variant mb-2">
+                    {isZh ? "风险因素" : "Risk Factors"}
+                  </h4>
+                  <div className="space-y-1.5">
+                    {agentRun.output_data.risk_factors.slice(0, 5).map((r: string, i: number) => (
+                      <div key={`risk-${i}`} className="text-[11px] text-secondary leading-relaxed pl-3 border-l-2 border-l-secondary/40 py-1">
+                        {r}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* LLM Candidate Organisms (Extremophile) */}
+              {agentRun.output_data.candidate_organisms?.length > 0 && (
+                <div>
+                  <h4 className="text-[10px] font-headline font-bold tracking-widest uppercase text-on-surface-variant mb-2">
+                    {isZh ? "候选微生物" : "Candidate Organisms"}
+                  </h4>
+                  <div className="space-y-2">
+                    {agentRun.output_data.candidate_organisms.map((c: any, i: number) => (
+                      <div key={`cand-${i}`} className="bg-surface-container-lowest p-3 rounded-lg border border-outline-variant/10">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-headline font-bold text-on-surface">{c.name}</span>
+                          {c.score && <span className={`text-xs font-bold ${accent.text}`}>{(c.score * 100).toFixed(0)}%</span>}
+                        </div>
+                        {c.rationale && <p className="text-[11px] text-on-surface-variant leading-relaxed">{c.rationale}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* LLM Gene Clusters (GeneFunc) */}
+              {agentRun.output_data.gene_clusters?.length > 0 && (
+                <div>
+                  <h4 className="text-[10px] font-headline font-bold tracking-widest uppercase text-on-surface-variant mb-2">
+                    {isZh ? "基因模块" : "Gene Modules"}
+                  </h4>
+                  <div className="space-y-2">
+                    {agentRun.output_data.gene_clusters.map((g: any, i: number) => (
+                      <div key={`gene-${i}`} className="bg-surface-container-lowest p-3 rounded-lg border border-outline-variant/10">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-headline font-bold text-on-surface">{g.name}</span>
+                          <span className="text-[10px] text-on-surface-variant">{g.function}</span>
+                        </div>
+                        {g.genes && <p className="text-[10px] font-mono text-primary/70">{g.genes.join(" → ")}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Separator */}
+              <div className="border-t border-outline-variant/20 pt-2">
+                <p className="text-[10px] text-outline text-center font-headline uppercase tracking-widest">
+                  {isZh ? "以下为参考数据" : "Reference data below"}
+                </p>
+              </div>
+            </div>
+          )}
 
           <div>
             <h3 className="text-[10px] font-headline font-bold tracking-widest uppercase text-on-surface-variant mb-3">{isZh ? "关键指标" : "Key Metrics"}</h3>

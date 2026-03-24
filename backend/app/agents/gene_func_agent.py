@@ -1,5 +1,5 @@
 import json
-from typing import Any
+from typing import Any, Dict
 
 from app.agents.base_agent import BaseAgent
 
@@ -39,7 +39,7 @@ class GeneFuncAgent(BaseAgent):
     def __init__(self):
         super().__init__("gene-func", "基因功能映射")
 
-    def build_user_prompt(self, input_data: dict[str, Any]) -> str:
+    def build_user_prompt(self, input_data: Dict[str, Any]) -> str:
         constraints = input_data.get("constraints", {})
         candidates = input_data.get("candidate_organisms", [])
         upstream_findings = input_data.get("upstream_findings", [])

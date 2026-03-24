@@ -1,5 +1,5 @@
 import json
-from typing import Any
+from typing import Any, Dict
 
 from app.agents.base_agent import BaseAgent
 
@@ -41,7 +41,7 @@ class MetabCompatAgent(BaseAgent):
     def __init__(self):
         super().__init__("metab-compat", "代谢兼容性")
 
-    def build_user_prompt(self, input_data: dict[str, Any]) -> str:
+    def build_user_prompt(self, input_data: Dict[str, Any]) -> str:
         logic_gates = input_data.get("logic_gates", [])
         gene_clusters = input_data.get("gene_clusters", [])
         candidate_organisms = input_data.get("candidate_organisms", [])
