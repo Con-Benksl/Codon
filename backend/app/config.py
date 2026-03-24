@@ -21,6 +21,13 @@ class Settings(BaseSettings):
     CELERY_BROKER_URL: str
     CELERY_RESULT_BACKEND: str
 
+    # LLM 配置（中转 API，兼容 OpenAI 格式）
+    LLM_API_KEY: str = ""
+    LLM_BASE_URL: str = "https://api.openai.com/v1"
+    LLM_MODEL: str = "gpt-4o"
+    LLM_MAX_TOKENS: int = 4096
+    LLM_TEMPERATURE: float = 0.3
+
     # Keep local dev ports aligned with the Vite config and common alternates.
     CORS_ORIGINS: list[str] = [
         "http://localhost:3000",

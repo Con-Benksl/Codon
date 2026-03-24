@@ -22,6 +22,9 @@ python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 bcrypt==4.0.1
 
+# LLM（OpenAI 兼容格式，支持中转 API）
+openai>=1.12.0
+
 # 生物信息学
 
 # 导出
