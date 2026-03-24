@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none">
+  <defs>
+    <linearGradient id="dna" x1="64" y1="220" x2="192" y2="36" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#22d3ee"/>
+      <stop offset="1" stop-color="#86efac"/>
+    </linearGradient>
+    <linearGradient id="bar" x1="84" y1="40" x2="172" y2="40" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#38bdf8"/>
+      <stop offset="1" stop-color="#a3e635"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <g filter="url(#glow)" stroke="url(#dna)" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M96 220c0-28 64-28 64-56s-64-28-64-56 64-28 64-56" stroke-width="12"/>
+    <path d="M160 220c0-28-64-28-64-56s64-28 64-56-64-28-64-56" stroke-width="12"/>
+  </g>
+
+  <g stroke="url(#bar)" stroke-width="10" stroke-linecap="round">
+    <line x1="96" y1="58" x2="160" y2="58"/>
+    <line x1="96" y1="94" x2="160" y2="94"/>
+    <line x1="96" y1="130" x2="160" y2="130"/>
+    <line x1="96" y1="166" x2="160" y2="166"/>
+    <line x1="96" y1="202" x2="160" y2="202"/>
+  </g>
+
+  <g fill="#86efac" filter="url(#glow)">
+    <path d="M148 38c10-16 23-16 32-10-3 11-16 22-32 21z"/>
+    <path d="M126 52c-9-14-22-15-30-9 2 10 14 20 30 19z"/>
+    <path d="M168 59c8-11 18-11 25-7-2 8-12 16-25 15z"/>
+  </g>
+</svg>
