@@ -1,18 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none">
-  <defs>
-    <linearGradient id="dna" x1="74" y1="208" x2="182" y2="52" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#1e3a5f" />
-      <stop offset="1" stop-color="#3b82c4" />
-    </linearGradient>
-    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="2.2" />
-    </filter>
-  </defs>
-
-  <g filter="url(#soft)" transform="rotate(-18 128 128)">
+  <g transform="rotate(-18 128 128)">
     <path
       d="M76 126C104 118 152 118 180 126"
-      stroke="url(#dna)"
+      stroke="#35506D"
       stroke-width="15"
       stroke-linecap="round"
       stroke-linejoin="round"
@@ -20,7 +10,7 @@
 
     <path
       d="M98 112C84 98 84 82 102 68M126 107L118 90M150 100C164 90 170 76 160 60"
-      stroke="url(#dna)"
+      stroke="#35506D"
       stroke-width="14"
       stroke-linecap="round"
       stroke-linejoin="round"
@@ -28,7 +18,7 @@
 
     <path
       d="M98 140C84 154 84 170 102 184M126 145L118 162M150 152C164 162 170 176 160 192"
-      stroke="url(#dna)"
+      stroke="#35506D"
       stroke-width="14"
       stroke-linecap="round"
       stroke-linejoin="round"
