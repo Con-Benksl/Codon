@@ -1,4 +1,4 @@
-﻿import { useState, type ComponentType } from "react";
+import { useState, type ComponentType } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Bell, FlaskConical, Monitor, Server, User2 } from "lucide-react";
 import { buttonPress, fadeScale, viewTransition } from "../lib/motion";
@@ -6,25 +6,28 @@ import SettingsSectionContent, {
   type SettingsSectionKey,
   type SettingsState,
 } from "../components/settings/SettingsSections";
+import { useLocale } from "../i18n/context";
 
-const NAV_ITEMS: Array<{
+function buildNavItems(t: (key: string) => string): Array<{
   key: SettingsSectionKey;
   label: string;
   icon: ComponentType<{ size?: number; className?: string }>;
-}> = [
-  { key: "user", label: "USER PROFILE", icon: User2 },
-  { key: "display", label: "DISPLAY", icon: Monitor },
-  { key: "notifications", label: "NOTIFICATIONS", icon: Bell },
-  { key: "simulation", label: "SIMULATION", icon: FlaskConical },
-  { key: "system", label: "SYSTEM", icon: Server },
-];
+}> {
+  return [
+    { key: "user", label: t("settings.sections.user"), icon: User2 },
+    { key: "display", label: t("settings.sections.display"), icon: Monitor },
+    { key: "notifications", label: t("settings.sections.notifications"), icon: Bell },
+    { key: "simulation", label: t("settings.sections.simulation"), icon: FlaskConical },
+    { key: "system", label: t("settings.sections.system"), icon: Server },
+  ];
+}
 
 const INITIAL_SETTINGS: SettingsState = {
   twoFactor: true,
   biometric: false,
   themePreset: "deep-space",
   accentColor: "blue",
-  language: "中文",
+  language: "����",
   dataUnits: "SI",
   dateFormat: "ISO",
   reducedMotion: true,
@@ -61,6 +64,9 @@ const INITIAL_SETTINGS: SettingsState = {
 export default function SettingsView() {
   const [activeSection, setActiveSection] = useState<SettingsSectionKey>("user");
   const [settings, setSettings] = useState<SettingsState>(INITIAL_SETTINGS);
+  const { t } = useLocale();
+
+  const NAV_ITEMS = buildNavItems(t);
 
   return (
     <motion.div
@@ -71,8 +77,8 @@ export default function SettingsView() {
       className="flex flex-col gap-6 p-4 md:p-8 min-h-full"
     >
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl md:text-3xl font-headline font-bold text-on-background">SETTINGS</h1>
-        <p className="text-sm text-on-surface-variant font-body">系统配置与个人偏好</p>
+        <h1 className="text-2xl md:text-3xl font-headline font-bold text-on-background">{t("settings.title")}</h1>
+        <p className="text-sm text-on-surface-variant font-body">{t("settings.subtitle")}</p>
       </div>
 
       <div className="flex flex-col md:flex-row gap-4 md:gap-6 min-h-[520px]">
@@ -128,4 +134,3 @@ export default function SettingsView() {
     </motion.div>
   );
 }
-

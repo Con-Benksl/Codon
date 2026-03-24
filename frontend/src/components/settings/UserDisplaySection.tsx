@@ -1,9 +1,10 @@
-锘縤mport type { Dispatch, SetStateAction } from "react";
+import type { Dispatch, SetStateAction } from "react";
 import { motion } from "motion/react";
 import { KeyRound, Pencil, ShieldCheck } from "lucide-react";
 import { buttonPress, cardHover, stagger } from "../../lib/motion";
 import type { SettingsState } from "./types";
 import { SectionBlock, SelectField, ToggleSwitch } from "./SettingsPrimitives";
+import { useLocale } from "../../i18n/context";
 
 interface SectionProps {
   settings: SettingsState;
@@ -11,9 +12,11 @@ interface SectionProps {
 }
 
 export function UserSection({ settings, setSettings }: SectionProps) {
+  const { t } = useLocale();
+
   return (
     <motion.div variants={stagger(70)} initial="hidden" animate="show" className="space-y-4">
-      <SectionBlock title="PROFILE INFORMATION">
+      <SectionBlock title={t("settings.user.profileInfo")}>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-full bg-primary/15 border border-primary/30 text-primary font-headline font-bold text-xl flex items-center justify-center">
@@ -30,49 +33,49 @@ export function UserSection({ settings, setSettings }: SectionProps) {
             className="flex items-center gap-2 px-4 py-2.5 bg-primary/10 border border-primary/30 text-primary text-[11px] font-headline tracking-widest uppercase rounded-lg hover:bg-primary/20 transition-colors"
           >
             <Pencil size={13} />
-            EDIT PROFILE
+            {t("settings.user.editProfile")}
           </motion.button>
         </div>
       </SectionBlock>
 
-      <SectionBlock title="ACCESS & PERMISSIONS">
+      <SectionBlock title={t("settings.user.accessPermissions")}>
         <div className="space-y-3 text-xs font-body">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-on-surface-variant">Role</span>
+            <span className="text-on-surface-variant">{t("settings.user.role")}</span>
             <span className="px-2 py-0.5 rounded-full text-[10px] font-headline uppercase tracking-wide bg-primary/15 text-primary">MISSION COMMANDER</span>
           </div>
           <div className="h-px bg-outline-variant/20" />
           <div className="flex items-center justify-between gap-2">
-            <span className="text-on-surface-variant">Clearance</span>
+            <span className="text-on-surface-variant">{t("settings.user.clearance")}</span>
             <span className="text-on-surface">Level 5 - Full Access</span>
           </div>
           <div className="h-px bg-outline-variant/20" />
           <div className="flex items-center justify-between gap-2">
-            <span className="text-on-surface-variant">Active Since</span>
+            <span className="text-on-surface-variant">{t("settings.user.activeSince")}</span>
             <span className="text-on-surface">Sol 47 (2026-03-01)</span>
           </div>
           <div className="h-px bg-outline-variant/20" />
           <div className="flex items-center justify-between gap-2">
-            <span className="text-on-surface-variant">Session</span>
+            <span className="text-on-surface-variant">{t("settings.user.session")}</span>
             <div className="flex items-center gap-3">
               <span className="text-on-surface">8h 23m</span>
               <button className="px-3 py-1 rounded-lg border border-secondary/30 bg-secondary/10 text-secondary text-[10px] font-headline uppercase tracking-widest">
-                TERMINATE SESSION
+                {t("settings.user.terminateSession")}
               </button>
             </div>
           </div>
         </div>
       </SectionBlock>
 
-      <SectionBlock title="AUTHENTICATION">
+      <SectionBlock title={t("settings.user.authentication")}>
         <div className="space-y-3 text-xs font-body">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-on-surface-variant">Password</p>
-              <p className="text-on-surface text-sm">鈼忊棌鈼忊棌鈼忊棌鈼忊棌  Last changed 30d ago</p>
+              <p className="text-on-surface-variant">{t("settings.user.password")}</p>
+              <p className="text-on-surface text-sm">●●●●●●●●  Last changed 30d ago</p>
             </div>
             <button className="px-3 py-1 rounded-lg border border-primary/30 bg-primary/10 text-primary text-[10px] font-headline uppercase tracking-widest">
-              CHANGE PASSWORD
+              {t("settings.user.changePassword")}
             </button>
           </div>
           <div className="h-px bg-outline-variant/20" />
@@ -80,8 +83,8 @@ export function UserSection({ settings, setSettings }: SectionProps) {
             <div className="flex items-center gap-2">
               <KeyRound size={14} className="text-primary" />
               <div>
-                <p className="text-on-surface">2FA</p>
-                <p className="text-on-surface-variant">Authenticator App</p>
+                <p className="text-on-surface">{t("settings.user.twoFa")}</p>
+                <p className="text-on-surface-variant">{t("settings.user.twoFaDesc")}</p>
               </div>
             </div>
             <ToggleSwitch checked={settings.twoFactor} onClick={() => setSettings((prev) => ({ ...prev, twoFactor: !prev.twoFactor }))} />
@@ -91,8 +94,8 @@ export function UserSection({ settings, setSettings }: SectionProps) {
             <div className="flex items-center gap-2">
               <ShieldCheck size={14} className="text-on-surface-variant" />
               <div>
-                <p className="text-on-surface">Biometric</p>
-                <p className="text-on-surface-variant">Not configured</p>
+                <p className="text-on-surface">{t("settings.user.biometric")}</p>
+                <p className="text-on-surface-variant">{t("settings.user.biometricDesc")}</p>
               </div>
             </div>
             <ToggleSwitch checked={settings.biometric} onClick={() => setSettings((prev) => ({ ...prev, biometric: !prev.biometric }))} />
@@ -104,6 +107,8 @@ export function UserSection({ settings, setSettings }: SectionProps) {
 }
 
 export function DisplaySection({ settings, setSettings }: SectionProps) {
+  const { locale, setLocale, t } = useLocale();
+
   const themes = [
     { id: "deep-space", label: "DEEP SPACE" },
     { id: "mars-dust", label: "MARS DUST" },
@@ -119,10 +124,10 @@ export function DisplaySection({ settings, setSettings }: SectionProps) {
 
   return (
     <motion.div variants={stagger(70)} initial="hidden" animate="show" className="space-y-4">
-      <SectionBlock title="THEME & APPEARANCE">
+      <SectionBlock title={t("settings.display.themeAppearance")}>
         <div className="space-y-4">
           <div>
-            <p className="text-xs text-on-surface-variant mb-2">Color Theme</p>
+            <p className="text-xs text-on-surface-variant mb-2">{t("settings.display.colorTheme")}</p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {themes.map((theme) => (
                 <motion.button
@@ -138,7 +143,7 @@ export function DisplaySection({ settings, setSettings }: SectionProps) {
                 >
                   <p className="text-xs font-headline font-bold uppercase tracking-widest">{theme.label}</p>
                   <p className="text-[10px] mt-1 uppercase tracking-wide">
-                    {settings.themePreset === theme.id ? "ACTIVE" : "AVAILABLE"}
+                    {settings.themePreset === theme.id ? t("common.active") : t("common.available")}
                   </p>
                 </motion.button>
               ))}
@@ -146,7 +151,7 @@ export function DisplaySection({ settings, setSettings }: SectionProps) {
           </div>
 
           <div className="flex flex-wrap items-center gap-3 text-xs">
-            <span className="text-on-surface-variant">Accent Color</span>
+            <span className="text-on-surface-variant">{t("settings.display.accentColor")}</span>
             {accents.map((accent) => (
               <button
                 key={accent.id}
@@ -166,42 +171,50 @@ export function DisplaySection({ settings, setSettings }: SectionProps) {
         </div>
       </SectionBlock>
 
-      <SectionBlock title="INTERFACE">
+      <SectionBlock title={t("settings.display.interface")}>
         <div className="space-y-3 text-xs">
           <div className="flex items-center justify-between gap-3">
-            <span className="text-on-surface-variant">Language</span>
-            <SelectField value={settings.language} onChange={(value) => setSettings((prev) => ({ ...prev, language: value }))} options={["涓枃", "English"]} />
+            <span className="text-on-surface-variant">{t("settings.display.language")}</span>
+            <SelectField
+              value={locale === "zh" ? "中文" : "English"}
+              onChange={(value) => {
+                const newLocale = value === "中文" ? "zh" : "en";
+                setLocale(newLocale);
+                setSettings((prev) => ({ ...prev, language: value }));
+              }}
+              options={["中文", "English"]}
+            />
           </div>
           <div className="h-px bg-outline-variant/20" />
           <div className="flex items-center justify-between gap-3">
-            <span className="text-on-surface-variant">Data Units</span>
+            <span className="text-on-surface-variant">{t("settings.display.dataUnits")}</span>
             <SelectField value={settings.dataUnits} onChange={(value) => setSettings((prev) => ({ ...prev, dataUnits: value }))} options={["SI", "Imperial"]} />
           </div>
           <div className="h-px bg-outline-variant/20" />
           <div className="flex items-center justify-between gap-3">
-            <span className="text-on-surface-variant">Date Format</span>
+            <span className="text-on-surface-variant">{t("settings.display.dateFormat")}</span>
             <SelectField value={settings.dateFormat} onChange={(value) => setSettings((prev) => ({ ...prev, dateFormat: value }))} options={["ISO", "Local"]} />
           </div>
           <div className="h-px bg-outline-variant/20" />
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-on-surface">Animations</p>
-              <p className="text-on-surface-variant">Reduced motion</p>
+              <p className="text-on-surface">{t("settings.display.animations")}</p>
+              <p className="text-on-surface-variant">{t("settings.display.reducedMotion")}</p>
             </div>
             <ToggleSwitch checked={settings.reducedMotion} onClick={() => setSettings((prev) => ({ ...prev, reducedMotion: !prev.reducedMotion }))} />
           </div>
           <div className="h-px bg-outline-variant/20" />
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-on-surface">Sidebar</p>
-              <p className="text-on-surface-variant">Auto-collapse</p>
+              <p className="text-on-surface">{t("settings.display.sidebar")}</p>
+              <p className="text-on-surface-variant">{t("settings.display.autoCollapse")}</p>
             </div>
             <ToggleSwitch checked={settings.autoCollapseSidebar} onClick={() => setSettings((prev) => ({ ...prev, autoCollapseSidebar: !prev.autoCollapseSidebar }))} />
           </div>
         </div>
       </SectionBlock>
 
-      <SectionBlock title="DASHBOARD WIDGETS">
+      <SectionBlock title={t("settings.display.widgets")}>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 text-xs text-on-surface">
           <label className="inline-flex items-center gap-2"><input type="checkbox" className="accent-primary" checked={settings.widgetMarsGlobe} onChange={(event) => setSettings((prev) => ({ ...prev, widgetMarsGlobe: event.target.checked }))} />Mars Globe</label>
           <label className="inline-flex items-center gap-2"><input type="checkbox" className="accent-primary" checked={settings.widgetStatusBar} onChange={(event) => setSettings((prev) => ({ ...prev, widgetStatusBar: event.target.checked }))} />Status Bar</label>
