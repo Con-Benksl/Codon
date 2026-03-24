@@ -1,4 +1,4 @@
-import { useState, type ComponentType } from "react";
+ï»¿import { useState, type ComponentType } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Bell, FlaskConical, Monitor, Server, User2 } from "lucide-react";
 import { buttonPress, fadeScale, viewTransition } from "../lib/motion";
@@ -27,7 +27,7 @@ const INITIAL_SETTINGS: SettingsState = {
   biometric: false,
   themePreset: "deep-space",
   accentColor: "blue",
-  language: "ÖÐÎÄ",
+  language: "ä¸­æ–‡",
   dataUnits: "SI",
   dateFormat: "ISO",
   reducedMotion: true,

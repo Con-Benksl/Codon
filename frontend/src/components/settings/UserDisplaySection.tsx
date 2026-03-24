@@ -1,4 +1,4 @@
-import type { Dispatch, SetStateAction } from "react";
+锘縤mport type { Dispatch, SetStateAction } from "react";
 import { motion } from "motion/react";
 import { KeyRound, Pencil, ShieldCheck } from "lucide-react";
 import { buttonPress, cardHover, stagger } from "../../lib/motion";
@@ -72,7 +72,7 @@ export function UserSection({ settings, setSettings }: SectionProps) {
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-on-surface-variant">{t("settings.user.password")}</p>
-              <p className="text-on-surface text-sm">●●●●●●●●  Last changed 30d ago</p>
+              <p className="text-on-surface text-sm">鈼忊棌鈼忊棌鈼忊棌鈼忊棌  Last changed 30d ago</p>
             </div>
             <button className="px-3 py-1 rounded-lg border border-primary/30 bg-primary/10 text-primary text-[10px] font-headline uppercase tracking-widest">
               {t("settings.user.changePassword")}
@@ -176,13 +176,13 @@ export function DisplaySection({ settings, setSettings }: SectionProps) {
           <div className="flex items-center justify-between gap-3">
             <span className="text-on-surface-variant">{t("settings.display.language")}</span>
             <SelectField
-              value={locale === "zh" ? "中文" : "English"}
+              value={locale === "zh" ? "涓枃" : "English"}
               onChange={(value) => {
-                const newLocale = value === "中文" ? "zh" : "en";
+                const newLocale = value === "涓枃" ? "zh" : "en";
                 setLocale(newLocale);
                 setSettings((prev) => ({ ...prev, language: value }));
               }}
-              options={["中文", "English"]}
+              options={["涓枃", "English"]}
             />
           </div>
           <div className="h-px bg-outline-variant/20" />
