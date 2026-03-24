@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent, type MouseEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Plus, X, Loader2, Dna, FolderOpen } from 'lucide-react';
+import { Plus, X, Loader2, Dna, FolderOpen, LogIn } from 'lucide-react';
 import { createProject, deleteProject, getProjects, type Project } from '../api';
 import { stagger } from '../lib/motion';
 
@@ -21,9 +21,15 @@ export default function ProjectsView() {
   const [creating, setCreating] = useState(false);
   const navigate = useNavigate();
 
+  const isLoggedIn = () => Boolean(localStorage.getItem('access_token'));
+
   useEffect(() => { loadProjects(); }, []);
 
   const loadProjects = async () => {
+    if (!isLoggedIn()) {
+      setLoading(false);
+      return;
+    }
     try {
       const data = await getProjects();
       setProjects(data);
@@ -32,6 +38,14 @@ export default function ProjectsView() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleNewProject = () => {
+    if (!isLoggedIn()) {
+      navigate('/login?redirect=/projects');
+      return;
+    }
+    setShowModal(true);
   };
 
   const handleCreate = async (e: FormEvent) => {
@@ -97,7 +111,7 @@ export default function ProjectsView() {
         <motion.button
           whileHover={{ scale: 1.03 }}
           whileTap={{ scale: 0.95 }}
-          onClick={() => setShowModal(true)}
+          onClick={handleNewProject}
           className="flex items-center gap-2 px-4 py-2.5 bg-primary/10 border border-primary/30 text-primary text-[11px] font-headline tracking-widest uppercase rounded-lg hover:bg-primary/20 transition-colors"
         >
           <Plus size={13} />
@@ -106,7 +120,7 @@ export default function ProjectsView() {
       </motion.div>
 
       {/* Stats strip */}
-      {!loading && (
+      {!loading && isLoggedIn() && (
         <motion.div
           variants={stagger(80)}
           initial="hidden"
@@ -141,8 +155,38 @@ export default function ProjectsView() {
         </div>
       )}
 
+      {/* Not logged in state */}
+      {!loading && !isLoggedIn() && (
+        <motion.div
+          initial={{ scale: 0.96 }}
+          animate={{ scale: 1 }}
+          transition={{ duration: 0.4 }}
+          className="flex flex-col items-center justify-center py-24 gap-4"
+        >
+          <div className="w-16 h-16 rounded-2xl bg-primary/5 border border-primary/15 flex items-center justify-center">
+            <LogIn size={28} className="text-primary/30" />
+          </div>
+          <div className="text-center">
+            <p className="font-headline text-sm text-on-surface/60 uppercase tracking-widest mb-1">
+              登录后查看项目
+            </p>
+            <p className="text-xs text-on-surface-variant/40 font-body">
+              登录你的账户以管理合成生物学研究项目
+            </p>
+          </div>
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate('/login?redirect=/projects')}
+            className="flex items-center gap-2 px-5 py-2.5 bg-primary/10 border border-primary/30 text-primary text-[11px] font-headline tracking-widest uppercase rounded-lg hover:bg-primary/20 transition-colors mt-2"
+          >
+            <LogIn size={13} />
+            去登录
+          </motion.button>
+        </motion.div>
+      )}
+
       {/* Empty state */}
-      {!loading && projects.length === 0 && (
+      {!loading && isLoggedIn() && projects.length === 0 && (
         <motion.div
           initial={{ scale: 0.96 }}
           animate={{ scale: 1 }}
@@ -162,7 +206,7 @@ export default function ProjectsView() {
           </div>
           <motion.button
             whileTap={{ scale: 0.95 }}
-            onClick={() => setShowModal(true)}
+            onClick={handleNewProject}
             className="flex items-center gap-2 px-5 py-2.5 bg-primary/10 border border-primary/30 text-primary text-[11px] font-headline tracking-widest uppercase rounded-lg hover:bg-primary/20 transition-colors mt-2"
           >
             <Plus size={13} />
@@ -172,7 +216,7 @@ export default function ProjectsView() {
       )}
 
       {/* Project grid */}
-      {!loading && projects.length > 0 && (
+      {!loading && isLoggedIn() && projects.length > 0 && (
         <motion.ul
           variants={stagger(80)}
           initial="hidden"

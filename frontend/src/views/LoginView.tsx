@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Rocket, Mail, Lock, User } from 'lucide-react';
 
 import { login, register } from '../api/auth';
@@ -39,6 +39,8 @@ export default function LoginView() {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectTo = new URLSearchParams(location.search).get('redirect') || '/projects';
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -68,7 +70,7 @@ export default function LoginView() {
         await login(email, password);
       }
 
-      navigate('/projects');
+      navigate(redirectTo);
     } catch (err: any) {
       setError(
         getErrorMessage(

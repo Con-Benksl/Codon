@@ -20,13 +20,13 @@ import {
   X,
   FolderOpen,
   LogOut,
+  LogIn,
   ChevronDown,
 } from "lucide-react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { NavItem, Starfield, AmbientGlow, MarsStatusGlobe, Avatar } from "../components";
 import { getCurrentUser, logout, type User } from "../api";
-import { setNavigate } from "../lib/navigate";
 
 // ── 导航配置 — 单一数据源，添加新视图只需增加一项 ──
 interface NavConfig {
@@ -67,10 +67,6 @@ export default function Layout() {
   const navigate = useNavigate();
   const activeKey = getActiveKey(location.pathname);
   const activeNav = NAV_ITEMS.find((n) => n.key === activeKey)!;
-
-  useEffect(() => {
-    setNavigate(navigate);
-  }, [navigate]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -197,6 +193,7 @@ export default function Layout() {
           </button>
 
           {/* User menu */}
+          {user ? (
           <div ref={menuRef} className="relative">
             <button
               onClick={() => setMenuOpen((o) => !o)}
@@ -204,8 +201,8 @@ export default function Layout() {
               aria-label="用户菜单"
             >
               <Avatar
-                alt={user?.username ?? "User"}
-                name={user?.username ?? "Mars Operator"}
+                alt={user.username}
+                name={user.username}
                 size={32}
               />
               <ChevronDown
@@ -227,16 +224,16 @@ export default function Layout() {
                   <div className="px-4 py-3 border-b border-outline-variant/15">
                     <div className="flex items-center gap-3">
                       <Avatar
-                        alt={user?.username ?? "User"}
-                        name={user?.username ?? "Mars Operator"}
+                        alt={user.username}
+                        name={user.username}
                         size={36}
                       />
                       <div className="min-w-0">
                         <p className="font-headline font-bold text-on-surface text-xs uppercase tracking-tight truncate">
-                          {user?.username ?? "Mars Operator"}
+                          {user.username}
                         </p>
                         <p className="text-[10px] text-on-surface-variant/60 font-body truncate mt-0.5">
-                          {user?.email ?? "—"}
+                          {user.email}
                         </p>
                       </div>
                     </div>
@@ -266,6 +263,15 @@ export default function Layout() {
               )}
             </AnimatePresence>
           </div>
+          ) : (
+            <button
+              onClick={() => navigate('/login')}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 border border-primary/30 text-primary text-xs font-headline tracking-wider uppercase hover:bg-primary/20 transition-colors"
+            >
+              <LogIn size={16} />
+              <span className="hidden md:inline">登录</span>
+            </button>
+          )}
         </div>
       </header>
 

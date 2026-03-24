@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { navigateTo } from '../lib/navigate';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api/v1';
 
@@ -19,13 +18,12 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// 响应拦截器：统一处理未登录态
+// 响应拦截器：清除过期 token，不自动跳转登录页（由各页面按需处理）
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('access_token');
-      navigateTo('/login');
     }
     return Promise.reject(error);
   }
