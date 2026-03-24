@@ -75,7 +75,6 @@ export default function OrchestratorView() {
     setCurrentRunningAgent("env-parse");
 
     try {
-      // 使用 project_id=1 作为默认（后续可改为用户选择）
       const result = await orchestrateAgents({
         project_id: 1,
         config: {
@@ -84,9 +83,10 @@ export default function OrchestratorView() {
         },
       });
 
-      // 获取详细运行记录
+      // 用后端返回的 project_id 获取详细运行记录
+      const pid = result?.project_id ?? 1;
       if (result?.agent_runs?.length) {
-        const runs = await getAgentRuns(1);
+        const runs = await getAgentRuns(pid);
         setAgentRuns(runs);
       }
     } catch (err: any) {
