@@ -54,7 +54,7 @@ const zh = {
       terminateSession: "终止会话",
       password: "密码",
       changePassword: "修改密码",
-      twoFa: "2FA",
+      twoFa: "双重认证",
       twoFaDesc: "验证器应用",
       biometric: "生物识别",
       biometricDesc: "未配置",
@@ -125,7 +125,7 @@ const zh = {
       "last-sync": { label: "最近同步", badge: "实时" },
     },
     sensors: {
-      o2: { name: "氧气浓度", status: "最佳" },
+      o2: { name: "氧气浓度", status: "最优" },
       co2: { name: "二氧化碳水平", status: "正常" },
       pressure: { name: "大气压力", status: "正常" },
       temperature: { name: "温度", status: "正常" },
@@ -150,7 +150,7 @@ const zh = {
       OFFLINE: "离线",
     },
     performance: {
-      cpu: { label: "CPU 使用率", note: "4 核心活跃" },
+      cpu: { label: "CPU 占用", note: "4 核心活跃" },
       memory: { label: "内存", note: "3.1 / 4.0 GB" },
       network: { label: "网络 I/O", note: "↑ 0.8 MB/s  ↓ 1.6 MB/s" },
     },
@@ -163,7 +163,7 @@ const zh = {
     logs: {
       l1: "合成引擎已完成批次 #2847",
       l2: "氧气传感器校准通过",
-      l3: "湿度接近上限阈值 (68%)",
+      l3: "湿度接近上限阈值（68%）",
       l4: "代理 ORCHESTRATOR 心跳正常",
       l5: "数据管线已同步 - 2847 条记录",
       l6: "仿真 tick #15402 已完成",

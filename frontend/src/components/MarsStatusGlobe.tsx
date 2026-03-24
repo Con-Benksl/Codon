@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Thermometer, Radiation, Wind } from "lucide-react";
 import FallbackImage from "./FallbackImage";
 import ProceduralMarsGlobe from "./ProceduralMarsGlobe";
+import { useLocale } from "../i18n/context";
 
 type NavKey = "projects" | "orchestrator" | "environment" | "synthesis" | "simulation" | "output" | "diagnostics" | "settings";
 
@@ -12,73 +13,27 @@ interface MarsStatusGlobeProps {
 }
 
 const viewTheme: Record<NavKey, { glow: string; border: string; ring: string; text: string; bg: string }> = {
-  projects: {
-    glow: "rgba(129,207,255,0.30)",
-    border: "border-primary/25",
-    ring: "border-primary/12",
-    text: "text-primary",
-    bg: "from-primary/15 to-primary/5",
-  },
-  orchestrator: {
-    glow: "rgba(78,168,217,0.35)",
-    border: "border-primary/30",
-    ring: "border-primary/15",
-    text: "text-primary",
-    bg: "from-primary/20 to-primary/5",
-  },
-  environment: {
-    glow: "rgba(100,221,153,0.35)",
-    border: "border-tertiary/30",
-    ring: "border-tertiary/15",
-    text: "text-tertiary",
-    bg: "from-tertiary/20 to-tertiary/5",
-  },
-  synthesis: {
-    glow: "rgba(78,168,217,0.25)",
-    border: "border-primary/20",
-    ring: "border-primary/10",
-    text: "text-primary",
-    bg: "from-primary/15 to-primary/5",
-  },
-  simulation: {
-    glow: "rgba(255,180,161,0.25)",
-    border: "border-secondary/20",
-    ring: "border-secondary/10",
-    text: "text-secondary",
-    bg: "from-secondary/15 to-secondary/5",
-  },
-  output: {
-    glow: "rgba(100,221,153,0.25)",
-    border: "border-tertiary/20",
-    ring: "border-tertiary/10",
-    text: "text-tertiary",
-    bg: "from-tertiary/15 to-tertiary/5",
-  },
-  diagnostics: {
-    glow: "rgba(78,168,217,0.15)",
-    border: "border-primary/15",
-    ring: "border-primary/8",
-    text: "text-primary",
-    bg: "from-primary/10 to-primary/5",
-  },
-  settings: {
-    glow: "rgba(78,168,217,0.15)",
-    border: "border-primary/15",
-    ring: "border-primary/8",
-    text: "text-primary",
-    bg: "from-primary/10 to-primary/5",
-  },
+  projects: { glow: "rgba(129,207,255,0.30)", border: "border-primary/25", ring: "border-primary/12", text: "text-primary", bg: "from-primary/15 to-primary/5" },
+  orchestrator: { glow: "rgba(78,168,217,0.35)", border: "border-primary/30", ring: "border-primary/15", text: "text-primary", bg: "from-primary/20 to-primary/5" },
+  environment: { glow: "rgba(100,221,153,0.35)", border: "border-tertiary/30", ring: "border-tertiary/15", text: "text-tertiary", bg: "from-tertiary/20 to-tertiary/5" },
+  synthesis: { glow: "rgba(78,168,217,0.25)", border: "border-primary/20", ring: "border-primary/10", text: "text-primary", bg: "from-primary/15 to-primary/5" },
+  simulation: { glow: "rgba(255,180,161,0.25)", border: "border-secondary/20", ring: "border-secondary/10", text: "text-secondary", bg: "from-secondary/15 to-secondary/5" },
+  output: { glow: "rgba(100,221,153,0.25)", border: "border-tertiary/20", ring: "border-tertiary/10", text: "text-tertiary", bg: "from-tertiary/15 to-tertiary/5" },
+  diagnostics: { glow: "rgba(78,168,217,0.15)", border: "border-primary/15", ring: "border-primary/8", text: "text-primary", bg: "from-primary/10 to-primary/5" },
+  settings: { glow: "rgba(78,168,217,0.15)", border: "border-primary/15", ring: "border-primary/8", text: "text-primary", bg: "from-primary/10 to-primary/5" },
 };
-
-const metrics = [
-  { icon: Thermometer, label: "表面温度", value: "-60°C", color: "text-primary" },
-  { icon: Radiation, label: "辐射通量", value: "450 mSv", color: "text-secondary" },
-  { icon: Wind, label: "大气压力", value: "0.61 kPa", color: "text-tertiary" },
-];
 
 export default function MarsStatusGlobe({ activeView, onNavigate }: MarsStatusGlobeProps) {
   const [hovered, setHovered] = useState(false);
   const theme = viewTheme[activeView];
+  const { locale } = useLocale();
+  const isZh = locale === "zh";
+
+  const metrics = [
+    { icon: Thermometer, label: isZh ? "表面温度" : "Surface Temp", value: "-60°C", color: "text-primary" },
+    { icon: Radiation, label: isZh ? "辐射通量" : "Radiation Flux", value: "450 mSv", color: "text-secondary" },
+    { icon: Wind, label: isZh ? "大气压力" : "Atmospheric Pressure", value: "0.61 kPa", color: "text-tertiary" },
+  ];
 
   return (
     <motion.div
@@ -89,7 +44,6 @@ export default function MarsStatusGlobe({ activeView, onNavigate }: MarsStatusGl
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {/* Expanded metrics panel */}
       <AnimatePresence>
         {hovered && (
           <motion.div
@@ -100,7 +54,7 @@ export default function MarsStatusGlobe({ activeView, onNavigate }: MarsStatusGl
             className="glass-panel rounded-xl p-3 mb-2 border border-outline-variant/20 min-w-[160px]"
           >
             <p className="text-[9px] font-headline font-bold text-on-surface-variant uppercase tracking-widest mb-2">
-              Mars Status
+              {isZh ? "火星状态" : "Mars Status"}
             </p>
             <div className="space-y-2">
               {metrics.map((m) => (
@@ -115,14 +69,13 @@ export default function MarsStatusGlobe({ activeView, onNavigate }: MarsStatusGl
             </div>
             <div className="mt-2 pt-2 border-t border-outline-variant/10">
               <p className="text-[8px] text-on-surface-variant text-center uppercase tracking-widest">
-                点击进入环境层
+                {isZh ? "点击进入环境层" : "Click to open Environment"}
               </p>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Globe */}
       <motion.button
         onClick={onNavigate}
         animate={{
@@ -132,16 +85,14 @@ export default function MarsStatusGlobe({ activeView, onNavigate }: MarsStatusGl
         }}
         transition={{ duration: 0.3 }}
         className={`relative w-14 h-14 rounded-full cursor-pointer bg-gradient-to-br ${theme.bg} border ${theme.border} overflow-hidden`}
-        aria-label="Mars status — click to view environment"
+        aria-label={isZh ? "火星状态，点击进入环境层" : "Mars status, click to view environment"}
       >
-        {/* Outer pulse ring */}
         <motion.div
           className={`absolute -inset-2 rounded-full border ${theme.ring}`}
           animate={{ scale: [1, 1.15, 1], opacity: [0.4, 0, 0.4] }}
           transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
         />
 
-        {/* Spinning image with procedural fallback */}
         <div className="absolute inset-0 rounded-full overflow-hidden">
           <FallbackImage
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuCLOnBpzwdG-9pxlP3Pho-Kze-P_c05g3uGAbBqKmt7JJ45b-qosrm5J1nSsLjjBsmOVck9cpX4nbm2ZopOykyDf4SN4eAF_q-4FzbeW-qB3kCvrEULNHUiYHBxLmC4IwWRPM_yqz9NwPpRGAkMn6JHjaGF8Qp4rAnEwn6FiSVpqVZlQTGZVrc8lGKPH7NC2PN-talRQBHvrBB1gzqPgB-0jT5kb8mowOdIBx3_LxfYiC9UwOb0zdE_MMP8sB_h-mXVzftdZ-UBqRM"
@@ -150,11 +101,7 @@ export default function MarsStatusGlobe({ activeView, onNavigate }: MarsStatusGl
             fallbackElement={<ProceduralMarsGlobe className="w-full h-full opacity-60 mix-blend-screen" />}
           />
         </div>
-
-        {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-transparent to-white/5 rounded-full" />
-
-        {/* Online indicator */}
         <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-tertiary border-2 border-background animate-pulse" />
       </motion.button>
     </motion.div>

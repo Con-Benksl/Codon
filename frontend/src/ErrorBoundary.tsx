@@ -1,8 +1,7 @@
 // @ts-nocheck
 import { Component } from "react";
 
-// Error boundary 必须是 class component（React 限制）
-// @ts-nocheck 屏蔽缺少 @types/react 时的类型报错，运行时完全正确
+// Error boundaries must be class components in React.
 export default class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
@@ -35,9 +34,28 @@ export default class ErrorBoundary extends Component {
             页面出现错误，请{" "}
             <button
               onClick={() => window.location.reload()}
-              style={{ color: "#81cfff", textDecoration: "underline", background: "none", border: "none", cursor: "pointer" }}
+              style={{
+                color: "#81cfff",
+                textDecoration: "underline",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+              }}
             >
               刷新重试
+            </button>
+            {" "} / Something went wrong.{" "}
+            <button
+              onClick={() => window.location.reload()}
+              style={{
+                color: "#81cfff",
+                textDecoration: "underline",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+              }}
+            >
+              Refresh
             </button>
           </p>
           {this.state.error && (

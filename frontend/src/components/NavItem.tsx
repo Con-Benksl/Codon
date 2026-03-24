@@ -1,11 +1,11 @@
 import type { LucideIcon } from "lucide-react";
+import { useLocale } from "../i18n/context";
 
 interface NavItemProps {
   icon: LucideIcon;
   label: string;
   active?: boolean;
   disabled?: boolean;
-  /** 抽屉模式下传 true，始终显示标签文字 */
   alwaysShowLabel?: boolean;
   onClick?: () => void;
 }
@@ -18,12 +18,15 @@ export default function NavItem({
   alwaysShowLabel = false,
   onClick,
 }: NavItemProps) {
+  const { locale } = useLocale();
+  const comingSoon = locale === "zh" ? "即将推出" : "Coming soon";
+
   return (
     <button
       onClick={disabled ? undefined : onClick}
       disabled={disabled}
       aria-disabled={disabled}
-      title={disabled ? `${label}（即将推出）` : label}
+      title={disabled ? `${label} (${comingSoon})` : label}
       className={`w-full flex items-center gap-4 p-3 rounded-lg transition-all duration-200 group/item text-left active:scale-95 ${
         disabled
           ? "opacity-25 cursor-not-allowed text-on-surface-variant"
@@ -39,7 +42,7 @@ export default function NavItem({
         }`}
       >
         {label}
-        {disabled && <span className="ml-1 text-[9px] normal-case opacity-60">即将推出</span>}
+        {disabled && <span className="ml-1 text-[9px] normal-case opacity-60">{comingSoon}</span>}
       </span>
     </button>
   );

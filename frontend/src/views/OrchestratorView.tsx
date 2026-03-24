@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { Badge, AnalysisCard, DesignCard, DetailPanel, FallbackImage } from "../components";
 import { agentDetails } from "../data/agentDetails";
+import { useLocale } from "../i18n/context";
 import {
   stagger,
   fadeSlideUp,
@@ -30,15 +31,32 @@ import {
   inViewport,
 } from "../lib/motion";
 
-const INITIAL_CONSTRAINTS = ["UV-B/C 辐射暴露", "高氯酸盐 (ClO4-)", "95% CO2 饱和度", "FE2O3 粉尘浓度"];
+const DEFAULT_CONSTRAINTS = {
+  zh: ["UV-B/C 辐射暴露", "高氯酸盐 (ClO4-)", "95% CO2 饱和度", "Fe2O3 粉尘浓度"],
+  en: ["UV-B/C exposure", "Perchlorate (ClO4-)", "95% CO2 saturation", "Fe2O3 dust density"],
+} as const;
 
 export default function OrchestratorView() {
+  const { locale } = useLocale();
+  const isZh = locale === "zh";
+  const t = <T,>(zh: T, en: T) => (isZh ? zh : en);
+
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
-  const [constraints, setConstraints] = useState<string[]>(INITIAL_CONSTRAINTS);
+  const [constraints, setConstraints] = useState<string[]>(() => [...DEFAULT_CONSTRAINTS[locale]]);
   const [inputValue, setInputValue] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const activeAgent = selectedAgent ? agentDetails[selectedAgent] : null;
+
+  useEffect(() => {
+    const allDefaults = [...DEFAULT_CONSTRAINTS.zh, ...DEFAULT_CONSTRAINTS.en];
+    setConstraints((prev) => {
+      if (prev.length === 0 || prev.every((item) => allDefaults.includes(item))) {
+        return [...DEFAULT_CONSTRAINTS[locale]];
+      }
+      return prev;
+    });
+  }, [locale]);
 
   const addConstraint = () => {
     const val = inputValue.trim();
@@ -52,7 +70,6 @@ export default function OrchestratorView() {
     setConstraints((prev) => prev.filter((c) => c !== tag));
   };
 
-  // 实时跳动的统计数字
   const [stats, setStats] = useState({ nodes: 1240, confidence: 98.4, latency: 14 });
   useEffect(() => {
     const id = setInterval(() => {
@@ -73,7 +90,6 @@ export default function OrchestratorView() {
       exit="exit"
       className="flex-1"
     >
-      {/* ── Hero Section ── */}
       <motion.section
         variants={stagger(70)}
         initial="hidden"
@@ -82,35 +98,34 @@ export default function OrchestratorView() {
       >
         <div className="space-y-4">
           <motion.div variants={fadeSlideUp} className="flex gap-2">
-            <Badge color="primary">合成生物学</Badge>
-            <Badge color="secondary">行星地质</Badge>
-            <Badge color="tertiary">多智能体 AI</Badge>
+            <Badge color="primary">{t("合成生物学", "Synthetic Biology")}</Badge>
+            <Badge color="secondary">{t("行星地质", "Planetary Geology")}</Badge>
+            <Badge color="tertiary">{t("多智能体 AI", "Multi-Agent AI")}</Badge>
           </motion.div>
           <motion.h2
             variants={fadeSlideUp}
             className="text-3xl md:text-5xl font-black font-headline text-on-background tracking-tighter max-w-2xl leading-none"
           >
-            生物群落合成 <span className="text-primary">协调者</span>
+            {t("生物群落合成", "Biota Synthesis")} <span className="text-primary">{t("协调者", "Orchestrator")}</span>
           </motion.h2>
         </div>
-        {/* 移动端撑满全宽 + justify-around 均匀分布，桌面端紧凑右对齐 */}
+
         <motion.div
           variants={fadeSlideUp}
           className="glass-panel p-4 rounded-xl flex items-center justify-around md:justify-start w-full md:w-auto gap-0 md:gap-6 border-l-4 border-l-tertiary"
         >
           <div className="text-center md:text-right">
-            <p className="text-[10px] font-headline text-on-surface-variant uppercase tracking-widest">大气压力</p>
+            <p className="text-[10px] font-headline text-on-surface-variant uppercase tracking-widest">{t("大气压力", "Atmospheric Pressure")}</p>
             <p className="text-xl font-headline font-bold text-tertiary">0.61 kPa</p>
           </div>
           <div className="h-10 w-px bg-outline-variant/20" />
           <div className="text-center md:text-right">
-            <p className="text-[10px] font-headline text-on-surface-variant uppercase tracking-widest">辐射通量</p>
+            <p className="text-[10px] font-headline text-on-surface-variant uppercase tracking-widest">{t("辐射通量", "Radiation Flux")}</p>
             <p className="text-xl font-headline font-bold text-secondary">450 mSv/yr</p>
           </div>
         </motion.div>
       </motion.section>
 
-      {/* ── Environmental Constraints ── */}
       <motion.section
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -122,7 +137,7 @@ export default function OrchestratorView() {
           <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4 lg:gap-6">
             <div className="flex items-center gap-3 shrink-0">
               <Thermometer className="text-primary" size={32} />
-              <h3 className="font-headline font-bold text-lg uppercase tracking-tight">火星环境约束参数</h3>
+              <h3 className="font-headline font-bold text-lg uppercase tracking-tight">{t("火星环境约束参数", "Martian Constraint Parameters")}</h3>
             </div>
             <motion.div
               variants={stagger(50)}
@@ -147,7 +162,7 @@ export default function OrchestratorView() {
                     <button
                       onClick={() => removeConstraint(tag)}
                       className="opacity-0 group-hover:opacity-100 transition-opacity ml-1 hover:text-secondary"
-                      aria-label={`移除 ${tag}`}
+                      aria-label={`${t("移除", "Remove")} ${tag}`}
                     >
                       <X size={10} />
                     </button>
@@ -163,8 +178,8 @@ export default function OrchestratorView() {
                   onKeyDown={(e) => {
                     if (e.key === "Enter") addConstraint();
                   }}
-                  className="bg-transparent border-none focus:outline-none text-xs font-headline text-outline placeholder:text-outline-variant/50 w-24"
-                  placeholder="添加约束..."
+                  className="bg-transparent border-none focus:outline-none text-xs font-headline text-outline placeholder:text-outline-variant/50 w-28"
+                  placeholder={t("添加约束...", "Add constraint...")}
                   type="text"
                 />
                 {inputValue.trim() && (
@@ -178,13 +193,12 @@ export default function OrchestratorView() {
               {...buttonPress}
               className="px-6 py-2 bg-primary text-on-primary font-headline font-bold text-xs rounded-full uppercase tracking-widest hover:brightness-110 transition-all shadow-[0_0_15px_rgba(129,207,255,0.4)]"
             >
-              更新模型
+              {t("更新模型", "Update Model")}
             </motion.button>
           </div>
         </div>
       </motion.section>
 
-      {/* ── Orchestrator Agent (Hero Card) ── */}
       <section className="mb-12 flex justify-center relative">
         <div className="absolute -bottom-12 left-1/2 w-px h-12 bg-gradient-to-b from-primary to-transparent" />
         <motion.div
@@ -213,15 +227,18 @@ export default function OrchestratorView() {
               className="space-y-4 text-center md:text-left"
             >
               <motion.div variants={fadeSlideUp}>
-                <h4 className="font-headline font-bold text-2xl text-primary tracking-tighter">协调者智能体</h4>
-                <p className="text-[10px] text-on-surface-variant font-headline tracking-[0.2em] uppercase">多智能体任务分解引擎</p>
+                <h4 className="font-headline font-bold text-2xl text-primary tracking-tighter">{t("协调者智能体", "Orchestrator Agent")}</h4>
+                <p className="text-[10px] text-on-surface-variant font-headline tracking-[0.2em] uppercase">{t("多智能体任务分解引擎", "Multi-agent task decomposition engine")}</p>
               </motion.div>
               <motion.p variants={fadeSlideUp} className="text-on-surface-variant font-body leading-relaxed max-w-xl italic">
-                "正在初始化火星岩石自养生物设计的深度任务分解。主要目标：设计用于高氯酸盐还原和太阳辐射防护的代谢途径。"
+                {t(
+                  "正在初始化火星岩石自养生物设计的深度任务分解。主要目标：设计用于高氯酸盐还原和太阳辐射防护的代谢途径。",
+                  "Initializing deep task decomposition for martian lithoautotrophic design. Primary target: pathways for perchlorate reduction and radiation shielding."
+                )}
               </motion.p>
               <motion.div variants={fadeSlideUp} className="flex gap-3 md:gap-4 justify-center md:justify-start">
                 <div className="text-center">
-                  <span className="block text-[10px] text-outline font-headline uppercase">逻辑节点</span>
+                  <span className="block text-[10px] text-outline font-headline uppercase">{t("逻辑节点", "Logic Nodes")}</span>
                   <motion.span
                     key={stats.nodes}
                     initial={{ opacity: 0.4, y: -4 }}
@@ -234,7 +251,7 @@ export default function OrchestratorView() {
                 </div>
                 <div className="h-8 w-px bg-outline-variant/30" />
                 <div className="text-center">
-                  <span className="block text-[10px] text-outline font-headline uppercase">置信度</span>
+                  <span className="block text-[10px] text-outline font-headline uppercase">{t("置信度", "Confidence")}</span>
                   <motion.span
                     key={stats.confidence}
                     initial={{ opacity: 0.4, y: -4 }}
@@ -247,7 +264,7 @@ export default function OrchestratorView() {
                 </div>
                 <div className="h-8 w-px bg-outline-variant/30" />
                 <div className="text-center">
-                  <span className="block text-[10px] text-outline font-headline uppercase">延迟</span>
+                  <span className="block text-[10px] text-outline font-headline uppercase">{t("延迟", "Latency")}</span>
                   <motion.span
                     key={stats.latency}
                     initial={{ opacity: 0.4, y: -4 }}
@@ -264,7 +281,6 @@ export default function OrchestratorView() {
         </motion.div>
       </section>
 
-      {/* ── Layers Grid ── */}
       <motion.div
         variants={stagger(100)}
         initial="hidden"
@@ -272,11 +288,10 @@ export default function OrchestratorView() {
         {...inViewport}
         className="grid grid-cols-1 lg:grid-cols-2 gap-12 relative"
       >
-        {/* Analysis Layer */}
         <motion.div variants={fadeSlideUp} className="space-y-6">
           <div className="flex items-center gap-3 mb-4">
             <Database size={16} className="text-secondary" />
-            <h3 className="font-headline font-bold text-sm tracking-widest uppercase">分析层 <span className="text-on-surface-variant/40">v2.4</span></h3>
+            <h3 className="font-headline font-bold text-sm tracking-widest uppercase">{t("分析层", "Analysis Layer")} <span className="text-on-surface-variant/40">v2.4</span></h3>
           </div>
           <motion.div
             variants={stagger(80)}
@@ -288,20 +303,20 @@ export default function OrchestratorView() {
             <motion.div variants={fadeSlideUp}>
               <AnalysisCard
                 icon={FlaskConical}
-                title="环境解析"
-                description="绘制土壤毒性梯度和热震荡模式，以实现最佳生物群落部署。"
+                title={t("环境解析", "Environment Parsing")}
+                description={t("绘制土壤毒性梯度和热震荡模式，以实现最佳生物群落部署。", "Maps soil toxicity gradients and thermal shock patterns for optimal biota deployment.")}
                 progress={75}
-                tag="环境解析"
+                tag={t("环境解析", "Env Parse")}
                 onClick={() => setSelectedAgent("env-parse")}
               />
             </motion.div>
             <motion.div variants={fadeSlideUp}>
               <AnalysisCard
                 icon={Bug}
-                title="极端微生物"
-                description="检索耐辐射奇球菌变体数据库，以获取辐射抗性性状。"
+                title={t("极端微生物", "Extremophile")}
+                description={t("检索耐辐射奇球菌变体数据库，以获取辐射抗性性状。", "Screens extremophile variants to mine radiation resistance traits.")}
                 progress={50}
-                tag="生物规范"
+                tag={t("生物规范", "Bio Profile")}
                 onClick={() => setSelectedAgent("extremophile")}
               />
             </motion.div>
@@ -313,11 +328,11 @@ export default function OrchestratorView() {
               >
                 <Dna size={40} className="text-secondary" />
                 <div className="flex-1">
-                  <h4 className="font-headline font-bold text-on-surface text-sm uppercase mb-1">基因功能映射</h4>
-                  <p className="text-xs text-on-surface-variant font-body">交叉引用用于大气固氮的代谢基因簇。</p>
+                  <h4 className="font-headline font-bold text-on-surface text-sm uppercase mb-1">{t("基因功能映射", "Gene Function Mapping")}</h4>
+                  <p className="text-xs text-on-surface-variant font-body">{t("交叉引用用于大气固氮的代谢基因簇。", "Cross-references metabolic clusters for atmospheric nitrogen fixation.")}</p>
                 </div>
                 <div className="text-right">
-                  <span className="text-[10px] font-headline text-on-surface-variant block">匹配率</span>
+                  <span className="text-[10px] font-headline text-on-surface-variant block">{t("匹配率", "Match Rate")}</span>
                   <span className="text-lg font-headline font-bold text-secondary">92%</span>
                 </div>
               </motion.div>
@@ -325,11 +340,10 @@ export default function OrchestratorView() {
           </motion.div>
         </motion.div>
 
-        {/* Design Layer */}
         <motion.div variants={fadeSlideUp} className="space-y-6">
           <div className="flex items-center gap-3 mb-4">
             <Cpu size={16} className="text-primary" />
-            <h3 className="font-headline font-bold text-sm tracking-widest uppercase">设计层 <span className="text-on-surface-variant/40">原型_0</span></h3>
+            <h3 className="font-headline font-bold text-sm tracking-widest uppercase">{t("设计层", "Design Layer")} <span className="text-on-surface-variant/40">{t("原型_0", "PROTO_0")}</span></h3>
           </div>
           <motion.div
             variants={stagger(80)}
@@ -341,20 +355,20 @@ export default function OrchestratorView() {
             <motion.div variants={fadeSlideUp}>
               <DesignCard
                 icon={Terminal}
-                title="回路设计"
-                description="编码用于环境感应和响应触发的切换开关。"
+                title={t("回路设计", "Circuit Design")}
+                description={t("编码用于环境感应和响应触发的切换开关。", "Builds switch logic for sensing-triggered responses.")}
                 steps={2}
-                tag="合成逻辑"
+                tag={t("合成逻辑", "Syn Logic")}
                 onClick={() => setSelectedAgent("circuit-design")}
               />
             </motion.div>
             <motion.div variants={fadeSlideUp}>
               <DesignCard
                 icon={Network}
-                title="代谢兼容性"
-                description="在高氯酸盐环境中模拟生物量通量，以确保生存。"
+                title={t("代谢兼容性", "Metabolic Compatibility")}
+                description={t("在高氯酸盐环境中模拟生物量通量，以确保生存。", "Simulates biomass flux in perchlorate-rich conditions for survival assurance.")}
                 steps={3}
-                tag="代谢映射"
+                tag={t("代谢映射", "Metabolic Map")}
                 onClick={() => setSelectedAgent("metab-compat")}
               />
             </motion.div>
@@ -366,8 +380,8 @@ export default function OrchestratorView() {
               >
                 <Layers size={40} className="text-primary" />
                 <div className="flex-1">
-                  <h4 className="font-headline font-bold text-on-surface text-sm uppercase mb-1">结构预测</h4>
-                  <p className="text-xs text-on-surface-variant font-body">利用深度学习折叠膜蛋白，以实现耐寒功能。</p>
+                  <h4 className="font-headline font-bold text-on-surface text-sm uppercase mb-1">{t("结构预测", "Structure Prediction")}</h4>
+                  <p className="text-xs text-on-surface-variant font-body">{t("利用深度学习折叠蛋白，以实现耐寒功能。", "Applies deep folding models to engineer cold-resilient proteins.")}</p>
                 </div>
                 <div className="flex -space-x-2">
                   <div className="w-8 h-8 rounded-full border border-primary bg-surface-container-high flex items-center justify-center">
@@ -383,7 +397,6 @@ export default function OrchestratorView() {
         </motion.div>
       </motion.div>
 
-      {/* ── Verification Agent ── */}
       <section className="mt-12 relative">
         <div className="absolute inset-0 bg-tertiary/5 rounded-3xl blur-3xl pointer-events-none opacity-40" />
         <motion.div
@@ -402,13 +415,13 @@ export default function OrchestratorView() {
               className="flex-1 space-y-6"
             >
               <motion.div variants={fadeSlideUp} className="inline-flex items-center gap-2 px-3 py-1 bg-tertiary/10 border border-tertiary/20 text-tertiary text-[10px] font-headline tracking-widest uppercase rounded">
-                反幻觉安全层
+                {t("反幻觉安全层", "Anti-Hallucination Safety Layer")}
               </motion.div>
               <motion.h3 variants={fadeSlideUp} className="text-2xl md:text-4xl font-headline font-black tracking-tighter text-on-surface uppercase leading-none">
-                核查层 <span className="text-tertiary italic">&amp; 保真度</span> 智能体
+                {t("核查层", "Verification")}<span className="text-tertiary italic">&amp; {t("保真度", "Fidelity")}</span> {t("智能体", "Agent")}
               </motion.h3>
               <motion.p variants={fadeSlideUp} className="text-on-surface-variant font-body text-lg leading-relaxed max-w-2xl">
-                验证阶段处于活跃状态。正在将预测的代谢输出与火星土壤化学模拟进行对比。设计层代谢途径中未检测到逻辑不一致性。
+                {t("验证阶段处于活跃状态。正在将预测代谢输出与火星土壤化学模拟进行对比。设计层路径中未检测到逻辑不一致性。", "Verification is active. Predicted metabolic output is being compared against martian soil chemistry models. No logical inconsistency detected in current design pathways.")}
               </motion.p>
               <motion.div variants={fadeSlideUp} className="flex gap-4">
                 <motion.button
@@ -416,13 +429,13 @@ export default function OrchestratorView() {
                   className="px-8 py-4 bg-tertiary text-on-tertiary font-headline font-bold text-sm rounded-full uppercase tracking-[0.2em] flex items-center gap-3 hover:scale-105 transition-all shadow-[0_0_20px_rgba(100,221,153,0.3)]"
                 >
                   <RefreshCw size={18} />
-                  反馈回路
+                  {t("反馈回路", "Feedback Loop")}
                 </motion.button>
                 <motion.button
                   {...buttonPress}
                   className="px-8 py-4 border border-outline-variant/30 text-on-surface-variant font-headline font-bold text-sm rounded-full uppercase tracking-[0.2em] flex items-center gap-3 hover:bg-surface-container transition-all"
                 >
-                  验证批次
+                  {t("验证批次", "Validate Batch")}
                 </motion.button>
               </motion.div>
             </motion.div>
@@ -434,15 +447,15 @@ export default function OrchestratorView() {
               className="w-full lg:w-1/3 grid grid-cols-2 gap-4"
             >
               <motion.div variants={fadeScale} className="bg-surface-container-low p-4 rounded-xl border border-outline-variant/15 text-center">
-                <p className="text-[10px] font-headline text-outline uppercase mb-2">错误率</p>
+                <p className="text-[10px] font-headline text-outline uppercase mb-2">{t("错误率", "Error Rate")}</p>
                 <p className="text-2xl font-headline font-bold text-tertiary">&lt; 0.001%</p>
               </motion.div>
               <motion.div variants={fadeScale} className="bg-surface-container-low p-4 rounded-xl border border-outline-variant/15 text-center">
-                <p className="text-[10px] font-headline text-outline uppercase mb-2">模拟周期</p>
+                <p className="text-[10px] font-headline text-outline uppercase mb-2">{t("模拟周期", "Simulation Cycles")}</p>
                 <p className="text-2xl font-headline font-bold text-on-surface">50M+</p>
               </motion.div>
               <motion.div variants={fadeScale} className="bg-surface-container-low p-4 rounded-xl border border-outline-variant/15 text-center col-span-2">
-                <p className="text-[10px] font-headline text-outline uppercase mb-2">结构稳定性</p>
+                <p className="text-[10px] font-headline text-outline uppercase mb-2">{t("结构稳定性", "Structural Stability")}</p>
                 <div className="flex items-center gap-4">
                   <div className="flex-1 h-2 bg-surface-container-highest rounded-full overflow-hidden">
                     <motion.div
@@ -461,7 +474,6 @@ export default function OrchestratorView() {
         </motion.div>
       </section>
 
-      {/* ── Output Bar ── */}
       <motion.section
         initial={{ opacity: 0, y: 16 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -472,7 +484,7 @@ export default function OrchestratorView() {
         <div className="bg-surface-container-low p-4 rounded-xl border border-outline-variant/15 flex flex-col md:flex-row items-center gap-4">
           <div className="flex items-center gap-3 shrink-0">
             <Database size={18} className="text-primary" />
-            <span className="font-headline font-bold text-xs uppercase tracking-widest text-on-surface-variant">设计规范书：</span>
+            <span className="font-headline font-bold text-xs uppercase tracking-widest text-on-surface-variant">{t("设计规范书：", "Design Spec:")}</span>
           </div>
           <div className="flex-1 bg-surface-container-lowest px-4 py-2 rounded font-mono text-xs text-primary/70 overflow-hidden text-ellipsis whitespace-nowrap">
             XENO_BIO_v1.0.4_PATH_ID_8842-B-ALPHA_CONSTRAINED_STABLE
@@ -489,13 +501,12 @@ export default function OrchestratorView() {
               onClick={() => navigate("/output")}
               className="px-6 py-2 bg-primary/20 text-primary border border-primary/30 rounded font-headline font-bold text-[10px] uppercase tracking-widest hover:bg-primary/30 transition-all"
             >
-              执行生物打印
+              {t("执行生物打印", "Run Bioprint")}
             </motion.button>
           </div>
         </div>
       </motion.section>
 
-      {/* ── Detail Panel ── */}
       <AnimatePresence>
         {activeAgent && (
           <DetailPanel

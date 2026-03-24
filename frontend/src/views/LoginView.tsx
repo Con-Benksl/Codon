@@ -1,12 +1,12 @@
-import { useState, type FormEvent } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { Rocket, Mail, Lock, User } from 'lucide-react';
-
-import { login, register } from '../api/auth';
-import { Starfield, AmbientGlow } from '../components';
+import { useState, type FormEvent } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { Rocket, Mail, Lock, User } from "lucide-react";
+import { login, register } from "../api/auth";
+import { Starfield, AmbientGlow } from "../components";
+import { useLocale } from "../i18n/context";
 
 const INPUT_CLASS =
-  'w-full pl-12 pr-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-lg text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all';
+  "w-full pl-12 pr-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-lg text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all";
 
 type ApiDetailItem = {
   msg?: string;
@@ -15,54 +15,78 @@ type ApiDetailItem = {
 const getErrorMessage = (detail: unknown, fallback: string) => {
   if (Array.isArray(detail)) {
     const messages = detail
-      .map((item) => (typeof item === 'object' && item ? (item as ApiDetailItem).msg : ''))
+      .map((item) => (typeof item === "object" && item ? (item as ApiDetailItem).msg : ""))
       .filter(Boolean);
-
-    if (messages.length > 0) {
-      return messages.join('; ');
-    }
+    if (messages.length > 0) return messages.join("; ");
   }
-
-  if (typeof detail === 'string' && detail.trim()) {
-    return detail;
-  }
-
+  if (typeof detail === "string" && detail.trim()) return detail;
   return fallback;
 };
 
 export default function LoginView() {
   const [isRegister, setIsRegister] = useState(false);
-  const [email, setEmail] = useState('');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const redirectTo = new URLSearchParams(location.search).get('redirect') || '/projects';
+  const redirectTo = new URLSearchParams(location.search).get("redirect") || "/projects";
+  const { locale } = useLocale();
+  const isZh = locale === "zh";
+
+  const text = isZh
+    ? {
+      createAccount: "创建账户",
+      signIn: "登录",
+      username: "用户名",
+      email: "邮箱",
+      password: "密码",
+      registering: "注册中...",
+      loggingIn: "登录中...",
+      register: "注册",
+      hasAccount: "已有账户？去登录",
+      noAccount: "没有账户？去注册",
+      registerSuccess: "注册成功，正在自动登录...",
+      registerSuccessManual: "注册成功，请手动登录。",
+      registerFailed: "注册失败",
+      loginFailed: "登录失败",
+    }
+    : {
+      createAccount: "Create Account",
+      signIn: "Sign In",
+      username: "Username",
+      email: "Email",
+      password: "Password",
+      registering: "Registering...",
+      loggingIn: "Signing in...",
+      register: "Register",
+      hasAccount: "Already have an account? Sign in",
+      noAccount: "No account? Register",
+      registerSuccess: "Registration succeeded. Signing in...",
+      registerSuccessManual: "Registration succeeded. Please sign in manually.",
+      registerFailed: "Registration failed",
+      loginFailed: "Sign in failed",
+    };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
     setLoading(true);
 
     try {
       if (isRegister) {
         await register({ email, username, password });
-        setSuccess('\u6ce8\u518c\u6210\u529f\uff0c\u6b63\u5728\u81ea\u52a8\u767b\u5f55...');
+        setSuccess(text.registerSuccess);
         await new Promise((resolve) => setTimeout(resolve, 1000));
 
         try {
           await login(email, password);
         } catch (loginError: any) {
-          setError(
-            getErrorMessage(
-              loginError.response?.data?.detail,
-              '\u6ce8\u518c\u6210\u529f\uff0c\u8bf7\u624b\u52a8\u767b\u5f55\u3002'
-            )
-          );
+          setError(getErrorMessage(loginError.response?.data?.detail, text.registerSuccessManual));
           setIsRegister(false);
           return;
         }
@@ -72,12 +96,7 @@ export default function LoginView() {
 
       navigate(redirectTo);
     } catch (err: any) {
-      setError(
-        getErrorMessage(
-          err.response?.data?.detail,
-          isRegister ? '\u6ce8\u518c\u5931\u8d25' : '\u767b\u5f55\u5931\u8d25'
-        )
-      );
+      setError(getErrorMessage(err.response?.data?.detail, isRegister ? text.registerFailed : text.loginFailed));
     } finally {
       setLoading(false);
     }
@@ -97,7 +116,7 @@ export default function LoginView() {
             MARTIAN BIOLAB AI
           </h1>
           <p className="text-sm text-on-surface-variant font-headline tracking-wider uppercase">
-            {isRegister ? '\u521b\u5efa\u8d26\u6237' : '\u767b\u5f55'}
+            {isRegister ? text.createAccount : text.signIn}
           </p>
         </div>
 
@@ -105,13 +124,10 @@ export default function LoginView() {
           {isRegister && (
             <div>
               <label className="block text-sm font-medium text-on-surface-variant mb-2 font-headline tracking-wide">
-                {'\u7528\u6237\u540d'}
+                {text.username}
               </label>
               <div className="relative">
-                <User
-                  size={18}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/50"
-                />
+                <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/50" />
                 <input
                   type="text"
                   placeholder="username"
@@ -126,13 +142,10 @@ export default function LoginView() {
 
           <div>
             <label className="block text-sm font-medium text-on-surface-variant mb-2 font-headline tracking-wide">
-              {'\u90ae\u7bb1'}
+              {text.email}
             </label>
             <div className="relative">
-              <Mail
-                size={18}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/50"
-              />
+              <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/50" />
               <input
                 type="email"
                 placeholder="your@email.com"
@@ -146,13 +159,10 @@ export default function LoginView() {
 
           <div>
             <label className="block text-sm font-medium text-on-surface-variant mb-2 font-headline tracking-wide">
-              {'\u5bc6\u7801'}
+              {text.password}
             </label>
             <div className="relative">
-              <Lock
-                size={18}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/50"
-              />
+              <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/50" />
               <input
                 type="password"
                 placeholder="********"
@@ -181,13 +191,11 @@ export default function LoginView() {
             disabled={loading}
             className={`w-full py-3 px-6 rounded-lg font-headline font-bold tracking-wide uppercase text-sm transition-all ${
               loading
-                ? 'bg-surface-variant text-on-surface-variant/50 cursor-not-allowed'
-                : 'bg-primary-container text-on-primary hover:bg-primary hover:shadow-lg hover:shadow-primary/30 active:scale-[0.98] glow-primary'
+                ? "bg-surface-variant text-on-surface-variant/50 cursor-not-allowed"
+                : "bg-primary-container text-on-primary hover:bg-primary hover:shadow-lg hover:shadow-primary/30 active:scale-[0.98] glow-primary"
             }`}
           >
-            {loading
-              ? (isRegister ? '\u6ce8\u518c\u4e2d...' : '\u767b\u5f55\u4e2d...')
-              : (isRegister ? '\u6ce8\u518c' : '\u767b\u5f55')}
+            {loading ? (isRegister ? text.registering : text.loggingIn) : (isRegister ? text.register : text.signIn)}
           </button>
 
           <div className="text-center">
@@ -195,14 +203,12 @@ export default function LoginView() {
               type="button"
               onClick={() => {
                 setIsRegister(!isRegister);
-                setError('');
-                setSuccess('');
+                setError("");
+                setSuccess("");
               }}
               className="text-sm text-on-surface-variant hover:text-primary transition-colors"
             >
-              {isRegister
-                ? '\u5df2\u6709\u8d26\u6237\uff1f\u53bb\u767b\u5f55'
-                : '\u6ca1\u6709\u8d26\u6237\uff1f\u53bb\u6ce8\u518c'}
+              {isRegister ? text.hasAccount : text.noAccount}
             </button>
           </div>
         </form>
