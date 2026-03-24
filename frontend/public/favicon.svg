@@ -1,16 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none">
-  <g transform="rotate(-16 128 128)" stroke="#2E4A66" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M94 200C126 172 126 84 94 56" stroke-width="14" />
-    <path d="M162 200C130 172 130 84 162 56" stroke-width="14" />
+  <g transform="rotate(-14 128 128)" stroke="#2E4A66" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M86 220C126 188 126 68 86 36" stroke-width="17" />
+    <path d="M170 220C130 188 130 68 170 36" stroke-width="17" />
 
-    <path d="M100 72H156" stroke-width="11" />
-    <path d="M103 104H153" stroke-width="11" />
-    <path d="M103 136H153" stroke-width="11" />
-    <path d="M100 168H156" stroke-width="11" />
+    <path d="M93 56H163" stroke-width="13" />
+    <path d="M96 92H160" stroke-width="13" />
+    <path d="M98 128H158" stroke-width="13" />
+    <path d="M96 164H160" stroke-width="13" />
+    <path d="M93 200H163" stroke-width="13" />
 
-    <path d="M91 47L102 59" stroke-width="9" />
-    <path d="M165 47L154 59" stroke-width="9" />
-    <path d="M91 209L102 197" stroke-width="9" />
-    <path d="M165 209L154 197" stroke-width="9" />
+    <circle cx="86" cy="36" r="6" fill="#2E4A66" stroke="none" />
+    <circle cx="170" cy="36" r="6" fill="#2E4A66" stroke="none" />
+    <circle cx="86" cy="220" r="6" fill="#2E4A66" stroke="none" />
+    <circle cx="170" cy="220" r="6" fill="#2E4A66" stroke="none" />
   </g>
 </svg>
