@@ -15,8 +15,21 @@ export interface OrchestrationRequest {
   config?: any;
 }
 
+export interface AgentRunSummary {
+  id: number;
+  agent_id: string;
+  agent_name: string;
+  status: string;
+}
+
+export interface OrchestrationResponse {
+  status: string;
+  project_id: number;
+  agent_runs: AgentRunSummary[];
+}
+
 // 启动 Agent 编排
-export const orchestrateAgents = async (data: OrchestrationRequest) => {
+export const orchestrateAgents = async (data: OrchestrationRequest): Promise<OrchestrationResponse> => {
   const response = await apiClient.post('/agents/orchestrate', data);
   return response.data;
 };

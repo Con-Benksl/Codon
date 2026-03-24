@@ -15,14 +15,12 @@ logger = logging.getLogger(__name__)
 
 _client: Optional[AsyncOpenAI] = None
 
-# 中转 API 超时和重试配置
-REQUEST_TIMEOUT = 180  # 秒
+REQUEST_TIMEOUT = 180
 MAX_RETRIES = 2
-RETRY_DELAY = 3  # 秒
+RETRY_DELAY = 3
 
 
 def get_llm_client() -> AsyncOpenAI:
-    """获取单例 LLM 客户端"""
     global _client
     if _client is None:
         settings = get_settings()
@@ -30,15 +28,17 @@ def get_llm_client() -> AsyncOpenAI:
             api_key=settings.LLM_API_KEY,
             base_url=settings.LLM_BASE_URL,
             timeout=httpx.Timeout(REQUEST_TIMEOUT, connect=30),
-            max_retries=0,  # 我们自己控制重试
+            max_retries=0,
         )
     return _client
 
 
-def reset_client() -> None:
-    """重置客户端（配置变更后调用）"""
+async def close_llm_client() -> None:
+    """关闭连接池（在 app shutdown 时调用）"""
     global _client
-    _client = None
+    if _client is not None:
+        await _client.close()
+        _client = None
 
 
 async def chat_completion(
@@ -77,10 +77,7 @@ async def chat_completion(
 
         except Exception as e:
             last_error = e
-            logger.warning(
-                "LLM request failed (attempt %d/%d): %s",
-                attempt + 1, MAX_RETRIES + 1, e,
-            )
+            logger.warning("LLM request failed (attempt %d/%d): %s", attempt + 1, MAX_RETRIES + 1, e)
             if attempt < MAX_RETRIES:
                 await asyncio.sleep(RETRY_DELAY * (attempt + 1))
 
@@ -89,17 +86,13 @@ async def chat_completion(
 
 def _extract_json(text: str) -> Optional[str]:
     """从 LLM 响应中提取 JSON — 支持 ```json 代码块或裸 JSON"""
-    # 尝试提取 ```json ... ``` 代码块
     match = re.search(r"```(?:json)?\s*\n?(.*?)\n?```", text, re.DOTALL)
     if match:
         return match.group(1).strip()
-
-    # 尝试找到第一个 { 到最后一个 } 的范围
     start = text.find("{")
     end = text.rfind("}")
-    if start != -1 and end != -1 and end > start:
+    if start != -1 and end > start:
         return text[start:end + 1]
-
     return None
 
 
@@ -108,25 +101,15 @@ async def chat_completion_json(
     user_message: str,
     **kwargs: Any,
 ) -> Dict[str, Any]:
-    """发送聊天请求，返回解析后的 JSON dict
-
-    不依赖 response_format 参数（部分中转 API 不支持），
-    而是在 prompt 尾部追加 JSON 输出指令，并从响应中提取 JSON。
-    """
+    """发送聊天请求，返回解析后的 JSON dict"""
     json_instruction = "\n\n重要：请只返回 JSON 对象，不要包含任何其他文字说明。"
-    raw = await chat_completion(
-        system_prompt + json_instruction,
-        user_message,
-        **kwargs,
-    )
+    raw = await chat_completion(system_prompt + json_instruction, user_message, **kwargs)
 
-    # 尝试直接解析
     try:
         return json.loads(raw)
     except json.JSONDecodeError:
         pass
 
-    # 尝试从代码块或文本中提取 JSON
     extracted = _extract_json(raw)
     if extracted:
         try:

@@ -1,4 +1,3 @@
-import json
 from typing import Any, Dict
 
 from app.agents.base_agent import BaseAgent
@@ -25,7 +24,7 @@ class ExtremophileAgent(BaseAgent):
       "name": "学名",
       "common_name": "通用名（如有）",
       "type": "细菌/古菌/真菌/蓝藻",
-      "key_tolerances": {"辐射": "耐受值", "温度": "耐受范围", ...},
+      "key_tolerances": {"辐射": "耐受值", "温度": "耐受范围"},
       "genetic_tools_available": true/false,
       "genome_sequenced": true/false,
       "score": 0.0-1.0,
@@ -44,18 +43,9 @@ class ExtremophileAgent(BaseAgent):
         super().__init__("extremophile", "极端微生物")
 
     def build_user_prompt(self, input_data: Dict[str, Any]) -> str:
-        constraints = input_data.get("constraints", {})
-        location = input_data.get("location", "未指定")
-        upstream_findings = input_data.get("upstream_findings", [])
-
-        parts = [f"目标火星地点：{location}"]
-
-        if constraints:
-            parts.append(f"环境约束条件：\n{json.dumps(constraints, ensure_ascii=False, indent=2)}")
-
-        if upstream_findings:
-            parts.append(f"环境解析 Agent 的关键发现：\n" + "\n".join(f"- {f}" for f in upstream_findings))
-
-        parts.append("请筛选最适合在上述条件下生存的候选极端微生物，并给出推荐的底盘组合方案。")
-
-        return "\n\n".join(parts)
+        return self._build_prompt([
+            ("目标火星地点", input_data.get("location", "未指定")),
+            ("环境约束条件", input_data.get("constraints")),
+            ("环境解析 Agent 的关键发现", input_data.get("upstream_findings")),
+            ("", "请筛选最适合在上述条件下生存的候选极端微生物，并给出推荐的底盘组合方案。"),
+        ])

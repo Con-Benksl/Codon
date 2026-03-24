@@ -1,3 +1,4 @@
+import json
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 from datetime import datetime
@@ -13,8 +14,6 @@ class BaseAgent(ABC):
 
     agent_id: str = ""
     agent_name: str = ""
-
-    # 子类覆盖：定义角色的 system prompt
     system_prompt: str = "You are a helpful assistant."
 
     def __init__(self, agent_id: str, agent_name: str):
@@ -41,14 +40,8 @@ class BaseAgent(ABC):
             )
         except Exception as e:
             self.log_progress(f"LLM 调用失败: {e}", level="error")
-            return {
-                "status": "failed",
-                "error": str(e),
-                "findings": [],
-                "metrics": {},
-            }
+            return {"status": "failed", "error": str(e), "findings": [], "metrics": {}}
 
-        # 确保返回标准字段
         result.setdefault("status", "completed")
         result.setdefault("findings", [])
         result.setdefault("metrics", {})
@@ -57,17 +50,39 @@ class BaseAgent(ABC):
         return result
 
     def validate_input(self, input_data: Dict[str, Any], required_fields: List[str]) -> None:
-        """验证输入数据"""
-        missing_fields = [field for field in required_fields if field not in input_data]
-        if missing_fields:
-            raise ValueError(f"缺少必需字段: {', '.join(missing_fields)}")
+        missing = [f for f in required_fields if f not in input_data]
+        if missing:
+            raise ValueError(f"缺少必需字段: {', '.join(missing)}")
 
-    def log_progress(self, message: str, level: str = "info"):
-        """记录进度日志"""
+    def log_progress(self, message: str, level: str = "info") -> None:
         log_func = getattr(self.logger, level, self.logger.info)
         log_func("[%s] %s", self.agent_id, message)
-        return {
-            "time": datetime.utcnow().isoformat(),
-            "message": message,
-            "level": level,
-        }
+
+    @staticmethod
+    def _build_prompt(sections: List[tuple]) -> str:
+        """将多个 (label, data) 段落拼接为 prompt。
+
+        data 为 dict/list 时自动 JSON 序列化；为 str 时直接使用；
+        为 list[str] 时格式化为项目符号列表。
+        """
+        parts = []
+        for label, data in sections:
+            if data is None:
+                continue
+            if isinstance(data, str):
+                if data:
+                    parts.append(f"{label}：{data}" if label else data)
+            elif isinstance(data, list):
+                if data:
+                    if all(isinstance(i, str) for i in data):
+                        formatted = "\n".join(f"- {i}" for i in data)
+                    else:
+                        formatted = json.dumps(data, ensure_ascii=False, indent=2)
+                    parts.append(f"{label}：\n{formatted}" if label else formatted)
+            elif isinstance(data, dict):
+                if data:
+                    parts.append(
+                        f"{label}：\n{json.dumps(data, ensure_ascii=False, indent=2)}"
+                        if label else json.dumps(data, ensure_ascii=False, indent=2)
+                    )
+        return "\n\n".join(parts)

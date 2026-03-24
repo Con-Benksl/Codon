@@ -51,7 +51,7 @@ class AgentOrchestrator:
                 agent_id=agent.agent_id,
                 agent_name=agent.agent_name,
                 status="running",
-                input_data=_safe_json(context),
+                input_data=context,
                 started_at=datetime.utcnow(),
             )
             self.db.add(agent_run)
@@ -98,7 +98,7 @@ class AgentOrchestrator:
         return results
 
 
-def _merge_output_to_context(context: dict, output: dict, agent_id: str) -> None:
+def _merge_output_to_context(context: dict, output: dict, agent_id: str) -> None:  # noqa: ARG001
     """将 Agent 输出的关键字段合并到共享上下文"""
     # 每个 Agent 输出的特征字段直接提升到上下文顶层
     passthrough_keys = [
@@ -112,13 +112,3 @@ def _merge_output_to_context(context: dict, output: dict, agent_id: str) -> None
     for key in passthrough_keys:
         if key in output:
             context[key] = output[key]
-
-
-def _safe_json(data: dict) -> dict:
-    """确保数据可序列化为 JSON（截断过大的字段）"""
-    import json
-    try:
-        json.dumps(data, ensure_ascii=False)
-        return data
-    except (TypeError, ValueError):
-        return {"note": "input_data serialization failed"}

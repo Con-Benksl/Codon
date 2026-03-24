@@ -18,18 +18,14 @@ async def orchestrate_agents(
     current_user: User = Depends(get_current_active_user)
 ):
     """启动 Agent 编排"""
-    # 确保项目存在，不存在则自动创建
-    project = db.query(Project).filter(Project.id == request.project_id).first()
+    # 多用户场景：必须限制为当前用户拥有的项目
+    project = (
+        db.query(Project)
+        .filter(Project.id == request.project_id, Project.owner_id == current_user.id)
+        .first()
+    )
     if not project:
-        project = Project(
-            name="Mars Biolab Design",
-            description="Auto-created for agent orchestration",
-            owner_id=current_user.id,
-            status="active",
-        )
-        db.add(project)
-        db.commit()
-        db.refresh(project)
+        raise HTTPException(status_code=404, detail="项目不存在或无权限访问")
 
     orchestrator = AgentOrchestrator(db)
     results = await orchestrator.orchestrate(project.id, request.config or {})
@@ -56,5 +52,19 @@ async def get_agent_runs(
 ):
     """获取项目的 Agent 执行记录"""
     from app.models.agent_run import AgentRun
-    runs = db.query(AgentRun).filter(AgentRun.project_id == project_id).all()
+
+    project = (
+        db.query(Project)
+        .filter(Project.id == project_id, Project.owner_id == current_user.id)
+        .first()
+    )
+    if not project:
+        raise HTTPException(status_code=404, detail="项目不存在或无权限访问")
+
+    runs = (
+        db.query(AgentRun)
+        .filter(AgentRun.project_id == project_id)
+        .order_by(AgentRun.created_at.desc(), AgentRun.id.desc())
+        .all()
+    )
     return runs

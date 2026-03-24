@@ -1,4 +1,3 @@
-import json
 from typing import Any, Dict
 
 from app.agents.base_agent import BaseAgent
@@ -25,19 +24,15 @@ class CircuitDesignAgent(BaseAgent):
       "type": "Toggle Switch / AND Gate / OR Gate / Oscillator",
       "sensor": "感应元件描述",
       "actuator": "执行模块描述",
-      "components": ["元件1", "元件2", ...],
+      "components": ["元件1", "元件2"],
       "response_time": "响应时间",
       "orthogonality_score": 0.0-1.0,
       "notes": "设计理由"
     }
   ],
-  "kill_switch": {
-    "type": "类型描述",
-    "mechanism": "机制描述",
-    "reliability": 0.0-1.0
-  },
+  "kill_switch": {"type": "类型描述", "mechanism": "机制描述", "reliability": 0.0-1.0},
   "overall_orthogonality": 0.0-1.0,
-  "findings": ["关键发现1", ...],
+  "findings": ["关键发现1"],
   "metrics": {"logic_gates_designed": 数量, "simulation_pass_rate": 0.0-1.0}
 }"""
 
@@ -45,21 +40,9 @@ class CircuitDesignAgent(BaseAgent):
         super().__init__("circuit-design", "回路设计")
 
     def build_user_prompt(self, input_data: Dict[str, Any]) -> str:
-        gene_clusters = input_data.get("gene_clusters", [])
-        constraints = input_data.get("constraints", {})
-        upstream_findings = input_data.get("upstream_findings", [])
-
-        parts = []
-
-        if constraints:
-            parts.append(f"环境约束：\n{json.dumps(constraints, ensure_ascii=False, indent=2)}")
-
-        if gene_clusters:
-            parts.append(f"功能基因模块：\n{json.dumps(gene_clusters, ensure_ascii=False, indent=2)}")
-
-        if upstream_findings:
-            parts.append("上游 Agent 关键发现：\n" + "\n".join(f"- {f}" for f in upstream_findings))
-
-        parts.append("请为上述基因模块设计环境感应与响应的逻辑回路，并设计安全开关。")
-
-        return "\n\n".join(parts)
+        return self._build_prompt([
+            ("环境约束", input_data.get("constraints")),
+            ("功能基因模块", input_data.get("gene_clusters")),
+            ("上游 Agent 关键发现", input_data.get("upstream_findings")),
+            ("", "请为上述基因模块设计环境感应与响应的逻辑回路，并设计安全开关。"),
+        ])

@@ -51,4 +51,5 @@ export const getCurrentUser = async (): Promise<User> => {
 // 退出登录
 export const logout = () => {
   localStorage.removeItem('access_token');
+  void apiClient.post('/auth/logout').catch(() => undefined);
 };

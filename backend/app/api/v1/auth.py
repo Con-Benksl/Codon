@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from datetime import timedelta
+
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -7,13 +9,17 @@ from app.database import get_db
 from app.models.user import User
 from app.schemas.user import Token, UserCreate, UserResponse
 from app.services.auth_service import (
+    clear_auth_cookie,
     create_access_token,
     get_current_active_user,
     get_password_hash,
+    set_auth_cookie,
     verify_password,
 )
+from app.config import get_settings
 
 router = APIRouter()
+settings = get_settings()
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
@@ -53,6 +59,7 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=Token)
 async def login(
+    response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
 ):
@@ -65,8 +72,19 @@ async def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    access_token = create_access_token(data={"sub": user.email})
+    access_token = create_access_token(
+        data={"sub": user.email},
+        expires_delta=timedelta(days=settings.AUTH_COOKIE_MAX_AGE_DAYS),
+    )
+    set_auth_cookie(response, access_token)
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+@router.post("/logout")
+async def logout(response: Response):
+    """Log out user."""
+    clear_auth_cookie(response)
+    return {"status": "ok"}
 
 
 @router.get("/me", response_model=UserResponse)

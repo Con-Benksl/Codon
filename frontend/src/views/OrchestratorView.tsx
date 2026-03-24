@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -58,25 +58,39 @@ export default function OrchestratorView() {
   const [isOrchestrating, setIsOrchestrating] = useState(false);
   const [orchestrationError, setOrchestrationError] = useState<string | null>(null);
   const [agentRuns, setAgentRuns] = useState<AgentRun[]>([]);
-  const [currentRunningAgent, setCurrentRunningAgent] = useState<string | null>(null);
 
   // 获取某个 agent 的真实运行结果
-  const getAgentRunResult = useCallback(
-    (agentId: string): AgentRun | undefined =>
-      agentRuns.find((r) => r.agent_id === agentId),
-    [agentRuns]
-  );
+  const getAgentRunResult = (agentId: string): AgentRun | undefined =>
+    agentRuns.find((r) => r.agent_id === agentId);
+
+  const getActiveProjectId = () => {
+    const raw = localStorage.getItem("active_project_id");
+    const parsed = raw ? Number(raw) : NaN;
+    return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+  };
 
   // 触发编排
   const handleOrchestrate = async () => {
     setIsOrchestrating(true);
     setOrchestrationError(null);
     setAgentRuns([]);
-    setCurrentRunningAgent("env-parse");
+
+    const activeProjectId = getActiveProjectId();
+    if (!activeProjectId) {
+      setIsOrchestrating(false);
+      setOrchestrationError(
+        t(
+          "请先在“我的项目”中选择一个项目，再启动编排。",
+          "Please select a project in Projects before running orchestration.",
+        ),
+      );
+      navigate("/projects");
+      return;
+    }
 
     try {
       const result = await orchestrateAgents({
-        project_id: 1,
+        project_id: activeProjectId,
         config: {
           location: "Jezero Crater",
           constraints: constraints,
@@ -84,17 +98,17 @@ export default function OrchestratorView() {
       });
 
       // 用后端返回的 project_id 获取详细运行记录
-      const pid = result?.project_id ?? 1;
+      const pid = result?.project_id ?? activeProjectId;
       if (result?.agent_runs?.length) {
         const runs = await getAgentRuns(pid);
-        setAgentRuns(runs);
+        const runIds = new Set(result.agent_runs.map((r) => r.id));
+        setAgentRuns(runs.filter((r) => runIds.has(r.id)));
       }
     } catch (err: any) {
       const msg = err?.response?.data?.detail || err?.message || "编排失败";
       setOrchestrationError(msg);
     } finally {
       setIsOrchestrating(false);
-      setCurrentRunningAgent(null);
     }
   };
 

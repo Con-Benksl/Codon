@@ -5,6 +5,7 @@ from app import models  # noqa: F401
 from app.api.v1 import agents, auth, projects
 from app.config import get_settings
 from app.database import Base, engine
+from app.services.llm_client import close_llm_client
 
 settings = get_settings()
 
@@ -34,6 +35,11 @@ app.include_router(agents.router, prefix="/api/v1/agents", tags=["\u667a\u80fd\u
 @app.on_event("startup")
 async def ensure_tables():
     Base.metadata.create_all(bind=engine)
+
+
+@app.on_event("shutdown")
+async def shutdown():
+    await close_llm_client()
 
 
 @app.get("/")

@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from typing import Optional
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, Response, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -15,7 +15,7 @@ from app.schemas.user import TokenData
 settings = get_settings()
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -42,8 +42,30 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return encoded_jwt
 
 
+def set_auth_cookie(response: Response, token: str) -> None:
+    max_age_seconds = settings.AUTH_COOKIE_MAX_AGE_DAYS * 24 * 60 * 60
+    response.set_cookie(
+        key=settings.AUTH_COOKIE_NAME,
+        value=token,
+        max_age=max_age_seconds,
+        expires=max_age_seconds,
+        httponly=True,
+        secure=settings.AUTH_COOKIE_SECURE,
+        samesite=settings.AUTH_COOKIE_SAMESITE,
+        path="/",
+    )
+
+
+def clear_auth_cookie(response: Response) -> None:
+    response.delete_cookie(
+        key=settings.AUTH_COOKIE_NAME,
+        path="/",
+    )
+
+
 async def get_current_user(
-    token: str = Depends(oauth2_scheme),
+    request: Request,
+    token: Optional[str] = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
 ) -> User:
     credentials_exception = HTTPException(
@@ -51,8 +73,12 @@ async def get_current_user(
         detail="\u65e0\u6cd5\u9a8c\u8bc1\u51ed\u636e",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    jwt_token = token or request.cookies.get(settings.AUTH_COOKIE_NAME)
+    if not jwt_token:
+        raise credentials_exception
+
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = jwt.decode(jwt_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         email: str = payload.get("sub")
         if email is None:
             raise credentials_exception
