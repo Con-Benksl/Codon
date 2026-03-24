@@ -1,45 +1,44 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none">
   <defs>
-    <linearGradient id="bg" x1="18" y1="16" x2="238" y2="240" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#0b1324"/>
-      <stop offset="1" stop-color="#0a1e36"/>
+    <linearGradient id="bg" x1="12" y1="10" x2="244" y2="248" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0a1220" />
+      <stop offset="1" stop-color="#0d1b2f" />
     </linearGradient>
-    <linearGradient id="dna" x1="70" y1="232" x2="186" y2="30" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#0ea5e9"/>
-      <stop offset="1" stop-color="#2dd4bf"/>
+    <linearGradient id="dna" x1="74" y1="208" x2="182" y2="52" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1e3a5f" />
+      <stop offset="1" stop-color="#3b82c4" />
     </linearGradient>
-    <linearGradient id="bar" x1="84" y1="44" x2="172" y2="44" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#38bdf8"/>
-      <stop offset="1" stop-color="#22d3ee"/>
-    </linearGradient>
-    <filter id="glow" x="-35%" y="-35%" width="170%" height="170%">
-      <feGaussianBlur stdDeviation="4.5" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2.2" />
     </filter>
   </defs>
 
-  <rect x="8" y="8" width="240" height="240" rx="56" fill="url(#bg)"/>
-  <rect x="8" y="8" width="240" height="240" rx="56" stroke="#1e293b" stroke-width="2"/>
+  <rect x="8" y="8" width="240" height="240" rx="48" fill="url(#bg)" />
+  <rect x="8" y="8" width="240" height="240" rx="48" stroke="#1f2f48" stroke-width="2" />
 
-  <g filter="url(#glow)" stroke="url(#dna)" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M88 228c0-30 80-30 80-60s-80-30-80-60 80-30 80-60" stroke-width="16"/>
-    <path d="M168 228c0-30-80-30-80-60s80-30 80-60-80-30-80-60" stroke-width="16"/>
-  </g>
+  <g filter="url(#soft)">
+    <path
+      d="M76 126C104 118 152 118 180 126"
+      stroke="url(#dna)"
+      stroke-width="15"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
 
-  <g stroke="url(#bar)" stroke-width="12" stroke-linecap="round">
-    <line x1="94" y1="56" x2="162" y2="56"/>
-    <line x1="94" y1="95" x2="162" y2="95"/>
-    <line x1="94" y1="134" x2="162" y2="134"/>
-    <line x1="94" y1="173" x2="162" y2="173"/>
-    <line x1="94" y1="212" x2="162" y2="212"/>
-  </g>
+    <path
+      d="M98 112C84 98 84 82 102 68M126 107L118 90M150 100C164 90 170 76 160 60"
+      stroke="url(#dna)"
+      stroke-width="14"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
 
-  <g fill="#2dd4bf" filter="url(#glow)">
-    <path d="M146 36c11-18 26-19 37-11-4 13-19 26-37 24z"/>
-    <path d="M122 50c-10-15-24-17-34-10 2 11 16 22 34 20z"/>
-    <path d="M168 58c9-12 21-13 29-8-3 9-14 19-29 18z"/>
+    <path
+      d="M98 140C84 154 84 170 102 184M126 145L118 162M150 152C164 162 170 176 160 192"
+      stroke="url(#dna)"
+      stroke-width="14"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
   </g>
 </svg>
