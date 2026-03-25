@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     AUTH_COOKIE_MAX_AGE_DAYS: int = 30
     AUTH_COOKIE_SECURE: bool = False
     AUTH_COOKIE_SAMESITE: str = "lax"
+    ARTIFACT_STORAGE_DIR: str = "uploads"
+    MAX_UPLOAD_BYTES: int = 10 * 1024 * 1024
+    VIEW_SCHEMA_VERSION: str = "2026-03-24"
 
     CELERY_BROKER_URL: str
     CELERY_RESULT_BACKEND: str

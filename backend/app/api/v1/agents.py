@@ -8,6 +8,7 @@ from app.models.project import Project
 from app.schemas.agent import AgentOrchestrationRequest, AgentRunResponse
 from app.services.auth_service import get_current_active_user
 from app.services.agent_orchestrator import AgentOrchestrator
+from app.services.project_runtime_service import ensure_latest_dataset, refresh_view_snapshots
 
 router = APIRouter()
 
@@ -29,6 +30,8 @@ async def orchestrate_agents(
 
     orchestrator = AgentOrchestrator(db)
     results = await orchestrator.orchestrate(project.id, request.config or {})
+    ensure_latest_dataset(db, project)
+    refresh_view_snapshots(db, project)
 
     return {
         "status": "completed",

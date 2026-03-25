@@ -13,6 +13,7 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
+  AlertTriangle,
 } from "lucide-react";
 import { useLocale } from "../i18n/context";
 import { viewTransition, buttonPress } from "../lib/motion";
