@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -10,23 +11,27 @@ from app.services.auth_service import get_current_active_user
 
 router = APIRouter()
 
-@router.post("/", response_model=ProjectResponse)
+@router.post("/", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
 def create_project(
     project: ProjectCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
     """创建新项目"""
-    db_project = Project(
-        name=project.name,
-        description=project.description,
-        config_json=project.config_json,
-        owner_id=current_user.id
-    )
-    db.add(db_project)
-    db.commit()
-    db.refresh(db_project)
-    return db_project
+    try:
+        db_project = Project(
+            name=project.name.strip(),
+            description=project.description.strip() if project.description else None,
+            config_json=project.config_json or {},
+            owner_id=current_user.id
+        )
+        db.add(db_project)
+        db.commit()
+        db.refresh(db_project)
+        return db_project
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="项目创建失败，请稍后重试")
 
 @router.get("/", response_model=List[ProjectResponse])
 def list_projects(

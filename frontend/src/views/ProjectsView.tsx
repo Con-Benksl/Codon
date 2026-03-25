@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent, type MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
-import { Plus, X, Loader2, Dna, FolderOpen, LogIn } from "lucide-react";
+import { Plus, X, Loader2, Dna, FolderOpen, LogIn, AlertCircle } from "lucide-react";
 import { createProject, deleteProject, getCurrentUser, getProjects, type Project } from "../api";
 import { stagger } from "../lib/motion";
 import { ProjectCard } from "../components";
@@ -12,6 +12,12 @@ const slideUp = {
   show: { y: 0, transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] as const } },
 };
 
+const getErrorMessage = (error: unknown, fallback: string) => {
+  const detail = (error as any)?.response?.data?.detail;
+  if (typeof detail === "string" && detail.trim()) return detail;
+  return fallback;
+};
+
 export default function ProjectsView() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -20,6 +26,8 @@ export default function ProjectsView() {
   const [newName, setNewName] = useState("");
   const [newDesc, setNewDesc] = useState("");
   const [creating, setCreating] = useState(false);
+  const [pageError, setPageError] = useState("");
+  const [modalError, setModalError] = useState("");
   const navigate = useNavigate();
   const { locale } = useLocale();
 
@@ -38,18 +46,21 @@ export default function ProjectsView() {
       emptyDesc: "创建你的第一个合成生物学研究项目",
       createFirst: "创建第一个项目",
       modalTitle: "新建项目",
-      modalSubtitle: "合成生物学研究项目",
+      modalSubtitle: "Synthetic biology research workspace",
       projectName: "项目名称",
       projectDesc: "项目描述",
       namePlaceholder: "例如：火星定植菌群设计",
-      descPlaceholder: "简短描述项目目标与研究方向...",
+      descPlaceholder: "简要描述项目目标、约束和研究方向...",
       cancel: "取消",
       creating: "创建中...",
       create: "创建项目",
-      confirmDelete: "确定删除此项目？所有相关数据将被永久清除。",
+      confirmDelete: "确定删除此项目？所有相关数据将被永久移除。",
       loadErr: "加载项目失败:",
       createErr: "创建项目失败:",
-      deleteErr: "删除失败:",
+      deleteErr: "删除项目失败:",
+      createFailed: "创建项目失败，请检查登录状态或稍后重试。",
+      loadFailed: "项目加载失败，请刷新后重试。",
+      invalidName: "项目名称不能为空。",
     }
     : {
       title: "MY PROJECTS",
@@ -77,10 +88,13 @@ export default function ProjectsView() {
       loadErr: "Failed to load projects:",
       createErr: "Failed to create project:",
       deleteErr: "Failed to delete project:",
+      createFailed: "Failed to create project. Check your sign-in state or try again later.",
+      loadFailed: "Failed to load projects. Refresh and try again.",
+      invalidName: "Project name is required.",
     };
 
   useEffect(() => {
-    initializeProjects();
+    void initializeProjects();
   }, []);
 
   const initializeProjects = async () => {
@@ -89,9 +103,16 @@ export default function ProjectsView() {
       setAuthenticated(true);
       const data = await getProjects();
       setProjects(data);
-    } catch (e) {
-      setAuthenticated(false);
-      console.error(copy.loadErr, e);
+      setPageError("");
+    } catch (error) {
+      const status = (error as any)?.response?.status;
+      if (status === 401) {
+        setAuthenticated(false);
+      } else {
+        setAuthenticated(true);
+        setPageError(getErrorMessage(error, copy.loadFailed));
+      }
+      console.error(copy.loadErr, error);
     } finally {
       setLoading(false);
     }
@@ -102,8 +123,10 @@ export default function ProjectsView() {
     try {
       const data = await getProjects();
       setProjects(data);
-    } catch (e) {
-      console.error(copy.loadErr, e);
+      setPageError("");
+    } catch (error) {
+      setPageError(getErrorMessage(error, copy.loadFailed));
+      console.error(copy.loadErr, error);
     }
   };
 
@@ -112,21 +135,46 @@ export default function ProjectsView() {
       navigate("/login?redirect=/projects");
       return;
     }
+    setModalError("");
     setShowModal(true);
   };
 
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
-    if (!newName.trim()) return;
+    const trimmedName = newName.trim();
+    const trimmedDesc = newDesc.trim();
+
+    if (!trimmedName) {
+      setModalError(copy.invalidName);
+      return;
+    }
+
     setCreating(true);
+    setModalError("");
     try {
-      await createProject({ name: newName.trim(), description: newDesc.trim() || undefined });
+      const createdProject = await createProject({
+        name: trimmedName,
+        description: trimmedDesc || undefined,
+      });
+      setProjects((prev) => [createdProject, ...prev]);
       setNewName("");
       setNewDesc("");
       setShowModal(false);
-      loadProjects();
-    } catch (e) {
-      console.error(copy.createErr, e);
+      setPageError("");
+      localStorage.setItem("active_project_id", String(createdProject.id));
+      localStorage.setItem("active_project_name", createdProject.name);
+      window.dispatchEvent(new Event("active-project-changed"));
+      navigate("/orchestrator");
+    } catch (error) {
+      const status = (error as any)?.response?.status;
+      if (status === 401) {
+        setAuthenticated(false);
+        setShowModal(false);
+        navigate("/login?redirect=/projects");
+        return;
+      }
+      setModalError(getErrorMessage(error, copy.createFailed));
+      console.error(copy.createErr, error);
     } finally {
       setCreating(false);
     }
@@ -135,12 +183,13 @@ export default function ProjectsView() {
   const handleDelete = async (id: number, e: MouseEvent) => {
     e.stopPropagation();
     if (!confirm(copy.confirmDelete)) return;
-    setProjects((ps) => ps.filter((p) => p.id !== id));
+    setProjects((prev) => prev.filter((project) => project.id !== id));
     try {
       await deleteProject(id);
-    } catch (err) {
-      console.error(copy.deleteErr, err);
-      loadProjects();
+    } catch (error) {
+      setPageError(getErrorMessage(error, copy.deleteErr));
+      console.error(copy.deleteErr, error);
+      void loadProjects();
     }
   };
 
@@ -151,8 +200,8 @@ export default function ProjectsView() {
     navigate("/orchestrator");
   };
 
-  const activeCount = projects.filter((p) => p.status === "active").length;
-  const draftCount = projects.filter((p) => p.status === "draft").length;
+  const activeCount = projects.filter((project) => project.status === "active").length;
+  const draftCount = projects.filter((project) => project.status === "draft").length;
 
   return (
     <div className="min-h-full p-6 md:p-8 max-w-6xl mx-auto">
@@ -184,6 +233,17 @@ export default function ProjectsView() {
           {copy.newProject}
         </motion.button>
       </motion.div>
+
+      {!loading && authenticated && pageError && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6 flex items-start gap-3 rounded-xl border border-secondary/30 bg-secondary/10 px-4 py-3 text-sm text-secondary"
+        >
+          <AlertCircle size={16} className="mt-0.5 shrink-0" />
+          <span>{pageError}</span>
+        </motion.div>
+      )}
 
       {!loading && authenticated && (
         <motion.div
@@ -286,11 +346,7 @@ export default function ProjectsView() {
         >
           {projects.map((project) => (
             <motion.li key={project.id} variants={slideUp}>
-              <ProjectCard
-                project={project}
-                onOpen={handleOpen}
-                onDelete={handleDelete}
-              />
+              <ProjectCard project={project} onOpen={handleOpen} onDelete={handleDelete} />
             </motion.li>
           ))}
         </motion.ul>
@@ -368,6 +424,13 @@ export default function ProjectsView() {
                       className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2.5 text-sm text-on-surface font-body placeholder:text-on-surface-variant/30 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors resize-none"
                     />
                   </div>
+
+                  {modalError && (
+                    <div className="flex items-start gap-2 rounded-lg border border-secondary/30 bg-secondary/10 px-3 py-2 text-xs text-secondary">
+                      <AlertCircle size={14} className="mt-0.5 shrink-0" />
+                      <span>{modalError}</span>
+                    </div>
+                  )}
 
                   <div className="flex gap-3 pt-2">
                     <button
