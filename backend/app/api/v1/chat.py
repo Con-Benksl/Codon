@@ -31,7 +31,7 @@ class ChatReply(BaseModel):
     reply: str
 
 
-@router.post("", response_model=ChatReply)
+@router.post("/", response_model=ChatReply)
 async def chat(
     payload: ChatMessage,
     current_user: User = Depends(get_current_active_user),
