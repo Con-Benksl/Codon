@@ -1,7 +1,7 @@
-import { startTransition, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
+import { startTransition, useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { AlertCircle, Loader2, RefreshCw, UploadCloud } from 'lucide-react';
+import { AlertCircle, ArrowRight, FolderOpen, Loader2, RefreshCw, UploadCloud } from 'lucide-react';
 import {
   buildJobEventsUrl,
   getProject,
@@ -44,12 +44,30 @@ export default function DynamicProjectView({ viewKey }: DynamicProjectViewProps)
   const [uploading, setUploading] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeProjectId, setActiveProjectId] = useState<number | null>(() => getActiveProjectId());
 
-  const activeProjectId = useMemo(() => getActiveProjectId(), []);
+  useEffect(() => {
+    const syncActiveProject = () => setActiveProjectId(getActiveProjectId());
+
+    window.addEventListener('storage', syncActiveProject);
+    window.addEventListener('active-project-changed', syncActiveProject as EventListener);
+
+    return () => {
+      window.removeEventListener('storage', syncActiveProject);
+      window.removeEventListener('active-project-changed', syncActiveProject as EventListener);
+    };
+  }, []);
 
   useEffect(() => {
     if (!activeProjectId) {
-      navigate('/projects');
+      eventSourceRef.current?.close();
+      eventSourceRef.current = null;
+      setProject(null);
+      setSnapshot(null);
+      setArtifacts([]);
+      setJob(null);
+      setError(null);
+      setLoading(false);
       return;
     }
 
@@ -180,6 +198,41 @@ export default function DynamicProjectView({ viewKey }: DynamicProjectViewProps)
 
   return (
     <div className="flex flex-col gap-6 p-4 md:p-8 min-h-full">
+      {!loading && !activeProjectId && (
+        <motion.section
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass-panel rounded-[1.75rem] border border-outline-variant/20 p-6 md:p-8"
+        >
+          <div className="flex flex-col items-start gap-5">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10">
+              <FolderOpen size={24} className="text-primary" />
+            </div>
+            <div className="max-w-2xl">
+              <p className="text-[10px] font-headline uppercase tracking-[0.25em] text-primary/60">
+                Project Context Required
+              </p>
+              <h1 className="mt-2 text-2xl md:text-3xl font-headline font-black tracking-tight text-on-surface">
+                Select a project to open the {getFallbackTitle(viewKey)} view
+              </h1>
+              <p className="mt-2 text-sm text-on-surface-variant">
+                This route is available now, but it needs an active project context before runtime data can load.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate('/projects')}
+              className="inline-flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/10 px-4 py-2.5 text-[11px] font-headline uppercase tracking-widest text-primary"
+            >
+              <FolderOpen size={14} />
+              Open Projects
+              <ArrowRight size={14} />
+            </button>
+          </div>
+        </motion.section>
+      )}
+
+      {activeProjectId && (
       <motion.section
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
@@ -249,6 +302,7 @@ export default function DynamicProjectView({ viewKey }: DynamicProjectViewProps)
           </div>
         </div>
       </motion.section>
+      )}
 
       {(job || error || (snapshot && !schemaValid)) && (
         <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-panel rounded-2xl border border-outline-variant/20 p-4">
@@ -277,7 +331,7 @@ export default function DynamicProjectView({ viewKey }: DynamicProjectViewProps)
         <div className="flex items-center justify-center py-20">
           <Loader2 size={24} className="animate-spin text-primary" />
         </div>
-      ) : snapshot && schemaValid ? (
+      ) : !activeProjectId ? null : snapshot && schemaValid ? (
         <ViewRenderer layout={snapshot.layout} data={snapshot.data} />
       ) : !error ? (
         <div className="rounded-2xl border border-dashed border-outline-variant/25 px-5 py-10 text-sm text-on-surface-variant">

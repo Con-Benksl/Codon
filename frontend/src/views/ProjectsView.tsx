@@ -147,6 +147,7 @@ export default function ProjectsView() {
   const handleOpen = (project: Project) => {
     localStorage.setItem("active_project_id", String(project.id));
     localStorage.setItem("active_project_name", project.name);
+    window.dispatchEvent(new Event("active-project-changed"));
     navigate("/orchestrator");
   };
 
