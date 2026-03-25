@@ -6,6 +6,6 @@ export interface ChatMessage {
 }
 
 export const sendChatMessage = async (message: string, context?: string): Promise<string> => {
-  const response = await apiClient.post('/chat/', { message, context });
+  const response = await apiClient.post('/chat', { message, context });
   return response.data.reply;
 };
