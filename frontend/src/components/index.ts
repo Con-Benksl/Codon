@@ -11,3 +11,4 @@ export { default as FallbackImage } from "./FallbackImage";
 export { default as Avatar } from "./Avatar";
 export { default as ProceduralMarsGlobe } from "./ProceduralMarsGlobe";
 export { default as ProjectCard } from "./ProjectCard";
+export { default as AiChatWidget } from "./AiChatWidget";

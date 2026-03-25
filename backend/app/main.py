@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app import models  # noqa: F401
-from app.api.v1 import agents, auth, projects, project_runtime
+from app.api.v1 import agents, auth, chat, projects, project_runtime
 from app.config import get_settings
 from app.database import Base, engine
 from app.services.llm_client import close_llm_client
@@ -31,6 +31,7 @@ app.include_router(auth.router, prefix="/api/v1/auth", tags=["\u8ba4\u8bc1"])
 app.include_router(projects.router, prefix="/api/v1/projects", tags=["\u9879\u76ee"])
 app.include_router(project_runtime.router, prefix="/api/v1/projects", tags=["\u9879\u76ee\u8fd0\u884c\u65f6"])
 app.include_router(agents.router, prefix="/api/v1/agents", tags=["\u667a\u80fd\u4f53"])
+app.include_router(chat.router, prefix="/api/v1/chat", tags=["\u5bf9\u8bdd"])
 
 
 @app.on_event("startup")

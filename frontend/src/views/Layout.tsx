@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
-import { NavItem, Starfield, AmbientGlow, MarsStatusGlobe, Avatar } from "../components";
+import { NavItem, Starfield, AmbientGlow, MarsStatusGlobe, Avatar, AiChatWidget } from "../components";
 import { getCurrentUser, logout, type User } from "../api";
 import { useLocale } from "../i18n/context";
 
@@ -398,6 +398,8 @@ export default function Layout() {
       <main className="ml-0 md:ml-20 safe-pt-main safe-pb-main px-4 md:px-8 min-h-screen">
         <Outlet />
       </main>
+
+      <AiChatWidget />
 
       <MarsStatusGlobe
         activeView={
