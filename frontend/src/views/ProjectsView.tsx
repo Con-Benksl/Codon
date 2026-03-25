@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent, type MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { Plus, X, Loader2, Dna, FolderOpen, LogIn } from "lucide-react";
-import { createProject, deleteProject, getProjects, type Project } from "../api";
+import { createProject, deleteProject, getCurrentUser, getProjects, type Project } from "../api";
 import { stagger } from "../lib/motion";
 import { ProjectCard } from "../components";
 import { useLocale } from "../i18n/context";
@@ -15,6 +15,7 @@ const slideUp = {
 export default function ProjectsView() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [authenticated, setAuthenticated] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [newName, setNewName] = useState("");
   const [newDesc, setNewDesc] = useState("");
@@ -78,29 +79,36 @@ export default function ProjectsView() {
       deleteErr: "Failed to delete project:",
     };
 
-  const isLoggedIn = () => Boolean(localStorage.getItem("access_token"));
-
   useEffect(() => {
-    loadProjects();
+    initializeProjects();
   }, []);
 
-  const loadProjects = async () => {
-    if (!isLoggedIn()) {
-      setLoading(false);
-      return;
-    }
+  const initializeProjects = async () => {
     try {
+      await getCurrentUser();
+      setAuthenticated(true);
       const data = await getProjects();
       setProjects(data);
     } catch (e) {
+      setAuthenticated(false);
       console.error(copy.loadErr, e);
     } finally {
       setLoading(false);
     }
   };
 
+  const loadProjects = async () => {
+    if (!authenticated) return;
+    try {
+      const data = await getProjects();
+      setProjects(data);
+    } catch (e) {
+      console.error(copy.loadErr, e);
+    }
+  };
+
   const handleNewProject = () => {
-    if (!isLoggedIn()) {
+    if (!authenticated) {
       navigate("/login?redirect=/projects");
       return;
     }
@@ -176,7 +184,7 @@ export default function ProjectsView() {
         </motion.button>
       </motion.div>
 
-      {!loading && isLoggedIn() && (
+      {!loading && authenticated && (
         <motion.div
           variants={stagger(80)}
           initial="hidden"
@@ -210,7 +218,7 @@ export default function ProjectsView() {
         </div>
       )}
 
-      {!loading && !isLoggedIn() && (
+      {!loading && !authenticated && (
         <motion.div
           initial={{ scale: 0.96 }}
           animate={{ scale: 1 }}
@@ -239,7 +247,7 @@ export default function ProjectsView() {
         </motion.div>
       )}
 
-      {!loading && isLoggedIn() && projects.length === 0 && (
+      {!loading && authenticated && projects.length === 0 && (
         <motion.div
           initial={{ scale: 0.96 }}
           animate={{ scale: 1 }}
@@ -268,7 +276,7 @@ export default function ProjectsView() {
         </motion.div>
       )}
 
-      {!loading && isLoggedIn() && projects.length > 0 && (
+      {!loading && authenticated && projects.length > 0 && (
         <motion.ul
           variants={stagger(80)}
           initial="hidden"
