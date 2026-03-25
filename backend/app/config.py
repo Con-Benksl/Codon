@@ -11,10 +11,10 @@ class Settings(BaseSettings):
     VERSION: str = "1.0.0"
     DEBUG: bool = False
 
-    DATABASE_URL: str
-    REDIS_URL: str
+    DATABASE_URL: str = "sqlite:///./mars_design.db"
+    REDIS_URL: str = "redis://127.0.0.1:6379/0"
 
-    SECRET_KEY: str
+    SECRET_KEY: str = "mars-design-local-dev-secret"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     AUTH_COOKIE_NAME: str = "access_token"
@@ -25,8 +25,8 @@ class Settings(BaseSettings):
     MAX_UPLOAD_BYTES: int = 10 * 1024 * 1024
     VIEW_SCHEMA_VERSION: str = "2026-03-24"
 
-    CELERY_BROKER_URL: str
-    CELERY_RESULT_BACKEND: str
+    CELERY_BROKER_URL: str = "redis://127.0.0.1:6379/0"
+    CELERY_RESULT_BACKEND: str = "redis://127.0.0.1:6379/1"
 
     # LLM 配置（中转 API，兼容 OpenAI 格式）
     LLM_API_KEY: str = ""
