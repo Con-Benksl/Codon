@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent, type MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
-import { Plus, X, Loader2, Dna, FolderOpen, LogIn, AlertCircle } from "lucide-react";
+import { Plus, X, Loader2, Dna, FolderOpen, LogIn, AlertCircle, Layers3, Activity } from "lucide-react";
 import { createProject, deleteProject, getCurrentUser, getProjects, type Project } from "../api";
 import { stagger } from "../lib/motion";
 import { ProjectCard } from "../components";
@@ -46,7 +46,7 @@ export default function ProjectsView() {
       emptyDesc: "创建你的第一个合成生物学研究项目",
       createFirst: "创建第一个项目",
       modalTitle: "新建项目",
-      modalSubtitle: "Synthetic biology research workspace",
+      modalSubtitle: "合成生物学研究工作区",
       projectName: "项目名称",
       projectDesc: "项目描述",
       namePlaceholder: "例如：火星定植菌群设计",
@@ -206,15 +206,20 @@ export default function ProjectsView() {
   return (
     <div className="min-h-full p-6 md:p-8 max-w-6xl mx-auto">
       <motion.div
-        initial={{ y: -12 }}
-        animate={{ y: 0 }}
+        initial={{ y: -12, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
         className="flex items-end justify-between mb-8"
       >
         <div>
-          <p className="text-[10px] font-headline text-primary/50 tracking-[0.2em] uppercase mb-1">
-            MARS SYNBIO AGENT
-          </p>
+          <div className="flex items-center gap-2 mb-2">
+            <div className="h-5 w-5 rounded-md bg-primary/10 border border-primary/20 flex items-center justify-center">
+              <Dna size={11} className="text-primary" />
+            </div>
+            <p className="text-[10px] font-headline text-primary/70 tracking-[0.2em] uppercase">
+              MARS SYNBIO AGENT
+            </p>
+          </div>
           <h1 className="text-2xl md:text-3xl font-headline font-bold text-on-surface tracking-tight">
             {copy.title}
           </h1>
@@ -227,7 +232,7 @@ export default function ProjectsView() {
           whileHover={{ scale: 1.03 }}
           whileTap={{ scale: 0.95 }}
           onClick={handleNewProject}
-          className="flex items-center gap-2 px-4 py-2.5 bg-primary/10 border border-primary/30 text-primary text-[11px] font-headline tracking-widest uppercase rounded-lg hover:bg-primary/20 transition-colors"
+          className="flex items-center gap-2 px-4 py-2.5 bg-primary/10 border border-primary/30 text-primary text-[11px] font-headline tracking-widest uppercase rounded-xl hover:bg-primary/20 transition-colors shadow-[0_0_16px_rgba(78,168,217,0.08)]"
         >
           <Plus size={13} />
           {copy.newProject}
@@ -247,22 +252,26 @@ export default function ProjectsView() {
 
       {!loading && authenticated && (
         <motion.div
-          variants={stagger(80)}
+          variants={stagger(60)}
           initial="hidden"
           animate="show"
           className="grid grid-cols-3 gap-3 mb-8"
         >
           {[
-            { label: copy.statsAll, value: projects.length, color: "text-on-surface" },
-            { label: copy.statsActive, value: activeCount, color: "text-tertiary" },
-            { label: copy.statsDraft, value: draftCount, color: "text-primary" },
+            { label: copy.statsAll, value: projects.length, color: "text-on-surface", icon: <Layers3 size={12} className="text-on-surface-variant/50" />, bg: "border-outline-variant/20" },
+            { label: copy.statsActive, value: activeCount, color: "text-tertiary", icon: <Activity size={12} className="text-tertiary/60" />, bg: "border-tertiary/20" },
+            { label: copy.statsDraft, value: draftCount, color: "text-primary", icon: <Dna size={12} className="text-primary/60" />, bg: "border-primary/20" },
           ].map((stat) => (
             <motion.div
               key={stat.label}
               variants={slideUp}
-              className="glass-panel rounded-xl px-4 py-3 flex flex-col gap-0.5"
+              className={`relative overflow-hidden glass-panel rounded-xl px-4 py-3.5 flex flex-col gap-1 border ${stat.bg}`}
             >
-              <span className={`text-xl font-headline font-bold ${stat.color}`}>
+              <div className="pointer-events-none absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-current opacity-20 to-transparent" />
+              <div className="flex items-center justify-between mb-0.5">
+                {stat.icon}
+              </div>
+              <span className={`text-xl font-headline font-bold leading-none ${stat.color}`}>
                 {stat.value}
               </span>
               <span className="text-[10px] font-headline text-on-surface-variant/60 uppercase tracking-widest">
@@ -281,26 +290,27 @@ export default function ProjectsView() {
 
       {!loading && !authenticated && (
         <motion.div
-          initial={{ scale: 0.96 }}
-          animate={{ scale: 1 }}
+          initial={{ scale: 0.96, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.4 }}
-          className="flex flex-col items-center justify-center py-24 gap-4"
+          className="relative overflow-hidden glass-panel rounded-2xl border border-primary/15 flex flex-col items-center justify-center py-20 gap-5"
         >
-          <div className="w-16 h-16 rounded-2xl bg-primary/5 border border-primary/15 flex items-center justify-center">
-            <LogIn size={28} className="text-primary/30" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent" />
+          <div className="relative w-16 h-16 rounded-2xl bg-primary/8 border border-primary/20 flex items-center justify-center shadow-[0_0_24px_rgba(78,168,217,0.12)]">
+            <LogIn size={28} className="text-primary/50" />
           </div>
-          <div className="text-center">
-            <p className="font-headline text-sm text-on-surface/60 uppercase tracking-widest mb-1">
+          <div className="relative text-center">
+            <p className="font-headline text-sm text-on-surface/70 uppercase tracking-widest mb-1.5">
               {copy.loginTitle}
             </p>
-            <p className="text-xs text-on-surface-variant/40 font-body">
+            <p className="text-xs text-on-surface-variant/50 font-body max-w-xs">
               {copy.loginDesc}
             </p>
           </div>
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={() => navigate("/login?redirect=/projects")}
-            className="flex items-center gap-2 px-5 py-2.5 bg-primary/10 border border-primary/30 text-primary text-[11px] font-headline tracking-widest uppercase rounded-lg hover:bg-primary/20 transition-colors mt-2"
+            className="relative flex items-center gap-2 px-5 py-2.5 bg-primary/10 border border-primary/30 text-primary text-[11px] font-headline tracking-widest uppercase rounded-xl hover:bg-primary/20 transition-colors"
           >
             <LogIn size={13} />
             {copy.toLogin}
@@ -310,26 +320,27 @@ export default function ProjectsView() {
 
       {!loading && authenticated && projects.length === 0 && (
         <motion.div
-          initial={{ scale: 0.96 }}
-          animate={{ scale: 1 }}
+          initial={{ scale: 0.96, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.4 }}
-          className="flex flex-col items-center justify-center py-24 gap-4"
+          className="relative overflow-hidden glass-panel rounded-2xl border border-outline-variant/20 flex flex-col items-center justify-center py-20 gap-5"
         >
-          <div className="w-16 h-16 rounded-2xl bg-primary/5 border border-primary/15 flex items-center justify-center">
-            <Dna size={28} className="text-primary/30" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-primary/4 to-transparent" />
+          <div className="relative w-16 h-16 rounded-2xl bg-primary/8 border border-primary/20 flex items-center justify-center">
+            <Dna size={28} className="text-primary/50" />
           </div>
-          <div className="text-center">
-            <p className="font-headline text-sm text-on-surface/60 uppercase tracking-widest mb-1">
+          <div className="relative text-center">
+            <p className="font-headline text-sm text-on-surface/70 uppercase tracking-widest mb-1.5">
               {copy.emptyTitle}
             </p>
-            <p className="text-xs text-on-surface-variant/40 font-body">
+            <p className="text-xs text-on-surface-variant/50 font-body max-w-xs">
               {copy.emptyDesc}
             </p>
           </div>
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={handleNewProject}
-            className="flex items-center gap-2 px-5 py-2.5 bg-primary/10 border border-primary/30 text-primary text-[11px] font-headline tracking-widest uppercase rounded-lg hover:bg-primary/20 transition-colors mt-2"
+            className="relative flex items-center gap-2 px-5 py-2.5 bg-primary/10 border border-primary/30 text-primary text-[11px] font-headline tracking-widest uppercase rounded-xl hover:bg-primary/20 transition-colors"
           >
             <Plus size={13} />
             {copy.createFirst}
@@ -372,32 +383,36 @@ export default function ProjectsView() {
               className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
             >
               <div
-                className="glass-panel rounded-2xl p-6 w-full max-w-md pointer-events-auto border border-outline-variant/20"
+                className="relative overflow-hidden glass-panel rounded-2xl p-6 w-full max-w-md pointer-events-auto border border-outline-variant/20"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="flex items-center justify-between mb-6">
+                {/* Modal 顶部装饰 */}
+                <div className="pointer-events-none absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+                <div className="pointer-events-none absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-primary/5 to-transparent" />
+
+                <div className="relative flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
-                      <FolderOpen size={15} className="text-primary/70" />
+                    <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/25 flex items-center justify-center shadow-[0_0_16px_rgba(78,168,217,0.12)]">
+                      <FolderOpen size={16} className="text-primary" />
                     </div>
                     <div>
                       <h2 className="font-headline font-bold text-on-surface text-sm uppercase tracking-tight">
                         {copy.modalTitle}
                       </h2>
-                      <p className="text-[10px] text-on-surface-variant/50 font-body">
+                      <p className="text-[10px] text-on-surface-variant/50 font-body mt-0.5">
                         {copy.modalSubtitle}
                       </p>
                     </div>
                   </div>
                   <button
                     onClick={() => setShowModal(false)}
-                    className="w-7 h-7 rounded-md flex items-center justify-center text-on-surface-variant/40 hover:text-on-surface hover:bg-surface-container transition-colors"
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-on-surface-variant/40 hover:text-on-surface hover:bg-surface-container transition-colors"
                   >
                     <X size={14} />
                   </button>
                 </div>
 
-                <form onSubmit={handleCreate} className="flex flex-col gap-4">
+                <form onSubmit={handleCreate} className="relative flex flex-col gap-4">
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[10px] font-headline text-on-surface-variant/60 uppercase tracking-widest">
                       {copy.projectName} <span className="text-secondary">*</span>
@@ -408,7 +423,7 @@ export default function ProjectsView() {
                       onChange={(e) => setNewName(e.target.value)}
                       placeholder={copy.namePlaceholder}
                       required
-                      className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2.5 text-sm text-on-surface font-body placeholder:text-on-surface-variant/30 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors"
+                      className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-xl px-3.5 py-2.5 text-sm text-on-surface font-body placeholder:text-on-surface-variant/30 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors"
                     />
                   </div>
 
@@ -421,22 +436,22 @@ export default function ProjectsView() {
                       onChange={(e) => setNewDesc(e.target.value)}
                       placeholder={copy.descPlaceholder}
                       rows={3}
-                      className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2.5 text-sm text-on-surface font-body placeholder:text-on-surface-variant/30 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors resize-none"
+                      className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-xl px-3.5 py-2.5 text-sm text-on-surface font-body placeholder:text-on-surface-variant/30 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors resize-none"
                     />
                   </div>
 
                   {modalError && (
-                    <div className="flex items-start gap-2 rounded-lg border border-secondary/30 bg-secondary/10 px-3 py-2 text-xs text-secondary">
+                    <div className="flex items-start gap-2 rounded-xl border border-secondary/30 bg-secondary/10 px-3.5 py-2.5 text-xs text-secondary">
                       <AlertCircle size={14} className="mt-0.5 shrink-0" />
                       <span>{modalError}</span>
                     </div>
                   )}
 
-                  <div className="flex gap-3 pt-2">
+                  <div className="flex gap-3 pt-1">
                     <button
                       type="button"
                       onClick={() => setShowModal(false)}
-                      className="flex-1 py-2.5 text-[11px] font-headline uppercase tracking-wider text-on-surface-variant border border-outline-variant/30 rounded-lg hover:bg-surface-container transition-colors"
+                      className="flex-1 py-2.5 text-[11px] font-headline uppercase tracking-wider text-on-surface-variant border border-outline-variant/30 rounded-xl hover:bg-surface-container transition-colors"
                     >
                       {copy.cancel}
                     </button>
@@ -444,7 +459,7 @@ export default function ProjectsView() {
                       type="submit"
                       whileTap={{ scale: 0.96 }}
                       disabled={creating || !newName.trim()}
-                      className="flex-1 flex items-center justify-center gap-2 py-2.5 text-[11px] font-headline uppercase tracking-wider text-primary bg-primary/10 border border-primary/30 rounded-lg hover:bg-primary/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 text-[11px] font-headline uppercase tracking-wider text-primary bg-primary/10 border border-primary/30 rounded-xl hover:bg-primary/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                     >
                       {creating ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
                       {creating ? copy.creating : copy.create}

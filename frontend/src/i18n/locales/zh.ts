@@ -175,6 +175,52 @@ const zh = {
     available: "可用",
     langOption: "中文",
   },
+  dynamicView: {
+    noProject: {
+      eyebrow: "需要项目上下文",
+      title: "请选择一个项目",
+      titleSuffix: "视图",
+      desc: "当前路由已就绪，但需要激活项目后才能加载运行时数据。",
+      open: "打开项目列表",
+    },
+    header: {
+      eyebrow: "动态前端运行时",
+      uploadData: "上传数据",
+      regenerate: "重新生成视图",
+    },
+    stats: {
+      view: "视图",
+      datasetVersion: "数据集版本",
+      artifacts: "文件数",
+    },
+    job: {
+      started: "任务已启动",
+    },
+    errors: {
+      schemaFailed: "运行时 Schema 校验失败。",
+      noSnapshot: "此视图暂无动态快照。",
+    },
+  },
+  viewRenderer: {
+    constraints: "约束条件",
+    records: "记录",
+    table: "表格",
+    agentPipeline: "Agent 流水线",
+    chart: "图表",
+    summary: "摘要",
+    noData: {
+      banner: "无 Banner 数据",
+      metrics: "暂无指标",
+      constraints: "暂无约束条件",
+      records: "暂无记录",
+      table: "暂无表格数据",
+      agents: "暂无 Agent 运行记录",
+      detail: "暂无详情",
+      chart: "暂无图表数据",
+      empty: "空布局",
+      unsupported: "不支持的块类型：",
+    },
+  },
 };
 
 export default zh;

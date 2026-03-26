@@ -175,6 +175,52 @@ const en = {
     available: "AVAILABLE",
     langOption: "English",
   },
+  dynamicView: {
+    noProject: {
+      eyebrow: "Project Context Required",
+      title: "Select a project to open the",
+      titleSuffix: "view",
+      desc: "This route is available now, but it needs an active project context before runtime data can load.",
+      open: "Open Projects",
+    },
+    header: {
+      eyebrow: "Dynamic Frontend Runtime",
+      uploadData: "Upload Data",
+      regenerate: "Regenerate View",
+    },
+    stats: {
+      view: "View",
+      datasetVersion: "Dataset Version",
+      artifacts: "Artifacts",
+    },
+    job: {
+      started: "Job started",
+    },
+    errors: {
+      schemaFailed: "Runtime schema validation failed for this snapshot.",
+      noSnapshot: "No dynamic snapshot available for this view yet.",
+    },
+  },
+  viewRenderer: {
+    constraints: "Constraints",
+    records: "Records",
+    table: "Table",
+    agentPipeline: "Agent Pipeline",
+    chart: "Chart",
+    summary: "Summary",
+    noData: {
+      banner: "No banner data",
+      metrics: "No metrics available",
+      constraints: "No constraints available",
+      records: "No records available",
+      table: "No tabular data available",
+      agents: "No agent runs available",
+      detail: "No detail payload",
+      chart: "No chart points available",
+      empty: "Empty layout",
+      unsupported: "Unsupported block type: ",
+    },
+  },
 };
 
 export default en;
