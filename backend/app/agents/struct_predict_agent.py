@@ -148,8 +148,15 @@ class StructPredictAgent(BaseAgent):
         super().__init__("struct-predict", "结构预测")
 
     def build_user_prompt(self, input_data: Dict[str, Any]) -> str:
-        temp = input_data.get("constraints", {}).get("temperature_range", {})
-        temp_str = f"{temp.get('min', '?')}°C ~ {temp.get('max', '?')}°C" if temp else None
+        constraints = input_data.get("constraints")
+        temp = None
+        if isinstance(constraints, dict):
+            temp = constraints.get("temperature_range")
+        temp_str = None
+        if isinstance(temp, dict):
+            temp_str = f"{temp.get('min', '?')}°C ~ {temp.get('max', '?')}°C"
+        elif isinstance(constraints, list):
+            temp_str = "火星表面：-73°C ~ -3°C（参考默认值）"
         gene_clusters = input_data.get("gene_clusters")
 
         self.log_progress("BioPython 蛋白质理化性质分析启动")
