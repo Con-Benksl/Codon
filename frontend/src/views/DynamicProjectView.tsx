@@ -3,6 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { AlertCircle, ArrowRight, FolderOpen, Loader2, RefreshCw, UploadCloud, Database, Layers3 } from 'lucide-react';
 import { useLocale } from '../i18n/context';
+import type { Locale } from '../i18n/context';
+
+function locVal(value: any, locale: Locale): string {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object' && (value.zh || value.en)) {
+    return locale === 'zh' ? (value.zh || value.en) : (value.en || value.zh);
+  }
+  return String(value);
+}
 import {
   buildJobEventsUrl,
   getProject,
@@ -34,7 +44,7 @@ function getFallbackTitle(viewKey: string) {
 
 export default function DynamicProjectView({ viewKey }: DynamicProjectViewProps) {
   const navigate = useNavigate();
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
 
@@ -307,7 +317,7 @@ export default function DynamicProjectView({ viewKey }: DynamicProjectViewProps)
             {[
               {
                 label: t('dynamicView.stats.view'),
-                value: snapshot?.layout?.page?.title || getFallbackTitle(viewKey),
+                value: locVal(snapshot?.layout?.page?.title, locale) || getFallbackTitle(viewKey),
                 color: 'text-primary',
                 icon: <Layers3 size={13} className="text-primary/60" />,
               },

@@ -4,10 +4,21 @@ import { Database, Layers3, ListTree, Network, Table2, BarChart3 } from 'lucide-
 import type { RuntimeLayout, RuntimeLayoutSection } from '../api/views';
 import { resolveBinding } from './bindingResolver';
 import { useLocale } from '../i18n/context';
+import type { Locale } from '../i18n/context';
 
 interface ViewRendererProps {
   layout: RuntimeLayout;
   data: Record<string, any>;
+}
+
+// 解析双语字段：值可以是字符串或 {zh, en} 对象
+function loc(value: any, locale: Locale): string {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object' && (value.zh || value.en)) {
+    return locale === 'zh' ? (value.zh || value.en) : (value.en || value.zh);
+  }
+  return String(value);
 }
 
 const toneClasses: Record<string, string> = {
@@ -49,44 +60,44 @@ function EmptyBlock({ message }: { message: string }) {
   );
 }
 
-function StatusBanner({ value, noDataMsg }: { value: any; noDataMsg: string }) {
+function StatusBanner({ value, noDataMsg, locale }: { value: any; noDataMsg: string; locale: Locale }) {
   if (!value) return <EmptyBlock message={noDataMsg} />;
   return (
     <div className="relative overflow-hidden glass-panel rounded-[1.75rem] p-6 md:p-8 border border-primary/20 bg-gradient-to-br from-primary/10 via-surface-container to-surface-container-low">
       <div className="pointer-events-none absolute -top-20 -right-20 h-52 w-52 rounded-full bg-primary/8 blur-3xl" />
       <div className="pointer-events-none absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
       <p className="relative text-[10px] font-headline uppercase tracking-[0.25em] text-primary/70 mb-2">
-        {value.eyebrow || 'Project View'}
+        {loc(value.eyebrow, locale) || 'Project View'}
       </p>
       <h1 className="relative text-3xl md:text-4xl font-headline font-black tracking-tight text-on-surface">
-        {value.title || 'Untitled'}
+        {loc(value.title, locale) || 'Untitled'}
       </h1>
       <p className="relative text-sm md:text-base text-on-surface-variant mt-2 max-w-3xl leading-relaxed">
-        {value.subtitle || ''}
+        {loc(value.subtitle, locale)}
       </p>
       <div className="relative mt-5 inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3.5 py-1.5 text-[11px] font-headline uppercase tracking-wider text-primary">
         <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-        {value.status || 'Ready'}
+        {loc(value.status, locale) || 'Ready'}
       </div>
     </div>
   );
 }
 
-function MetricGrid({ value, noDataMsg }: { value: any; noDataMsg: string }) {
+function MetricGrid({ value, noDataMsg, locale }: { value: any; noDataMsg: string; locale: Locale }) {
   const metrics = Array.isArray(value) ? value : [];
   if (metrics.length === 0) return <EmptyBlock message={noDataMsg} />;
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
       {metrics.map((metric: any, index: number) => (
         <motion.div
-          key={`${metric.label}-${index}`}
+          key={`${index}`}
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: index * 0.05, ease: [0.25, 0.46, 0.45, 0.94] }}
           className="rounded-xl border border-outline-variant/15 bg-surface-container-low px-4 py-4 hover:border-outline-variant/30 transition-colors"
         >
           <p className="text-[10px] font-headline uppercase tracking-widest text-on-surface-variant/70">
-            {metric.label}
+            {loc(metric.label, locale)}
           </p>
           <p className={`mt-2.5 text-2xl font-headline font-black leading-none ${toneClasses[metric.tone || 'muted']}`}>
             {metric.value}
@@ -125,7 +136,7 @@ function ConstraintList({ value, title, noDataMsg }: { value: any; title: string
   );
 }
 
-function RecordList({ value, title, noDataMsg }: { value: any; title: string; noDataMsg: string }) {
+function RecordList({ value, title, noDataMsg, locale }: { value: any; title: string; noDataMsg: string; locale: Locale }) {
   const items = Array.isArray(value) ? value : [];
   return (
     <BlockShell title={title} icon={<Database size={13} />} accent="tertiary">
@@ -135,11 +146,11 @@ function RecordList({ value, title, noDataMsg }: { value: any; title: string; no
         <div className="space-y-2">
           {items.map((item: any, index: number) => (
             <div
-              key={`${item.title}-${index}`}
+              key={`${index}`}
               className="rounded-xl border border-outline-variant/15 bg-surface-container-low px-4 py-3 hover:border-outline-variant/30 transition-colors"
             >
-              <p className="text-sm font-headline font-bold text-on-surface">{item.title || 'Untitled'}</p>
-              {item.meta && <p className="text-xs text-on-surface-variant/70 mt-1 font-body">{item.meta}</p>}
+              <p className="text-sm font-headline font-bold text-on-surface">{loc(item.title, locale) || 'Untitled'}</p>
+              {item.meta && <p className="text-xs text-on-surface-variant/70 mt-1 font-body">{loc(item.meta, locale)}</p>}
             </div>
           ))}
         </div>
@@ -224,12 +235,12 @@ function AgentPipeline({ value, title, noDataMsg }: { value: any; title: string;
   );
 }
 
-function DetailPanel({ value, summaryLabel, noDataMsg }: { value: any; summaryLabel: string; noDataMsg: string }) {
+function DetailPanel({ value, summaryLabel, noDataMsg, locale }: { value: any; summaryLabel: string; noDataMsg: string; locale: Locale }) {
   if (!value) return <EmptyBlock message={noDataMsg} />;
   return (
-    <BlockShell title={value.title || summaryLabel} icon={<Layers3 size={13} />}>
+    <BlockShell title={loc(value.title, locale) || summaryLabel} icon={<Layers3 size={13} />}>
       <p className="text-sm text-on-surface-variant leading-relaxed mb-4">
-        {value.description || ''}
+        {loc(value.description, locale)}
       </p>
       <div className="space-y-2">
         {(value.details || []).map((detail: string, index: number) => (
@@ -286,36 +297,36 @@ function sectionClassName(section: RuntimeLayoutSection) {
   return 'flex flex-col gap-5';
 }
 
-function renderBlock(type: string, value: any, vr: ReturnType<typeof useLocale>['t']) {
-  const nd = (k: string) => vr(`viewRenderer.noData.${k}`);
+function renderBlock(type: string, value: any, t: ReturnType<typeof useLocale>['t'], locale: Locale) {
+  const nd = (k: string) => t(`viewRenderer.noData.${k}`);
   switch (type) {
     case 'status_banner':
-      return <StatusBanner value={value} noDataMsg={nd('banner')} />;
+      return <StatusBanner value={value} noDataMsg={nd('banner')} locale={locale} />;
     case 'metric_grid':
-      return <MetricGrid value={value} noDataMsg={nd('metrics')} />;
+      return <MetricGrid value={value} noDataMsg={nd('metrics')} locale={locale} />;
     case 'constraint_list':
-      return <ConstraintList value={value} title={vr('viewRenderer.constraints')} noDataMsg={nd('constraints')} />;
+      return <ConstraintList value={value} title={t('viewRenderer.constraints')} noDataMsg={nd('constraints')} />;
     case 'record_list':
-      return <RecordList value={value} title={vr('viewRenderer.records')} noDataMsg={nd('records')} />;
+      return <RecordList value={value} title={t('viewRenderer.records')} noDataMsg={nd('records')} locale={locale} />;
     case 'entity_table':
-      return <EntityTable value={value} title={vr('viewRenderer.table')} noDataMsg={nd('table')} />;
+      return <EntityTable value={value} title={t('viewRenderer.table')} noDataMsg={nd('table')} />;
     case 'agent_pipeline':
-      return <AgentPipeline value={value} title={vr('viewRenderer.agentPipeline')} noDataMsg={nd('agents')} />;
+      return <AgentPipeline value={value} title={t('viewRenderer.agentPipeline')} noDataMsg={nd('agents')} />;
     case 'detail_panel':
-      return <DetailPanel value={value} summaryLabel={vr('viewRenderer.summary')} noDataMsg={nd('detail')} />;
+      return <DetailPanel value={value} summaryLabel={t('viewRenderer.summary')} noDataMsg={nd('detail')} locale={locale} />;
     case 'chart_bar':
-      return <ChartBar value={value} title={vr('viewRenderer.chart')} noDataMsg={nd('chart')} />;
+      return <ChartBar value={value} title={t('viewRenderer.chart')} noDataMsg={nd('chart')} />;
     default:
       return (
         <div className="rounded-xl border border-dashed border-secondary/30 bg-secondary/5 px-4 py-5 text-sm text-secondary">
-          {vr('viewRenderer.noData.unsupported')}{type}
+          {t('viewRenderer.noData.unsupported')}{type}
         </div>
       );
   }
 }
 
 export default function ViewRenderer({ layout, data }: ViewRendererProps) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
 
   if (!layout?.sections?.length) {
     return (
@@ -331,7 +342,7 @@ export default function ViewRenderer({ layout, data }: ViewRendererProps) {
         <section key={section.id} className={sectionClassName(section)}>
           {section.blocks.map((block) => (
             <div key={block.id}>
-              {renderBlock(block.type, resolveBinding(data, block.binding), t)}
+              {renderBlock(block.type, resolveBinding(data, block.binding), t, locale)}
             </div>
           ))}
         </section>

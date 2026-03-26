@@ -683,33 +683,40 @@ def build_view_data(project: Project, dataset: ProjectDataset, agent_runs: Seque
     latest_findings = [finding for run in agents for finding in run.get("findings", [])][:8]
 
     project_name = project.name or f"Project {project.id}"
-    subtitle = project.description or "Dynamic project workspace"
+    subtitle = project.description or {"zh": "动态项目工作区", "en": "Dynamic project workspace"}
+
+    def i18n(zh: str, en: str) -> Dict[str, str]:
+        return {"zh": zh, "en": en}
 
     if view_key == "orchestrator":
         constraints = canonical.get("environment", {}).get("constraints", [])
+        completed = sum(1 for run in agents if run["status"] == "completed")
         return {
             "hero": {
-                "eyebrow": "Dynamic Orchestrator",
+                "eyebrow": i18n("动态编排器", "Dynamic Orchestrator"),
                 "title": project_name,
                 "subtitle": subtitle,
-                "status": "Live dataset linked to controlled layout runtime",
+                "status": i18n("已连接实时数据集与受控布局运行时", "Live dataset linked to controlled layout runtime"),
             },
             "metrics": [
-                {"label": "Dataset Version", "value": str(dataset.version), "tone": "primary"},
-                {"label": "Constraints", "value": str(len(constraints)), "tone": "secondary"},
-                {"label": "Agent Runs", "value": str(len(agents)), "tone": "tertiary"},
-                {"label": "References", "value": str(canonical["derived_metrics"].get("source_count", 0)), "tone": "muted"},
+                {"label": i18n("数据集版本", "Dataset Version"), "value": str(dataset.version), "tone": "primary"},
+                {"label": i18n("约束条件", "Constraints"), "value": str(len(constraints)), "tone": "secondary"},
+                {"label": i18n("Agent 运行", "Agent Runs"), "value": str(len(agents)), "tone": "tertiary"},
+                {"label": i18n("参考文献", "References"), "value": str(canonical["derived_metrics"].get("source_count", 0)), "tone": "muted"},
             ],
             "constraints": constraints,
             "pipeline": agents,
             "records": [{"title": run["agent_name"], "meta": ", ".join(run.get("findings", [])[:2]) or run["status"]} for run in agents],
             "summary": {
-                "title": "Pipeline state",
-                "description": "Uploads, canonical dataset, agent runs, and view snapshots now share one project-scoped pipeline.",
+                "title": i18n("流水线状态", "Pipeline state"),
+                "description": i18n(
+                    "上传文件、标准数据集、Agent 运行与视图快照共用同一项目级流水线。",
+                    "Uploads, canonical dataset, agent runs, and view snapshots now share one project-scoped pipeline.",
+                ),
                 "details": [
                     f"Active dataset version: {dataset.version}",
                     f"Rendered view: {view_key}",
-                    f"Completed agents: {sum(1 for run in agents if run['status'] == 'completed')}/{len(agents)}",
+                    f"Completed agents: {completed}/{len(agents)}",
                 ],
             },
         }
@@ -719,23 +726,26 @@ def build_view_data(project: Project, dataset: ProjectDataset, agent_runs: Seque
         measurements = environment.get("measurements", [])
         return {
             "hero": {
-                "eyebrow": "Environment Model",
-                "title": f"{project_name} environment",
-                "subtitle": "Derived from uploaded artifacts and project notes",
-                "status": "Schema-driven environmental context",
+                "eyebrow": i18n("环境模型", "Environment Model"),
+                "title": project_name,
+                "subtitle": subtitle,
+                "status": i18n("Schema 驱动的环境上下文", "Schema-driven environmental context"),
             },
             "metrics": [
-                {"label": "Constraints", "value": str(len(environment.get("constraints", []))), "tone": "primary"},
-                {"label": "Measurements", "value": str(len(measurements)), "tone": "secondary"},
-                {"label": "Notes", "value": str(len(environment.get("notes", []))), "tone": "tertiary"},
-                {"label": "Sources", "value": str(len(environment.get("sources", []))), "tone": "muted"},
+                {"label": i18n("约束条件", "Constraints"), "value": str(len(environment.get("constraints", []))), "tone": "primary"},
+                {"label": i18n("测量值", "Measurements"), "value": str(len(measurements)), "tone": "secondary"},
+                {"label": i18n("备注", "Notes"), "value": str(len(environment.get("notes", []))), "tone": "tertiary"},
+                {"label": i18n("数据来源", "Sources"), "value": str(len(environment.get("sources", []))), "tone": "muted"},
             ],
             "constraints": environment.get("constraints", []),
-            "records": [{"title": note, "meta": "Imported note"} for note in environment.get("notes", [])[:12]],
+            "records": [{"title": note, "meta": i18n("导入备注", "Imported note")} for note in environment.get("notes", [])[:12]],
             "table": measurements[:30],
             "summary": {
-                "title": "Environment traceability",
-                "description": "Each value shown here can be traced back to uploaded artifacts or extracted documents.",
+                "title": i18n("环境溯源", "Environment traceability"),
+                "description": i18n(
+                    "此处展示的每个值均可追溯到上传的文件或提取的文档。",
+                    "Each value shown here can be traced back to uploaded artifacts or extracted documents.",
+                ),
                 "details": [src.get("label", "Source") for src in environment.get("sources", [])[:6]],
             },
         }
@@ -745,22 +755,25 @@ def build_view_data(project: Project, dataset: ProjectDataset, agent_runs: Seque
         pathways = canonical.get("pathways", [])
         return {
             "hero": {
-                "eyebrow": "Synthesis Design",
-                "title": f"{project_name} gene assembly",
-                "subtitle": "Rendered from canonical genes and pathway records",
-                "status": "Controlled schema blocks only",
+                "eyebrow": i18n("合成设计", "Synthesis Design"),
+                "title": project_name,
+                "subtitle": subtitle,
+                "status": i18n("仅使用受控 Schema 块", "Controlled schema blocks only"),
             },
             "metrics": [
-                {"label": "Gene Modules", "value": str(len(genes)), "tone": "primary"},
-                {"label": "Pathways", "value": str(len(pathways)), "tone": "secondary"},
-                {"label": "Candidates", "value": str(len(canonical.get("organisms", []))), "tone": "tertiary"},
-                {"label": "References", "value": str(canonical["derived_metrics"].get("source_count", 0)), "tone": "muted"},
+                {"label": i18n("基因模块", "Gene Modules"), "value": str(len(genes)), "tone": "primary"},
+                {"label": i18n("代谢通路", "Pathways"), "value": str(len(pathways)), "tone": "secondary"},
+                {"label": i18n("候选物种", "Candidates"), "value": str(len(canonical.get("organisms", []))), "tone": "tertiary"},
+                {"label": i18n("参考文献", "References"), "value": str(canonical["derived_metrics"].get("source_count", 0)), "tone": "muted"},
             ],
             "table": genes[:30],
             "records": [{"title": item.get("name", "Pathway"), "meta": item.get("function") or item.get("notes") or ""} for item in pathways[:12]],
             "summary": {
-                "title": "Design assembly guidance",
-                "description": "Use uploaded module libraries and agent findings to build reusable synthesis assemblies.",
+                "title": i18n("设计组装指导", "Design assembly guidance"),
+                "description": i18n(
+                    "使用上传的模块库与 Agent 发现来构建可复用的合成组装体。",
+                    "Use uploaded module libraries and agent findings to build reusable synthesis assemblies.",
+                ),
                 "details": latest_findings[:6],
             },
         }
@@ -770,23 +783,26 @@ def build_view_data(project: Project, dataset: ProjectDataset, agent_runs: Seque
         parameters = canonical.get("simulations", {}).get("parameters", [])
         return {
             "hero": {
-                "eyebrow": "Simulation Workspace",
-                "title": f"{project_name} simulation",
-                "subtitle": "Simulation inputs and survival estimates from normalized datasets",
-                "status": "Ready for live model wiring",
+                "eyebrow": i18n("仿真工作区", "Simulation Workspace"),
+                "title": project_name,
+                "subtitle": subtitle,
+                "status": i18n("已就绪，可接入实时模型", "Ready for live model wiring"),
             },
             "metrics": [
-                {"label": "Species", "value": str(len(species)), "tone": "primary"},
-                {"label": "Parameters", "value": str(len(parameters)), "tone": "secondary"},
-                {"label": "Avg Survival", "value": str(canonical["derived_metrics"].get("avg_survival_score") or "-"), "tone": "tertiary"},
-                {"label": "Dataset Version", "value": str(dataset.version), "tone": "muted"},
+                {"label": i18n("物种", "Species"), "value": str(len(species)), "tone": "primary"},
+                {"label": i18n("参数", "Parameters"), "value": str(len(parameters)), "tone": "secondary"},
+                {"label": i18n("平均存活率", "Avg Survival"), "value": str(canonical["derived_metrics"].get("avg_survival_score") or "-"), "tone": "tertiary"},
+                {"label": i18n("数据集版本", "Dataset Version"), "value": str(dataset.version), "tone": "muted"},
             ],
             "chart": [{"label": item.get("name", "Entity"), "value": item.get("survival") or item.get("score") or 0} for item in species[:10]],
             "records": [{"title": item.get("name", "Species"), "meta": f"Survival {item.get('survival') or item.get('score') or '-'}"} for item in species[:12]],
             "table": parameters[:25],
             "summary": {
-                "title": "Simulation posture",
-                "description": "This page is now driven by uploaded inputs and derived survival data instead of local constants.",
+                "title": i18n("仿真状态", "Simulation posture"),
+                "description": i18n(
+                    "此页面现由上传的输入数据和派生存活率数据驱动，不再使用本地常量。",
+                    "This page is now driven by uploaded inputs and derived survival data instead of local constants.",
+                ),
                 "details": latest_findings[:6],
             },
         }
@@ -796,22 +812,25 @@ def build_view_data(project: Project, dataset: ProjectDataset, agent_runs: Seque
         records = outputs.get("traceability") or canonical.get("references", [])
         return {
             "hero": {
-                "eyebrow": "Output Hub",
-                "title": f"{project_name} outputs",
-                "subtitle": "Snapshot-backed exports and traceability",
-                "status": "Generated from canonical records",
+                "eyebrow": i18n("输出中心", "Output Hub"),
+                "title": project_name,
+                "subtitle": subtitle,
+                "status": i18n("从标准记录生成", "Generated from canonical records"),
             },
             "metrics": [
-                {"label": "Traceability Items", "value": str(len(canonical.get("references", []))), "tone": "primary"},
-                {"label": "Exports", "value": str(len(outputs.get("exports", []))), "tone": "secondary"},
-                {"label": "Bioprint Queue", "value": str(len(outputs.get("bioprint_queue", []))), "tone": "tertiary"},
-                {"label": "Views", "value": str(len(VIEW_KEYS)), "tone": "muted"},
+                {"label": i18n("溯源条目", "Traceability Items"), "value": str(len(canonical.get("references", []))), "tone": "primary"},
+                {"label": i18n("导出", "Exports"), "value": str(len(outputs.get("exports", []))), "tone": "secondary"},
+                {"label": i18n("生物打印队列", "Bioprint Queue"), "value": str(len(outputs.get("bioprint_queue", []))), "tone": "tertiary"},
+                {"label": i18n("视图数", "Views"), "value": str(len(VIEW_KEYS)), "tone": "muted"},
             ],
             "records": [{"title": item.get("label", "Reference"), "meta": item.get("type", "source")} for item in records[:12]],
             "table": outputs.get("exports", [])[:20],
             "summary": {
-                "title": "Export readiness",
-                "description": "Export state is now computed from project snapshots and references, not hardcoded cards.",
+                "title": i18n("导出就绪状态", "Export readiness"),
+                "description": i18n(
+                    "导出状态现由项目快照和参考文献计算得出，不再使用硬编码卡片。",
+                    "Export state is now computed from project snapshots and references, not hardcoded cards.",
+                ),
                 "details": [
                     "SBOL / JSON / PDF can be attached to future export workers",
                     f"Current snapshot schema: {settings.VIEW_SCHEMA_VERSION}",
@@ -826,22 +845,25 @@ def build_view_data(project: Project, dataset: ProjectDataset, agent_runs: Seque
         logs = [{"message": finding, "type": "INFO"} for finding in latest_findings[:8]]
     return {
         "hero": {
-            "eyebrow": "Diagnostics",
-            "title": f"{project_name} diagnostics",
-            "subtitle": "Project health from live jobs, datasets, and agent runs",
-            "status": "Runtime telemetry",
+            "eyebrow": i18n("诊断", "Diagnostics"),
+            "title": project_name,
+            "subtitle": subtitle,
+            "status": i18n("运行时遥测", "Runtime telemetry"),
         },
         "metrics": [
-            {"label": "Agent Pipeline", "value": str(len(agents)), "tone": "primary"},
-            {"label": "Sensors", "value": str(len(diagnostics.get("sensors", []))), "tone": "secondary"},
-            {"label": "Logs", "value": str(len(logs)), "tone": "tertiary"},
-            {"label": "Dataset Version", "value": str(dataset.version), "tone": "muted"},
+            {"label": i18n("Agent 流水线", "Agent Pipeline"), "value": str(len(agents)), "tone": "primary"},
+            {"label": i18n("传感器", "Sensors"), "value": str(len(diagnostics.get("sensors", []))), "tone": "secondary"},
+            {"label": i18n("日志", "Logs"), "value": str(len(logs)), "tone": "tertiary"},
+            {"label": i18n("数据集版本", "Dataset Version"), "value": str(dataset.version), "tone": "muted"},
         ],
         "pipeline": agents,
         "records": [{"title": item.get("message", "Log item"), "meta": item.get("type", "INFO")} for item in logs[:12]],
         "summary": {
-            "title": "Diagnostics posture",
-            "description": "This panel now reflects actual dataset and job state instead of local mock arrays.",
+            "title": i18n("诊断状态", "Diagnostics posture"),
+            "description": i18n(
+                "此面板现在反映实际数据集和任务状态，不再使用本地模拟数组。",
+                "This panel now reflects actual dataset and job state instead of local mock arrays.",
+            ),
             "details": [
                 f"Latest job-ready dataset version: {dataset.version}",
                 f"References tracked: {canonical['derived_metrics'].get('source_count', 0)}",
@@ -853,14 +875,14 @@ def build_view_data(project: Project, dataset: ProjectDataset, agent_runs: Seque
 
 def compose_layout(view_key: str) -> Dict[str, Any]:
     page_titles = {
-        "orchestrator": ("Orchestrator", "Project-wide pipeline view"),
-        "environment": ("Environment", "Normalized environment model"),
-        "synthesis": ("Synthesis", "Genes and pathway modules"),
-        "simulation": ("Simulation", "Derived simulation inputs"),
-        "output": ("Output", "Traceability and export readiness"),
-        "diagnostics": ("Diagnostics", "Operational dataset health"),
+        "orchestrator": ({"zh": "编排器", "en": "Orchestrator"}, {"zh": "项目级流水线视图", "en": "Project-wide pipeline view"}),
+        "environment": ({"zh": "环境", "en": "Environment"}, {"zh": "规范化环境模型", "en": "Normalized environment model"}),
+        "synthesis": ({"zh": "合成", "en": "Synthesis"}, {"zh": "基因与代谢通路模块", "en": "Genes and pathway modules"}),
+        "simulation": ({"zh": "仿真", "en": "Simulation"}, {"zh": "派生仿真输入", "en": "Derived simulation inputs"}),
+        "output": ({"zh": "输出", "en": "Output"}, {"zh": "溯源与导出就绪", "en": "Traceability and export readiness"}),
+        "diagnostics": ({"zh": "诊断", "en": "Diagnostics"}, {"zh": "运行时数据集健康状态", "en": "Operational dataset health"}),
     }
-    title, subtitle = page_titles.get(view_key, ("View", "Dynamic project view"))
+    title, subtitle = page_titles.get(view_key, ({"zh": "视图", "en": "View"}, {"zh": "动态项目视图", "en": "Dynamic project view"}))
     layout = {"page": {"title": title, "subtitle": subtitle}, "sections": []}
     layout["sections"].append(
         {
