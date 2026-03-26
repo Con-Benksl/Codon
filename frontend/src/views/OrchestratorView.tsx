@@ -181,7 +181,7 @@ export default function OrchestratorView() {
           initial={{ opacity: 0, x: -16 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.15, duration: 0.4 }}
-          className={`relative glass-panel rounded-2xl border border-outline-variant/20 overflow-hidden flex flex-col transition-all duration-300 ${
+          className={`relative glass-panel rounded-2xl border border-outline-variant/20 flex flex-col transition-all duration-300 h-80 lg:h-[520px] ${
             chatCollapsed ? "lg:w-12" : "lg:w-80 xl:w-96"
           } shrink-0`}
         >

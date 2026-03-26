@@ -1,12 +1,10 @@
 """AI 对话接口 — 用户可与 Martian Biolab AI 助手实时对话"""
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 from pydantic import BaseModel
 from typing import Optional
 
 from app.services.llm_client import chat_completion
-from app.services.auth_service import get_current_active_user
-from app.models.user import User
 
 router = APIRouter()
 
@@ -32,10 +30,7 @@ class ChatReply(BaseModel):
 
 
 @router.post("/", response_model=ChatReply)
-async def chat(
-    payload: ChatMessage,
-    current_user: User = Depends(get_current_active_user),
-):
+async def chat(payload: ChatMessage):
     """与 Martian Biolab AI 助手对话"""
     system = SYSTEM_PROMPT
     if payload.context:

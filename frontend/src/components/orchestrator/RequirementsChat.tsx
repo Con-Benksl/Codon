@@ -202,7 +202,7 @@ export default function RequirementsChat({ isZh, onRequirementsUpdate, onConstra
   };
 
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div className="flex flex-col" style={{ height: "100%" }}>
       {/* 头部 */}
       <div className="flex items-center gap-2.5 px-4 py-3 border-b border-outline-variant/15 shrink-0">
         <div className="w-7 h-7 rounded-full bg-primary/15 border border-primary/25 flex items-center justify-center">

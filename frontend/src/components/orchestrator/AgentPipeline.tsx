@@ -251,9 +251,9 @@ export default function AgentPipeline({ isZh, agentRuns, isOrchestrating, onSele
           <div className="flex-1 h-px bg-secondary/10" />
         </div>
 
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center justify-center gap-2 flex-wrap">
           {analysisNodes.map((node, idx) => (
-            <div key={node.id} className="flex items-center gap-2 flex-1">
+            <React.Fragment key={node.id}>
               <NodeCard
                 node={node}
                 status={getNodeStatus(node.id, agentRuns, isOrchestrating)}
@@ -263,16 +263,16 @@ export default function AgentPipeline({ isZh, agentRuns, isOrchestrating, onSele
               />
               {idx < analysisNodes.length - 1 && (
                 <motion.div
-                  initial={{ opacity: 0, scaleX: 0 }}
-                  animate={{ opacity: 1, scaleX: 1 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
                   transition={{ delay: idx * 0.08 + 0.3 }}
                   className="flex items-center gap-0.5 shrink-0"
                 >
-                  <div className="h-px w-4 bg-gradient-to-r from-secondary/30 to-secondary/60" />
+                  <div className="h-px w-6 bg-gradient-to-r from-secondary/30 to-secondary/60" />
                   <ChevronRight size={10} className="text-secondary/50" />
                 </motion.div>
               )}
-            </div>
+            </React.Fragment>
           ))}
         </div>
       </div>
@@ -312,9 +312,9 @@ export default function AgentPipeline({ isZh, agentRuns, isOrchestrating, onSele
           <div className="flex-1 h-px bg-primary/10" />
         </div>
 
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center justify-center gap-2 flex-wrap">
           {designNodes.map((node, idx) => (
-            <div key={node.id} className="flex items-center gap-2 flex-1">
+            <React.Fragment key={node.id}>
               <NodeCard
                 node={node}
                 status={getNodeStatus(node.id, agentRuns, isOrchestrating)}
@@ -324,16 +324,16 @@ export default function AgentPipeline({ isZh, agentRuns, isOrchestrating, onSele
               />
               {idx < designNodes.length - 1 && (
                 <motion.div
-                  initial={{ opacity: 0, scaleX: 0 }}
-                  animate={{ opacity: 1, scaleX: 1 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
                   transition={{ delay: 0.4 + idx * 0.08 + 0.3 }}
                   className="flex items-center gap-0.5 shrink-0"
                 >
-                  <div className="h-px w-4 bg-gradient-to-r from-primary/30 to-primary/60" />
+                  <div className="h-px w-6 bg-gradient-to-r from-primary/30 to-primary/60" />
                   <ChevronRight size={10} className="text-primary/50" />
                 </motion.div>
               )}
-            </div>
+            </React.Fragment>
           ))}
         </div>
       </div>
