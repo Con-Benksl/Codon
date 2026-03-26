@@ -27,6 +27,8 @@ bcrypt==4.0.1
 openai>=1.12.0
 
 # 生物信息学
+biopython>=1.83
+cobra>=0.29.0
 
 # 导出
 

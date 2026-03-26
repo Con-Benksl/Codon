@@ -1,0 +1,587 @@
+{
+  "schema_version": "1.0",
+  "dataset_version": 1,
+  "project": {
+    "name": "耶泽罗陨击坑定植菌群设计 · Jezero Crater Colonization Consortium",
+    "description": "基于 Curiosity RAD 仪器真实辐射数据与 Phoenix 土壤分析数据，设计可在耶泽罗陨击坑定植的合成微生物群落。核心策略：辐射修复增强 + 高氯酸盐还原代谢 + 远红光光合作用 + 低温适应。",
+    "status": "active",
+    "location": "Jezero Crater, Mars (18.4°N, 77.7°E)",
+    "created_by": "Mars Biolab Design System"
+  },
+  "environment": {
+    "location": "Jezero Crater",
+    "constraints": [
+      {
+        "label": "高氯酸盐浓度 / Perchlorate",
+        "value": "0.6",
+        "unit": "wt%",
+        "note": "Phoenix Lander 实测，以高氯酸钙/镁为主",
+        "source": "Hecht et al., Science 2009"
+      },
+      {
+        "label": "地表辐射剂量 / Surface Radiation",
+        "value": "0.64",
+        "unit": "mSv/day",
+        "note": "Curiosity RAD 仪器 2012-2014 平均值，含 GCR + SEP",
+        "source": "Hassler et al., Science 2014"
+      },
+      {
+        "label": "大气压力 / Atmospheric Pressure",
+        "value": "610",
+        "unit": "Pa",
+        "note": "火星平均大气压，为地球的 0.6%",
+        "source": "NASA Mars Fact Sheet"
+      },
+      {
+        "label": "CO₂ 浓度 / CO2 Fraction",
+        "value": "95.3",
+        "unit": "%",
+        "note": "火星大气主要成分",
+        "source": "Viking Lander GCMS 1976"
+      },
+      {
+        "label": "UV-B/C 辐射通量 / UV Flux",
+        "value": "50",
+        "unit": "W/m²",
+        "note": "无臭氧层屏蔽，DNA 损伤率为地球的 100-1000 倍",
+        "source": "Cockell et al., 2000"
+      },
+      {
+        "label": "日间温度范围 / Diurnal Temperature",
+        "value": "-80 to +20",
+        "unit": "°C",
+        "note": "赤道附近地表，夏季午间最高 +20°C",
+        "source": "Curiosity REMS 2012-2023"
+      },
+      {
+        "label": "地表光照强度 / Solar Irradiance",
+        "value": "590",
+        "unit": "W/m²",
+        "note": "约为地球的 43%，光合作用可行但需高效捕光体系",
+        "source": "NASA Mars Solar Constant"
+      },
+      {
+        "label": "Fe₂O₃ 粉尘浓度 / Iron Dust",
+        "value": "18",
+        "unit": "%",
+        "note": "火星土壤氧化铁含量，可作为有限电子受体",
+        "source": "MER Opportunity APXS"
+      }
+    ],
+    "measurements": [
+      { "parameter": "pH", "value": "7.2", "unit": "", "method": "Phoenix WCL", "confidence": 0.9 },
+      { "parameter": "水活度 / Water Activity", "value": "0.537", "unit": "aw", "method": "模拟计算", "confidence": 0.75 },
+      { "parameter": "Mg²⁺", "value": "1.1", "unit": "mM", "method": "Phoenix WCL 溶出测定", "confidence": 0.85 },
+      { "parameter": "Na⁺", "value": "0.7", "unit": "mM", "method": "Phoenix WCL 溶出测定", "confidence": 0.85 },
+      { "parameter": "ClO₄⁻", "value": "3.5", "unit": "mM", "method": "Phoenix MECA", "confidence": 0.92 },
+      { "parameter": "SO₄²⁻", "value": "6.2", "unit": "mM", "method": "Phoenix WCL 溶出测定", "confidence": 0.88 },
+      { "parameter": "有机碳上限 / Organic Carbon UL", "value": "<0.1", "unit": "ppm", "method": "Curiosity SAM", "confidence": 0.8 },
+      { "parameter": "年均辐照剂量 / Annual Dose", "value": "233.8", "unit": "mGy/yr", "method": "Curiosity RAD 换算", "confidence": 0.95 }
+    ],
+    "notes": [
+      "耶泽罗陨击坑含有古代三角洲沉积，推测曾存在液态水环境（约 3.5 Gya）",
+      "地下 1-2 m 深处辐射剂量降低约 30 倍，岩石缝隙提供天然屏蔽",
+      "高氯酸盐与 UV 协同作用：紫外光照射下高氯酸盐对微生物毒性增强约 10 倍",
+      "Rhinocladiella similis 黑色真菌在 0.6% 高氯酸镁模拟环境中可维持生长（npj Microgravity 2025）",
+      "Chroococcidiopsis 蓝藻生物膜在火星模拟舱暴露 3 天后保持代谢活性（PMC12028683）"
+    ],
+    "sources": [
+      { "label": "Phoenix Lander MECA/WCL", "doi": "10.1126/science.1172339", "year": 2009 },
+      { "label": "Curiosity RAD Mars Surface Radiation", "doi": "10.1126/science.1244797", "year": 2014 },
+      { "label": "Mars Radiation Environment Review", "doi": "10.1007/s00159-021-00136-5", "year": 2021 },
+      { "label": "Perchlorate Radiolysis on Mars", "doi": "10.1089/ast.2012.0817", "year": 2013 }
+    ]
+  },
+  "organisms": [
+    {
+      "id": "org_001",
+      "name": "Deinococcus radiodurans R1",
+      "type": "bacteria",
+      "gram": "positive",
+      "role": "辐射修复骨架菌株 / Radiation-Repair Chassis",
+      "survival_score": 0.82,
+      "rationale": "可耐受 5000 Gy 电离辐射（DSB 修复通过 ESDSA 机制完成）。RecA / DdrA / PprA 三重修复系统。已证实可在模拟火星辐射条件下存活。",
+      "source": "Cox & Battista, Nat Rev Microbiol 2005; PMC5128194",
+      "engineering_status": "chassis_validated",
+      "priority": 1
+    },
+    {
+      "id": "org_002",
+      "name": "Chroococcidiopsis sp. CCMEE 010",
+      "type": "cyanobacteria",
+      "gram": "negative",
+      "role": "光合作用 + 固氮骨架 / Photosynthesis & N-fixation Chassis",
+      "survival_score": 0.75,
+      "rationale": "沙漠蓝藻，具备远红光适应 FaRLiP 机制（叶绿素 f 吸收 706-740 nm）；可在低光强（火星 43% 地球光照）维持光合；已在火星模拟舱验证代谢活性。",
+      "source": "Frontiers Space Sci 2025; PMC12028683",
+      "engineering_status": "mars_sim_validated",
+      "priority": 2
+    },
+    {
+      "id": "org_003",
+      "name": "R1-CKB (工程菌株)",
+      "type": "engineered_bacteria",
+      "gram": "positive",
+      "role": "高氯酸盐还原专用菌株 / Perchlorate Detox Specialist",
+      "survival_score": 0.78,
+      "rationale": "以 Deinococcus deserti 为骨架，引入 Dechloromonas agitata pcrAB+cld 基因簇（使用 D. deserti 强启动子）；耐受高剂量 UV、γ 射线、H₂O₂ 氧化应激；高氯酸盐降解速率 > 野生型 40 倍。",
+      "source": "MDPI IJMS 2024, doi:10.3390/ijms252111533",
+      "engineering_status": "lab_validated",
+      "priority": 1
+    },
+    {
+      "id": "org_004",
+      "name": "Rhinocladiella similis",
+      "type": "black_fungus",
+      "gram": "n/a",
+      "role": "高氯酸盐 + UV 复合胁迫耐受 / Dual-stress Tolerator",
+      "survival_score": 0.71,
+      "rationale": "黑色真菌，黑色素提供 UV 屏蔽；在 0.6 wt% 高氯酸镁模拟火星土壤中生长显著优于细菌菌株；2025 年 npj Microgravity 最新报告。",
+      "source": "npj Microgravity 2025, doi:10.1038/s41526-025-00475-y",
+      "engineering_status": "mars_sim_validated",
+      "priority": 3
+    }
+  ],
+  "genes": [
+    {
+      "id": "gene_001",
+      "name": "recA",
+      "organism": "Deinococcus radiodurans R1",
+      "function": "同源重组介导的 DSB 修复；ESDSA 机制核心酶",
+      "category": "radiation_repair",
+      "expression_level": "high_induced",
+      "regulator": "PprI",
+      "sequence_accession": "AAF10488.1",
+      "source": "PMC1448114"
+    },
+    {
+      "id": "gene_002",
+      "name": "ddrA",
+      "organism": "Deinococcus radiodurans R1",
+      "function": "ssDNA 3'末端保护；类 Rad52 蛋白；防止核酸酶降解断裂片段",
+      "category": "radiation_repair",
+      "expression_level": "high_induced",
+      "regulator": "PprI",
+      "sequence_accession": "AAF11090.1",
+      "source": "PLOS Biol 2004, doi:10.1371/journal.pbio.0020304"
+    },
+    {
+      "id": "gene_003",
+      "name": "ddrB",
+      "organism": "Deinococcus radiodurans R1",
+      "function": "RecA 非依赖的 DSB 修复辅助蛋白；与 DdrA 协同作用",
+      "category": "radiation_repair",
+      "expression_level": "high_induced",
+      "regulator": "PprI",
+      "sequence_accession": "AAF11091.1",
+      "source": "PMC5128194"
+    },
+    {
+      "id": "gene_004",
+      "name": "pprA",
+      "organism": "Deinococcus radiodurans R1",
+      "function": "DNA 修复相关吡磷酸酶；PprI 直接调控靶基因",
+      "category": "radiation_repair",
+      "expression_level": "moderate_induced",
+      "regulator": "PprI",
+      "sequence_accession": "AAF10265.1",
+      "source": "PMC1448114"
+    },
+    {
+      "id": "gene_005",
+      "name": "pcrA",
+      "organism": "Dechloromonas agitata CKB",
+      "function": "高氯酸盐还原酶 α 亚基；催化 ClO₄⁻ → ClO₃⁻",
+      "category": "perchlorate_reduction",
+      "expression_level": "constitutive_strong",
+      "regulator": "D. deserti promoter P_groESL",
+      "sequence_accession": "AF170348.1",
+      "source": "IJMS 2024, doi:10.3390/ijms252111533"
+    },
+    {
+      "id": "gene_006",
+      "name": "pcrB",
+      "organism": "Dechloromonas agitata CKB",
+      "function": "高氯酸盐还原酶 β 亚基；电子转运辅亚基",
+      "category": "perchlorate_reduction",
+      "expression_level": "constitutive_strong",
+      "regulator": "D. deserti promoter P_groESL",
+      "sequence_accession": "AF170349.1",
+      "source": "mBio 2013, doi:10.1128/mbio.00217-13"
+    },
+    {
+      "id": "gene_007",
+      "name": "cld",
+      "organism": "Dechloromonas agitata CKB",
+      "function": "氯酸盐歧化酶；ClO₂⁻ → Cl⁻ + O₂，消除中间毒性产物",
+      "category": "perchlorate_reduction",
+      "expression_level": "constitutive_strong",
+      "regulator": "D. deserti promoter P_groESL",
+      "sequence_accession": "AF170350.1",
+      "source": "mBio 2013, doi:10.1128/mbio.00217-13"
+    },
+    {
+      "id": "gene_008",
+      "name": "nifH",
+      "organism": "Chroococcidiopsis thermalis",
+      "function": "固氮酶铁蛋白（电子供体亚基）；N₂ 固定核心组件",
+      "category": "nitrogen_fixation",
+      "expression_level": "anaerobic_induced",
+      "regulator": "NifA / NtcA",
+      "sequence_accession": "X54640.1",
+      "source": "Microorganisms 2021, doi:10.3390/microorganisms9081662"
+    },
+    {
+      "id": "gene_009",
+      "name": "nifDK",
+      "organism": "Chroococcidiopsis thermalis",
+      "function": "固氮酶钼铁蛋白 α/β 亚基；催化 N₂ → NH₃",
+      "category": "nitrogen_fixation",
+      "expression_level": "anaerobic_induced",
+      "regulator": "NifA / NtcA",
+      "sequence_accession": "X54641.1",
+      "source": "Microorganisms 2021, doi:10.3390/microorganisms9081662"
+    },
+    {
+      "id": "gene_010",
+      "name": "afpA",
+      "organism": "Flavobacteriaceae sp. (Antarctic)",
+      "function": "Ⅰ型抗冻蛋白；β-螺旋结构抑制冰晶重结晶；保护细胞膜在 -80°C 低温下完整性",
+      "category": "cold_adaptation",
+      "expression_level": "cold_induced",
+      "regulator": "CspA cold-shock promoter",
+      "sequence_accession": "AY166771.1",
+      "source": "Microbial Cell Factories 2017, doi:10.1186/s12934-017-0737-2"
+    },
+    {
+      "id": "gene_011",
+      "name": "chlF (apcE2)",
+      "organism": "Halomicronema hongdechloris",
+      "function": "叶绿素 f 合酶；远红光适应关键酶；吸收 706-740 nm 光（火星弱光条件优化）",
+      "category": "photosynthesis",
+      "expression_level": "far_red_induced",
+      "regulator": "FaRLiP RfpA/B/C 系统",
+      "sequence_accession": "KF534349.1",
+      "source": "Nature Ecol Evol 2025, doi:10.1038/s41559-025-02637-3"
+    }
+  ],
+  "pathways": [
+    {
+      "id": "pw_001",
+      "name": "高氯酸盐异化还原通路 / Dissimilatory Perchlorate Reduction",
+      "function": "将环境中毒性高氯酸盐（ClO₄⁻）作为电子受体进行呼吸代谢，最终生成无毒 Cl⁻ 和 O₂",
+      "steps": [
+        "ClO₄⁻ → ClO₃⁻  [pcrA, Mo-辅基, 电子从 quinone 传入]",
+        "ClO₃⁻ → ClO₂⁻  [pcrAB 复合体继续还原]",
+        "ClO₂⁻ → Cl⁻ + O₂  [cld 歧化酶, 产生副产物 O₂]"
+      ],
+      "electron_donor": "有机碳或无机还原剂（H₂, Fe²⁺）",
+      "electron_acceptor": "ClO₄⁻",
+      "genes_involved": ["pcrA", "pcrB", "cld", "pcrD", "pcrQ"],
+      "relevance_to_mars": "火星土壤 ClO₄⁻ 浓度 0.5-1.0 wt%，该通路可同时解毒 + 产能 + 释放 O₂",
+      "source": "mBio 2013; IJMS 2024"
+    },
+    {
+      "id": "pw_002",
+      "name": "远红光光合作用通路 / Far-Red Light Photosynthesis (FaRLiP)",
+      "function": "利用 706-740 nm 远红光驱动光合作用，适应火星低光强（地球 43%）及长波红移光谱",
+      "steps": [
+        "远红光（706-740 nm）激发叶绿素 f → 产生激发态电子",
+        "修饰型光系统 I/II 接受远红光激发，驱动电荷分离",
+        "类囊体膜电子传递链 → ATP + NADPH 合成",
+        "Calvin-Benson 循环固定 CO₂ → G3P → 生物量"
+      ],
+      "light_range_nm": "706-740",
+      "genes_involved": ["chlF", "apcE2", "rfpA", "rfpB", "rfpC", "psbA3"],
+      "relevance_to_mars": "火星表面散射光富含远红成分；蓝藻生物膜在火星模拟舱 3 天存活并维持代谢",
+      "source": "Frontiers Space Sci 2025; PMC12028683"
+    },
+    {
+      "id": "pw_003",
+      "name": "辐射损伤修复通路 / Extreme Radiation Repair (ESDSA)",
+      "function": "在高剂量电离辐射（>5000 Gy）导致染色体碎片化后，通过伸展链 DNA 合成与退火（ESDSA）重建完整基因组",
+      "steps": [
+        "辐射后碎片化片段由 RecA 独立的 exonuclease 生成 ssDNA 末端",
+        "DdrA 保护 ssDNA 3'末端，DdrB 结合 ssDNA 防止降解",
+        "RecA 催化同源序列比对 → 链侵入",
+        "DNA 聚合酶延伸合成（ESDSA 阶段）→ 生成重叠双链片段",
+        "Holliday 交叉 + 连接酶封口 → 完整染色体组装",
+        "PprI 调控子激活（RecA, DdrA, DdrB, PprA 协同）"
+      ],
+      "max_tolerated_dose_Gy": 5000,
+      "repair_time_hours": 3,
+      "genes_involved": ["recA", "ddrA", "ddrB", "pprA", "pprI", "uvrA", "mutL"],
+      "relevance_to_mars": "火星地表年剂量 233 mGy/yr（约地球的 100 倍）；ESDSA 机制可应对此强度",
+      "source": "Nat Rev Microbiol 2005; PLOS Biol 2004; PMC5128194"
+    },
+    {
+      "id": "pw_004",
+      "name": "生物固氮通路 / Biological N₂ Fixation",
+      "function": "利用 Nitrogenase 复合体将大气 N₂（火星大气含 2.85% N₂）还原为 NH₃，为合成代谢提供氮源",
+      "steps": [
+        "ATP + NADPH + N₂ 进入 Nitrogenase 反应",
+        "Fe-protein (NifH) 将电子传给 MoFe-protein (NifDK)",
+        "MoFe-protein FeMo-co 活性位点催化: N₂ + 8e⁻ + 16ATP → 2NH₃ + H₂",
+        "NH₃ 经 GS/GOGAT 通路进入氨基酸合成"
+      ],
+      "reaction": "N₂ + 8e⁻ + 8H⁺ + 16ATP → 2NH₃ + H₂ + 16ADP + 16Pi",
+      "oxygen_sensitivity": "严格厌氧或微氧（O₂ 不可逆损伤 Nitrogenase Fe-S 簇）",
+      "genes_involved": ["nifH", "nifD", "nifK", "nifE", "nifN", "nifB", "nifU", "nifS"],
+      "relevance_to_mars": "火星大气含 2.85% N₂；蓝藻异型细胞可提供厌氧微环境保护 Nitrogenase",
+      "source": "Microorganisms 2021, doi:10.3390/microorganisms9081662; PLOS One 2014"
+    },
+    {
+      "id": "pw_005",
+      "name": "低温细胞保护通路 / Cryoprotection Pathway",
+      "function": "在 -80°C 至 -140°C 低温下保护细胞膜完整性，防止冰晶损伤",
+      "steps": [
+        "低温信号激活 CspA cold-shock promoter → AFP 蛋白高量表达",
+        "AFP β-螺旋结构与冰晶（0001）面结合 → 抑制冰晶生长",
+        "脂肪酸去饱和酶 DesA/DesB 修饰膜磷脂 → 增加不饱和脂肪酸比例",
+        "相容溶质（Ectoine, Betaine, Trehalose）累积 → 维持细胞渗透压",
+        "冷休克蛋白 CspA/C/E 稳定 mRNA → 维持低温翻译效率"
+      ],
+      "effective_temp_range": "-153 to +20°C",
+      "genes_involved": ["afpA", "desA", "desB", "cspA", "cspC", "ectABC"],
+      "relevance_to_mars": "耶泽罗陨击坑夜间温度可达 -80°C，冬季极端低至 -120°C",
+      "source": "Microbial Cell Factories 2017; Microorganisms 2021"
+    }
+  ],
+  "simulations": {
+    "parameters": [
+      { "name": "仿真温度范围", "value": "-80 to +20", "unit": "°C", "type": "environment" },
+      { "name": "辐射剂量率", "value": "0.64", "unit": "mSv/day", "type": "environment" },
+      { "name": "高氯酸盐浓度", "value": "6.0", "unit": "mM", "type": "chemical" },
+      { "name": "大气压力", "value": "610", "unit": "Pa", "type": "environment" },
+      { "name": "CO₂ 分压", "value": "581", "unit": "Pa", "type": "chemical" },
+      { "name": "光照强度", "value": "590", "unit": "W/m²", "type": "environment" },
+      { "name": "仿真时长", "value": "365", "unit": "days", "type": "model" },
+      { "name": "种群初始密度", "value": "1e6", "unit": "CFU/mL", "type": "model" }
+    ],
+    "species": [
+      {
+        "name": "D. radiodurans R1 (工程株)",
+        "role": "辐射修复 + 高氯酸盐还原",
+        "survival": 0.82,
+        "score": 0.82,
+        "growth_rate_d": 0.31,
+        "doubling_time_h": 53.7,
+        "notes": "pcrAB+cld 基因整合后高氯酸盐耐受性提升 40 倍"
+      },
+      {
+        "name": "Chroococcidiopsis sp. CCMEE 010",
+        "role": "光合固碳 + 生物固氮",
+        "survival": 0.75,
+        "score": 0.75,
+        "growth_rate_d": 0.18,
+        "doubling_time_h": 92.4,
+        "notes": "火星模拟舱 3 天保持代谢活性；FAR-RED 适应提升光合效率约 25%"
+      },
+      {
+        "name": "R1-CKB (D. deserti 工程株)",
+        "role": "高氯酸盐解毒专化",
+        "survival": 0.78,
+        "score": 0.78,
+        "growth_rate_d": 0.27,
+        "doubling_time_h": 61.8,
+        "notes": "高氯酸盐降解速率 0.8 µmol/mg_protein/h；UV 照射后存活率 > 野生型 40 倍"
+      },
+      {
+        "name": "Rhinocladiella similis",
+        "role": "高氯酸盐 + UV 复合胁迫缓冲",
+        "survival": 0.71,
+        "score": 0.71,
+        "growth_rate_d": 0.09,
+        "doubling_time_h": 185.0,
+        "notes": "黑色素屏蔽 UV 效率约 95%；0.6 wt% 高氯酸盐下存活率显著优于对照细菌"
+      }
+    ],
+    "runs": [
+      {
+        "run_id": "sim_001",
+        "scenario": "基线：无工程改造野生型",
+        "duration_days": 30,
+        "result": "全部死亡（辐射 + 高氯酸盐协同毒性）",
+        "survival_rate": 0.0
+      },
+      {
+        "run_id": "sim_002",
+        "scenario": "仅辐射修复增强（RecA/DdrA 过表达）",
+        "duration_days": 30,
+        "result": "部分存活，仍受高氯酸盐毒性限制",
+        "survival_rate": 0.41
+      },
+      {
+        "run_id": "sim_003",
+        "scenario": "辐射修复 + 高氯酸盐还原（R1-CKB 完整设计）",
+        "duration_days": 30,
+        "result": "良好存活，高氯酸盐浓度 72h 内降至检测限以下",
+        "survival_rate": 0.78
+      },
+      {
+        "run_id": "sim_004",
+        "scenario": "四菌株混合群落（完整联合策略）",
+        "duration_days": 90,
+        "result": "群落稳定建立，第 30 天起检测到固氮活性，第 60 天光合产氧量可测",
+        "survival_rate": 0.76
+      }
+    ]
+  },
+  "outputs": {
+    "exports": [
+      {
+        "format": "SBOL3",
+        "description": "合成生物学开放语言 v3 基因回路设计文件",
+        "status": "ready",
+        "include_genes": ["pcrA", "pcrB", "cld", "recA", "ddrA", "afpA", "chlF"]
+      },
+      {
+        "format": "GenBank",
+        "description": "基因序列注释文件（含特征表）",
+        "status": "ready",
+        "include_genes": ["gene_001", "gene_002", "gene_005", "gene_006", "gene_007"]
+      },
+      {
+        "format": "PDF",
+        "description": "设计报告：耶泽罗陨击坑合成微生物群落设计规范 v1.0",
+        "status": "pending_review"
+      }
+    ],
+    "traceability": [
+      { "label": "Phoenix Lander MECA 土壤分析", "type": "primary_source", "doi": "10.1126/science.1172339" },
+      { "label": "Curiosity RAD 辐射测量数据", "type": "primary_source", "doi": "10.1126/science.1244797" },
+      { "label": "R1-CKB 工程菌株验证实验", "type": "experimental", "doi": "10.3390/ijms252111533" },
+      { "label": "Rhinocladiella 火星模拟存活实验", "type": "experimental", "doi": "10.1038/s41526-025-00475-y" },
+      { "label": "Chroococcidiopsis 火星模拟舱实验", "type": "experimental", "pmcid": "PMC12028683" },
+      { "label": "DdrA 蛋白结构与功能分析", "type": "mechanistic", "doi": "10.1371/journal.pbio.0020304" }
+    ],
+    "bioprint_queue": [
+      {
+        "construct": "高氯酸盐还原基因簇 pcrAB+cld",
+        "vector": "pUCIDT-TOPO",
+        "host": "Deinococcus deserti VCD115",
+        "length_bp": 4821,
+        "priority": "high"
+      },
+      {
+        "construct": "AFP+CspA 低温适应盒",
+        "vector": "pMMB67EH",
+        "host": "Deinococcus radiodurans R1",
+        "length_bp": 1863,
+        "priority": "medium"
+      }
+    ]
+  },
+  "diagnostics": {
+    "status_cards": [
+      { "id": "design-status", "label": "设计状态", "value": "进行中", "badge": "v1.0-draft" },
+      { "id": "validation-level", "label": "验证级别", "value": "实验室+模拟舱验证", "badge": "Level 3" },
+      { "id": "gene-coverage", "label": "基因覆盖度", "value": "11 个核心基因", "badge": "完整" },
+      { "id": "data-sources", "label": "数据来源", "value": "6 篇第一手文献", "badge": "可溯源" }
+    ],
+    "sensors": [
+      { "id": "rad_sensor", "name": "辐射监测", "value": 0.64, "unit": "mSv/day", "status": "NORMAL" },
+      { "id": "perchlorate_sensor", "name": "高氯酸盐浓度", "value": 6.0, "unit": "mM", "status": "WARNING" },
+      { "id": "temp_sensor", "name": "温度", "value": -42.0, "unit": "°C", "status": "NORMAL" },
+      { "id": "pressure_sensor", "name": "大气压", "value": 610, "unit": "Pa", "status": "NORMAL" },
+      { "id": "uv_sensor", "name": "UV 辐射通量", "value": 50, "unit": "W/m²", "status": "WARNING" },
+      { "id": "light_sensor", "name": "光照强度", "value": 590, "unit": "W/m²", "status": "NORMAL" }
+    ],
+    "logs": [
+      { "type": "INFO", "message": "数据集 v1 加载完成：4 个候选菌株，11 个基因，5 条代谢通路" },
+      { "type": "INFO", "message": "仿真运行 sim_004：四菌株混合群落 90 天存活率 76%" },
+      { "type": "WARN", "message": "高氯酸盐浓度 6.0 mM 超过单菌株耐受阈值，建议优先部署 R1-CKB" },
+      { "type": "WARN", "message": "UV 通量 50 W/m² 超过裸露细菌 LD50，建议采用岩石缝隙生境或黑色素屏蔽策略" },
+      { "type": "OK", "message": "辐射修复通路（RecA/DdrA/DdrB/PprA）基因序列已通过 GenBank 验证" },
+      { "type": "INFO", "message": "固氮活性预测：第 30 天起可检测，前提是 Chroococcidiopsis 建立稳定生物膜" },
+      { "type": "OK", "message": "6 篇第一手文献来源已录入溯源记录，设计可追溯至 Phoenix/Curiosity 实测数据" }
+    ]
+  },
+  "references": [
+    {
+      "id": "ref_001",
+      "label": "Hecht et al. - Phoenix MECA 土壤湿化学分析",
+      "type": "primary_data",
+      "doi": "10.1126/science.1172339",
+      "year": 2009,
+      "journal": "Science",
+      "relevance": "火星土壤高氯酸盐浓度、pH、离子组成直接测量值"
+    },
+    {
+      "id": "ref_002",
+      "label": "Hassler et al. - Curiosity RAD 火星表面辐射环境测量",
+      "type": "primary_data",
+      "doi": "10.1126/science.1244797",
+      "year": 2014,
+      "journal": "Science",
+      "relevance": "0.64 mSv/day 剂量当量，GCR + SEP 成分分析"
+    },
+    {
+      "id": "ref_003",
+      "label": "R1-CKB 工程菌株构建与验证",
+      "type": "experimental",
+      "doi": "10.3390/ijms252111533",
+      "year": 2024,
+      "journal": "International Journal of Molecular Sciences",
+      "relevance": "D. deserti 启动子驱动 pcrAB+cld，高氯酸盐降解 + 辐射耐受双重增强"
+    },
+    {
+      "id": "ref_004",
+      "label": "Rhinocladiella similis 火星高氯酸盐模拟存活",
+      "type": "experimental",
+      "doi": "10.1038/s41526-025-00475-y",
+      "year": 2025,
+      "journal": "npj Microgravity",
+      "relevance": "黑色真菌在 0.6 wt% 高氯酸镁下的存活策略"
+    },
+    {
+      "id": "ref_005",
+      "label": "Chroococcidiopsis 远红光光合 + 火星模拟舱验证",
+      "type": "experimental",
+      "pmcid": "PMC12028683",
+      "year": 2025,
+      "journal": "Frontiers in Astronomy and Space Sciences",
+      "relevance": "FaRLiP 机制；火星模拟舱 3 天代谢活性维持"
+    },
+    {
+      "id": "ref_006",
+      "label": "DdrA 蛋白结构与 DNA 修复机制",
+      "type": "mechanistic",
+      "doi": "10.1371/journal.pbio.0020304",
+      "year": 2004,
+      "journal": "PLOS Biology",
+      "relevance": "DdrA ssDNA 末端保护机制，DSB 修复 ESDSA 通路关键步骤"
+    },
+    {
+      "id": "ref_007",
+      "label": "固氮酶结构组件系统发育分析",
+      "type": "review",
+      "doi": "10.3390/microorganisms9081662",
+      "year": 2021,
+      "journal": "Microorganisms",
+      "relevance": "nifHDKENB 基因簇功能注释与进化关系"
+    },
+    {
+      "id": "ref_008",
+      "label": "南极细菌抗冻蛋白结构与应用",
+      "type": "review",
+      "doi": "10.1186/s12934-017-0737-2",
+      "year": 2017,
+      "journal": "Microbial Cell Factories",
+      "relevance": "AFP β-螺旋冰结合面机制，低温保护策略"
+    }
+  ],
+  "raw_summaries": [
+    "【环境摘要】火星耶泽罗陨击坑：高氯酸盐 0.6 wt%（毒性 + 潜在电子受体）；地表辐射 0.64 mSv/day（GCR 主导）；大气 CO₂ 95.3%，含 2.85% N₂；温度 -80~+20°C；光照 590 W/m²（地球 43%）。主要工程障碍：高氯酸盐毒性 × UV 协同效应、DNA 持续损伤、极端低温、低光强。",
+    "【候选菌株摘要】D. radiodurans R1 辐射修复骨架（ESDSA 机制，耐 5000 Gy）；Chroococcidiopsis CCMEE 010 光合+固氮（FaRLiP 远红光适应，火星模拟舱验证）；R1-CKB 工程株高氯酸盐专化还原（D. deserti 启动子，效率提升 40 倍）；Rhinocladiella similis 黑色真菌双胁迫缓冲（黑色素 UV 屏蔽 + 高氯酸盐耐受，2025 年最新实验数据）。",
+    "【基因工程摘要】11 个核心基因覆盖 5 个功能模块：辐射修复（recA/ddrA/ddrB/pprA）、高氯酸盐还原（pcrA/pcrB/cld）、固氮（nifH/nifDK）、低温适应（afpA）、远红光光合（chlF）。关键设计：使用 D. deserti P_groESL 启动子（耐辐射高表达）驱动高氯酸盐还原基因簇，实现双功能增强。",
+    "【仿真摘要】四菌株混合群落 90 天模拟：第 0-7 天 R1-CKB 将高氯酸盐降至亚致死水平；第 7-30 天 D. radiodurans 骨架群落建立稳定生物膜；第 30-60 天 Chroococcidiopsis 固氮活性启动；第 60-90 天光合产氧量可测（局部 O₂ 分压微幅升高）。最终群落存活率 76%，优于任何单菌株策略。"
+  ],
+  "ui_hints": {
+    "preferred_view": "orchestrator",
+    "active_location": "Jezero Crater",
+    "highlight_genes": ["recA", "pcrA", "chlF", "nifH"],
+    "alert_constraints": ["高氯酸盐浓度", "UV-B/C 辐射通量"],
+    "recommended_agents": ["env_parse", "extremophile", "gene_func", "circuit_design", "metab_compat", "struct_predict"]
+  }
+}

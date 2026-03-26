@@ -650,8 +650,13 @@ def to_number(value: Optional[str]) -> Optional[float]:
 
 
 def summarize_agent_runs(agent_runs: Sequence[AgentRun]) -> List[Dict[str, Any]]:
+    # 按 agent_id 去重，保留最新一次运行（查询已按 id desc 排序）
+    seen: set = set()
     summary: List[Dict[str, Any]] = []
     for run in agent_runs:
+        if run.agent_id in seen:
+            continue
+        seen.add(run.agent_id)
         output = run.output_data or {}
         summary.append(
             {
