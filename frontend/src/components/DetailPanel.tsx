@@ -426,6 +426,15 @@ export default function DetailPanel({ agent, agentRun, onClose }: DetailPanelPro
           <p className="text-sm text-on-surface-variant leading-relaxed">{displayAgent.description}</p>
 
           {/* === LLM 真实结果 === */}
+          {agentRun?.error_message && (
+            <div className="rounded-xl border border-secondary/20 bg-secondary/5 px-4 py-3">
+              <p className="text-[10px] font-headline font-bold uppercase tracking-widest text-secondary/80">
+                {isZh ? "失败原因" : "Failure reason"}
+              </p>
+              <p className="mt-2 text-xs leading-relaxed text-on-surface-variant">{agentRun.error_message}</p>
+            </div>
+          )}
+
           {agentRun?.output_data && !agentRun.output_data.error && (
             <div className="space-y-4">
               <div className="flex items-center gap-2">

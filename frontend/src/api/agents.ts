@@ -6,6 +6,7 @@ export interface AgentRun {
   agent_id: string;
   agent_name: string;
   status: string;
+  error_message?: string | null;
   output_data?: any;
   created_at: string;
 }
@@ -20,6 +21,7 @@ export interface AgentRunSummary {
   agent_id: string;
   agent_name: string;
   status: string;
+  error_message?: string | null;
 }
 
 export interface OrchestrationResponse {

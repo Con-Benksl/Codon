@@ -664,6 +664,7 @@ def summarize_agent_runs(agent_runs: Sequence[AgentRun]) -> List[Dict[str, Any]]
                 "agent_id": run.agent_id,
                 "agent_name": run.agent_name,
                 "status": run.status,
+                "error_message": run.error_message,
                 "findings": output.get("findings", [])[:5] if isinstance(output, dict) else [],
                 "metrics": output.get("metrics", {}) if isinstance(output, dict) else {},
                 "updated_at": (run.completed_at or run.created_at).isoformat() + "Z",

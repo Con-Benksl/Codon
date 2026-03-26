@@ -8,6 +8,7 @@ class AgentRunResponse(BaseModel):
     agent_id: str
     agent_name: str
     status: str
+    error_message: Optional[str] = None
     output_data: Optional[Dict[str, Any]]
     created_at: datetime
 

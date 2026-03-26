@@ -1,8 +1,9 @@
 import { useEffect, useState, type FormEvent, type MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
-import { Plus, X, Loader2, Dna, FolderOpen, LogIn, AlertCircle, Layers3, Activity } from "lucide-react";
+import { Plus, X, Loader2, Dna, FolderOpen, LogIn, AlertCircle, Layers3, Activity, Bot, Sparkles, Send } from "lucide-react";
 import { createProject, deleteProject, getCurrentUser, getProjects, type Project } from "../api";
+import { sendChatMessage } from "../api/chat";
 import { stagger } from "../lib/motion";
 import { ProjectCard } from "../components";
 import { useLocale } from "../i18n/context";
@@ -28,6 +29,8 @@ export default function ProjectsView() {
   const [creating, setCreating] = useState(false);
   const [pageError, setPageError] = useState("");
   const [modalError, setModalError] = useState("");
+  const [aiInput, setAiInput] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
   const navigate = useNavigate();
   const { locale } = useLocale();
 
@@ -137,6 +140,29 @@ export default function ProjectsView() {
     }
     setModalError("");
     setShowModal(true);
+  };
+
+  const handleAiGenerate = async () => {
+    const text = aiInput.trim();
+    if (!text || aiLoading) return;
+    setAiLoading(true);
+    try {
+      const ctx = locale === "zh"
+        ? `用户描述了一个火星合成生物学研究项目。请根据描述提取并生成：项目名称（简洁，15字以内）和项目描述（50字以内）。严格以JSON格式回复：{"name": "...", "description": "..."}`
+        : `User described a Mars synthetic biology project. Extract and generate: project name (concise, under 60 chars) and description (under 150 chars). Reply strictly as JSON: {"name": "...", "description": "..."}`;
+      const reply = await sendChatMessage(text, ctx);
+      const match = reply.match(/\{[\s\S]*"name"[\s\S]*"description"[\s\S]*\}/);
+      if (match) {
+        const parsed = JSON.parse(match[0]);
+        if (parsed.name) setNewName(parsed.name);
+        if (parsed.description) setNewDesc(parsed.description);
+      }
+    } catch {
+      // ignore AI errors, let user fill manually
+    } finally {
+      setAiLoading(false);
+      setAiInput("");
+    }
   };
 
   const handleCreate = async (e: FormEvent) => {
@@ -410,6 +436,45 @@ export default function ProjectsView() {
                   >
                     <X size={14} />
                   </button>
+                </div>
+
+                {/* AI 引导区域 */}
+                <div className="relative mb-4 rounded-xl border border-primary/20 bg-primary/5 p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Bot size={12} className="text-primary/70" />
+                    <p className="text-[10px] font-headline text-primary/70 uppercase tracking-wider">
+                      {locale === "zh" ? "AI 需求助手 · 描述你的目标，自动填写表单" : "AI Assistant · Describe goal, auto-fill form"}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={aiInput}
+                      onChange={(e) => setAiInput(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") handleAiGenerate(); }}
+                      placeholder={locale === "zh" ? "例如：设计可在耶泽罗陨击坑存活的耐辐射菌群..." : "e.g. Design radiation-tolerant microbes for Jezero Crater..."}
+                      className="flex-1 bg-surface-container-lowest border border-outline-variant/25 rounded-xl px-3 py-2 text-xs font-body text-on-surface placeholder:text-on-surface-variant/30 focus:outline-none focus:border-primary/40 focus:ring-1 focus:ring-primary/15 transition-colors"
+                    />
+                    <motion.button
+                      type="button"
+                      whileTap={{ scale: 0.9 }}
+                      onClick={handleAiGenerate}
+                      disabled={!aiInput.trim() || aiLoading}
+                      className="w-8 h-8 rounded-xl bg-primary/15 border border-primary/25 text-primary flex items-center justify-center disabled:opacity-40 shrink-0"
+                    >
+                      {aiLoading ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
+                    </motion.button>
+                  </div>
+                  {(newName || newDesc) && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mt-2 flex items-center gap-1.5 text-[10px] text-tertiary font-headline"
+                    >
+                      <Sparkles size={9} />
+                      {locale === "zh" ? "已自动填写表单 · 可继续修改" : "Form auto-filled · Edit as needed"}
+                    </motion.div>
+                  )}
                 </div>
 
                 <form onSubmit={handleCreate} className="relative flex flex-col gap-4">

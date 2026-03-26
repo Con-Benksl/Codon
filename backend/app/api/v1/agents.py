@@ -42,6 +42,7 @@ async def orchestrate_agents(
                 "agent_id": r.agent_id,
                 "agent_name": r.agent_name,
                 "status": r.status,
+                "error_message": r.error_message,
             }
             for r in results
         ]
