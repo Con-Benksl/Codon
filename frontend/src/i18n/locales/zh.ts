@@ -30,7 +30,7 @@ const zh = {
     current: "当前：",
     view: "视图",
     comingSoon: "即将推出",
-    langLabel: "ZH",
+    langLabel: "中",
   },
   settings: {
     title: "设置",

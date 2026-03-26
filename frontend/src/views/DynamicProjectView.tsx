@@ -42,6 +42,31 @@ function getFallbackTitle(viewKey: string) {
   return viewKey.charAt(0).toUpperCase() + viewKey.slice(1);
 }
 
+// 已知的英文默认描述 → 中文映射（处理旧数据库数据）
+const KNOWN_EN_DESC: Record<string, string> = {
+  'auto-created for agent orchestration': '自动创建 · Agent 编排项目',
+  'dynamic project workspace': '动态项目工作区',
+};
+
+// 已知视图名英文 → 中文（兼容旧快照缓存）
+const KNOWN_VIEW_TITLE: Record<string, string> = {
+  'orchestrator': '编排器',
+  'environment': '环境',
+  'synthesis': '合成',
+  'simulation': '仿真',
+  'output': '输出',
+  'diagnostics': '诊断',
+};
+
+function localizeDesc(desc: string | null | undefined, locale: Locale): string {
+  if (!desc) return '';
+  if (locale === 'zh') {
+    const mapped = KNOWN_EN_DESC[desc.toLowerCase().trim()];
+    if (mapped) return mapped;
+  }
+  return desc;
+}
+
 export default function DynamicProjectView({ viewKey }: DynamicProjectViewProps) {
   const navigate = useNavigate();
   const { t, locale } = useLocale();
@@ -277,7 +302,7 @@ export default function DynamicProjectView({ viewKey }: DynamicProjectViewProps)
                 {project?.name || localStorage.getItem('active_project_name') || 'Project'}
               </h1>
               <p className="text-sm text-on-surface-variant mt-1.5 max-w-2xl leading-relaxed">
-                {project?.description || `${getFallbackTitle(viewKey)} · Schema-driven runtime view`}
+                {localizeDesc(project?.description, locale) || `${getFallbackTitle(viewKey)} · Schema-driven runtime view`}
               </p>
             </div>
 
@@ -317,7 +342,15 @@ export default function DynamicProjectView({ viewKey }: DynamicProjectViewProps)
             {[
               {
                 label: t('dynamicView.stats.view'),
-                value: locVal(snapshot?.layout?.page?.title, locale) || getFallbackTitle(viewKey),
+                value: (() => {
+                  const raw = snapshot?.layout?.page?.title;
+                  if (!raw) return getFallbackTitle(viewKey);
+                  // 新格式：{zh, en} 对象
+                  if (typeof raw === 'object') return locVal(raw, locale);
+                  // 旧格式：纯英文字符串，尝试映射
+                  if (locale === 'zh') return KNOWN_VIEW_TITLE[raw.toLowerCase()] || raw;
+                  return raw;
+                })(),
                 color: 'text-primary',
                 icon: <Layers3 size={13} className="text-primary/60" />,
               },

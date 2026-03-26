@@ -11,12 +11,61 @@ interface ViewRendererProps {
   data: Record<string, any>;
 }
 
+// 旧快照纯英文字段 → 中文映射（兼容数据库存量数据）
+const LEGACY_ZH: Record<string, string> = {
+  'dynamic orchestrator': '动态编排器',
+  'environment model': '环境模型',
+  'synthesis design': '合成设计',
+  'simulation workspace': '仿真工作区',
+  'output hub': '输出中心',
+  'diagnostics': '诊断',
+  'live dataset linked to controlled layout runtime': '已连接实时数据集与受控布局运行时',
+  'schema-driven environmental context': 'Schema 驱动的环境上下文',
+  'controlled schema blocks only': '仅使用受控 Schema 块',
+  'ready for live model wiring': '已就绪，可接入实时模型',
+  'generated from canonical records': '从标准记录生成',
+  'runtime telemetry': '运行时遥测',
+  'pipeline state': '流水线状态',
+  'environment traceability': '环境溯源',
+  'design assembly guidance': '设计组装指导',
+  'simulation posture': '仿真状态',
+  'export readiness': '导出就绪状态',
+  'diagnostics posture': '诊断状态',
+  'dataset version': '数据集版本',
+  'constraints': '约束条件',
+  'agent runs': 'Agent 运行',
+  'references': '参考文献',
+  'measurements': '测量值',
+  'notes': '备注',
+  'sources': '数据来源',
+  'gene modules': '基因模块',
+  'pathways': '代谢通路',
+  'candidates': '候选物种',
+  'species': '物种',
+  'parameters': '参数',
+  'avg survival': '平均存活率',
+  'traceability items': '溯源条目',
+  'exports': '导出',
+  'bioprint queue': '生物打印队列',
+  'views': '视图数',
+  'agent pipeline': 'Agent 流水线',
+  'sensors': '传感器',
+  'logs': '日志',
+  'imported note': '导入备注',
+};
+
 // 解析双语字段：值可以是字符串或 {zh, en} 对象
 function loc(value: any, locale: Locale): string {
   if (!value) return '';
-  if (typeof value === 'string') return value;
   if (typeof value === 'object' && (value.zh || value.en)) {
     return locale === 'zh' ? (value.zh || value.en) : (value.en || value.zh);
+  }
+  if (typeof value === 'string') {
+    if (locale === 'zh') {
+      const mapped = LEGACY_ZH[value.toLowerCase().trim()];
+      if (mapped) return mapped;
+    }
+    return value;
   }
   return String(value);
 }

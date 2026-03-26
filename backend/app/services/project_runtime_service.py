@@ -683,7 +683,18 @@ def build_view_data(project: Project, dataset: ProjectDataset, agent_runs: Seque
     latest_findings = [finding for run in agents for finding in run.get("findings", [])][:8]
 
     project_name = project.name or f"Project {project.id}"
-    subtitle = project.description or {"zh": "动态项目工作区", "en": "Dynamic project workspace"}
+
+    # 已知英文默认描述 → 双语映射（兼容旧数据库存量数据）
+    _KNOWN_DESC_MAP: Dict[str, Dict[str, str]] = {
+        "auto-created for agent orchestration": {"zh": "自动创建 · Agent 编排项目", "en": "Auto-created for agent orchestration"},
+        "dynamic project workspace": {"zh": "动态项目工作区", "en": "Dynamic project workspace"},
+    }
+    _raw_desc = (project.description or "").strip()
+    subtitle = (
+        _KNOWN_DESC_MAP.get(_raw_desc.lower())
+        or (_raw_desc if _raw_desc else None)
+        or {"zh": "动态项目工作区", "en": "Dynamic project workspace"}
+    )
 
     def i18n(zh: str, en: str) -> Dict[str, str]:
         return {"zh": zh, "en": en}
