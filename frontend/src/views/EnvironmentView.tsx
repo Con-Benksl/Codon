@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Activity,
@@ -12,6 +12,7 @@ import {
   Search,
 } from "lucide-react";
 import { EnvironmentalCard } from "../components";
+import SolarSystemScene from "../components/SolarSystemScene";
 import { useLocale, type Locale } from "../i18n/context";
 import { stagger, fadeSlideUp, fadeSlideLeft, fadeSlideRight, viewTransition } from "../lib/motion";
 
@@ -288,287 +289,181 @@ const DATA: Record<Locale, Record<LocationKey, LocationData>> = {
 const ORDER: LocationKey[] = ["jezero", "valles", "gale", "utopia"];
 const ICONS: Record<LocationKey, typeof MapPin> = { jezero: MapPin, valles: Mountain, gale: Activity, utopia: Search };
 
-// 银河拉近动画帧序列
-const ZOOM_STEPS = [
-  { text: "INITIALIZING NAVIGATION SYSTEM...", scale: 0.08, opacity: 0.4, duration: 600 },
-  { text: "LOCATING MILKY WAY CORE...", scale: 0.15, opacity: 0.6, duration: 700 },
-  { text: "ZOOMING TO SOLAR SYSTEM...", scale: 0.35, opacity: 0.75, duration: 800 },
-  { text: "APPROACHING INNER PLANETS...", scale: 0.6, opacity: 0.85, duration: 700 },
-  { text: "LOCKING ON MARS ORBIT...", scale: 0.85, opacity: 0.95, duration: 600 },
-  { text: "MARS VIEW LOCKED ✓", scale: 1, opacity: 1, duration: 500 },
-];
-
-function SolarSystemIframe({ className }: { className?: string }) {
-  const [zoomStep, setZoomStep] = useState(0);
-  const [overlayVisible, setOverlayVisible] = useState(true);
-  const [iframeReady, setIframeReady] = useState(false);
-
-  useEffect(() => {
-    // 预加载 iframe，延迟后开始动画
-    const preloadTimer = setTimeout(() => setIframeReady(true), 300);
-    return () => clearTimeout(preloadTimer);
-  }, []);
-
-  useEffect(() => {
-    if (!iframeReady) return;
-    if (zoomStep >= ZOOM_STEPS.length) {
-      // 所有步骤完成，延迟后隐藏覆盖层
-      const hideTimer = setTimeout(() => setOverlayVisible(false), 600);
-      return () => clearTimeout(hideTimer);
-    }
-    const timer = setTimeout(() => {
-      setZoomStep((s) => s + 1);
-    }, ZOOM_STEPS[zoomStep]?.duration ?? 500);
-    return () => clearTimeout(timer);
-  }, [zoomStep, iframeReady]);
-
-  const currentStep = ZOOM_STEPS[Math.min(zoomStep, ZOOM_STEPS.length - 1)];
-
-  return (
-    <div className={`relative overflow-hidden rounded-2xl ${className ?? ""}`}>
-      {/* 实际 iframe */}
-      <iframe
-        src="https://www.solarsystemscope.com/iframe"
-        style={{
-          width: "100%",
-          height: "100%",
-          border: "2px solid #0f5c6e",
-          borderRadius: "16px",
-          display: "block",
-        }}
-        allowFullScreen
-        title="Solar System Scope"
-      />
-
-      {/* 拉近动画覆盖层 */}
-      <AnimatePresence>
-        {overlayVisible && (
-          <motion.div
-            initial={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className="absolute inset-0 rounded-2xl overflow-hidden flex flex-col items-center justify-center"
-            style={{ background: "radial-gradient(ellipse at center, #050d1a 0%, #000508 60%, #000000 100%)" }}
-          >
-            {/* 星空背景粒子效果 */}
-            <div className="absolute inset-0 overflow-hidden">
-              {Array.from({ length: 80 }).map((_, i) => (
-                <motion.div
-                  key={i}
-                  className="absolute rounded-full bg-white"
-                  style={{
-                    width: Math.random() * 2 + 0.5,
-                    height: Math.random() * 2 + 0.5,
-                    left: `${Math.random() * 100}%`,
-                    top: `${Math.random() * 100}%`,
-                    opacity: Math.random() * 0.6 + 0.1,
-                  }}
-                  animate={{
-                    scale: currentStep ? [1, currentStep.scale * 8 + 1, 1] : 1,
-                    opacity: [null, 0.8, Math.random() * 0.4 + 0.1],
-                  }}
-                  transition={{ duration: 1.5, ease: "easeInOut", repeat: Infinity, repeatType: "reverse" }}
-                />
-              ))}
-            </div>
-
-            {/* 银河系缩放圆环 */}
-            <div className="relative flex items-center justify-center mb-8">
-              {[1, 0.7, 0.45, 0.25].map((ringScale, i) => (
-                <motion.div
-                  key={i}
-                  className="absolute rounded-full border border-cyan-500/20"
-                  style={{ width: 220 * ringScale, height: 220 * ringScale }}
-                  animate={{
-                    scale: iframeReady ? [1, currentStep.scale * 0.4 + 0.8, 1] : 1,
-                    opacity: currentStep.opacity * (1 - i * 0.2),
-                    borderColor: i === 0 ? "rgba(78,168,217,0.4)" : undefined,
-                  }}
-                  transition={{ duration: 1.2, ease: [0.25, 0.46, 0.45, 0.94], delay: i * 0.05 }}
-                />
-              ))}
-              {/* 中心火星标记 */}
-              <motion.div
-                className="w-8 h-8 rounded-full flex items-center justify-center"
-                style={{ background: "radial-gradient(circle, #c1440e 0%, #8b2500 60%, #3d1000 100%)" }}
-                animate={{
-                  scale: iframeReady ? currentStep.scale * 0.5 + 0.5 : 0.5,
-                  boxShadow: zoomStep >= ZOOM_STEPS.length
-                    ? "0 0 20px rgba(193,68,14,0.8), 0 0 40px rgba(193,68,14,0.4)"
-                    : "0 0 8px rgba(193,68,14,0.4)",
-                }}
-                transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
-              />
-            </div>
-
-            {/* 进度文字 */}
-            <AnimatePresence mode="wait">
-              <motion.p
-                key={zoomStep}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.3 }}
-                className="font-mono text-[11px] tracking-widest uppercase text-cyan-400/80 text-center px-4"
-              >
-                {currentStep.text}
-              </motion.p>
-            </AnimatePresence>
-
-            {/* 进度条 */}
-            <div className="mt-4 w-48 h-[2px] bg-cyan-900/40 rounded-full overflow-hidden">
-              <motion.div
-                className="h-full bg-cyan-400/70 rounded-full"
-                animate={{ width: `${(Math.min(zoomStep, ZOOM_STEPS.length) / ZOOM_STEPS.length) * 100}%` }}
-                transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
-              />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
 export default function EnvironmentView() {
   const { locale } = useLocale();
   const copy = COPY[locale];
   const [mobileTab, setMobileTab] = useState<MobileTab>("env");
   const [activeLocation, setActiveLocation] = useState<LocationKey>("jezero");
+  const [scenePhase, setScenePhase] = useState<"fullscreen" | "background">("fullscreen");
   const loc = DATA[locale][activeLocation];
 
   return (
-    <motion.div variants={viewTransition} initial="initial" animate="animate" exit="exit" className="flex-1 flex flex-col pt-2 lg:h-[calc(100vh-64px)] lg:overflow-hidden">
-      <motion.div variants={stagger(50)} initial="hidden" animate="show" className="flex justify-between items-center mb-4 md:mb-6">
-        <div className="flex flex-wrap items-center gap-2 md:gap-4">
-          <motion.span variants={fadeSlideUp} className="text-lg md:text-xl font-black tracking-tighter text-primary italic font-headline">{copy.monitoring}</motion.span>
-          <div className="h-4 w-[1px] bg-outline-variant/30 hidden md:block" />
-          <motion.span variants={fadeSlideUp} className="font-headline tracking-tight uppercase text-xs md:text-sm font-bold text-primary border-b-2 border-primary pb-1">SOL 1242</motion.span>
-          <motion.span key={`coords-${locale}-${activeLocation}`} variants={fadeSlideUp} className="hidden md:block font-headline tracking-tight uppercase text-sm font-bold text-on-surface-variant">{loc.coords}</motion.span>
-          <motion.span key={`system-${locale}-${activeLocation}`} variants={fadeSlideUp} className={`hidden md:block font-headline tracking-tight uppercase text-sm font-bold ${loc.system === "optimal" ? "text-tertiary" : loc.system === "warning" ? "text-secondary" : "text-primary"}`}>
-            {copy.system}: {SYSTEM_LABELS[locale][loc.system]}
-          </motion.span>
+    <div className="flex-1 flex flex-col relative lg:h-[calc(100vh-64px)] lg:overflow-hidden">
+
+      {/* ── 全屏入场阶段 ─────────────────────────────────── */}
+      <AnimatePresence>
+        {scenePhase === "fullscreen" && (
+          <motion.div
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0, scale: 1.04 }}
+            transition={{ duration: 1.2, ease: [0.25, 0.46, 0.45, 0.94] }}
+            className="fixed inset-0 z-50"
+          >
+            <SolarSystemScene
+              onComplete={() => setScenePhase("background")}
+              className="w-full h-full"
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── 背景太阳系（动画完成后持久运行） ────────────── */}
+      {scenePhase === "background" && (
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <SolarSystemScene className="w-full h-full" />
+          {/* 遮罩层让 UI 可读 */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/20 to-black/70" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/60" />
         </div>
-      </motion.div>
+      )}
 
-      <div className="flex lg:hidden gap-2 mb-4">
-        <button onClick={() => setMobileTab("env")} className={`relative flex-1 py-3 min-h-[44px] rounded-lg font-headline text-xs uppercase tracking-widest font-bold transition-colors ${mobileTab === "env" ? "text-primary" : "bg-surface-container-low text-on-surface-variant border border-outline-variant/15"}`}>
-          {mobileTab === "env" && <motion.div layoutId="tab-indicator" className="absolute inset-0 rounded-lg bg-primary/15 border border-primary/30" transition={{ type: "spring", damping: 30, stiffness: 300 }} />}
-          <span className="relative z-10">{copy.envTab}</span>
-        </button>
-        <button onClick={() => setMobileTab("geo")} className={`relative flex-1 py-3 min-h-[44px] rounded-lg font-headline text-xs uppercase tracking-widest font-bold transition-colors ${mobileTab === "geo" ? "text-[#d4a843]" : "bg-surface-container-low text-on-surface-variant border border-outline-variant/15"}`}>
-          {mobileTab === "geo" && <motion.div layoutId="tab-indicator" className="absolute inset-0 rounded-lg bg-[#d4a843]/15 border border-[#d4a843]/30" transition={{ type: "spring", damping: 30, stiffness: 300 }} />}
-          <span className="relative z-10">{copy.geoTab}</span>
-        </button>
-      </div>
-
-      <div className="flex flex-col lg:flex-row lg:flex-1 lg:overflow-hidden gap-4 lg:gap-0">
-        <motion.section variants={stagger(80)} initial="hidden" animate="show" className={`w-full lg:w-80 lg:h-full lg:pr-6 flex-col gap-4 overflow-y-auto ${mobileTab === "env" ? "flex" : "hidden"} lg:flex`}>
-          <motion.div variants={fadeSlideLeft} className="mb-2 lg:mb-4">
-            <h1 className="text-xl md:text-2xl font-black font-headline text-on-surface leading-tight tracking-tighter">{copy.title1}<br />{copy.title2}</h1>
-            <motion.div initial={{ width: 0 }} animate={{ width: 48 }} transition={{ duration: 0.6, delay: 0.4 }} className="h-1 bg-primary mt-2" />
-          </motion.div>
-          <EnvironmentalCard title={copy.temp} icon={Thermometer} value={loc.temperature.value} unit={loc.temperature.unit} description={loc.temperature.description} progress={{ current: loc.temperature.progress, min: copy.tempMin, max: copy.tempMax }} index={0} />
-          <EnvironmentalCard title={copy.rad} icon={AlertTriangle} value={loc.radiation.value} unit={loc.radiation.unit} color="secondary" description={loc.radiation.description} index={1} />
-          <EnvironmentalCard title={copy.pres} icon={Minimize2} value={loc.pressure.value} unit={loc.pressure.unit} description={loc.pressure.description} index={2} />
-          <motion.div initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.4, delay: 0.24 }} className="glass-panel rounded-xl p-4 border border-outline-variant/10">
-            <div className="flex justify-between items-start mb-4">
-              <span className="text-[10px] font-bold text-[#d4a843] tracking-widest uppercase">{copy.chem}</span>
-              <FlaskConical size={16} className="text-[#d4a843]" />
-            </div>
-            <div className="space-y-3">
-              {loc.chemicals.map((item, i) => (
-                <div key={item.label}>
-                  <div className="flex justify-between text-[10px] mb-1">
-                    <span className={item.isHazard ? "text-secondary" : "text-on-surface"}>{item.label}</span>
-                    <span className={item.isHazard ? "text-secondary font-bold" : "text-on-surface font-bold"}>{item.value}</span>
-                  </div>
-                  <div className={`h-1 w-full rounded-full ${item.isHazard ? "bg-secondary/20" : "bg-surface-container-lowest"}`}>
-                    <motion.div className="h-full rounded-full" style={{ backgroundColor: item.color }} initial={{ width: 0 }} animate={{ width: item.value }} transition={{ duration: 1, delay: 0.5 + i * 0.15, ease: [0.25, 0.46, 0.45, 0.94] }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-          <motion.div key={`survival-mobile-${locale}-${activeLocation}`} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.6 }} className="flex items-center gap-4 glass-panel rounded-xl p-4 border border-tertiary/20 glow-tertiary lg:hidden">
-            <div className="text-center shrink-0">
-              <span className="text-3xl font-headline font-black text-tertiary">{loc.survival}%</span>
-              <p className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest mt-1">{copy.survival}</p>
-            </div>
-            <div className="flex-1">
-              <p className="text-[10px] font-bold text-on-surface uppercase tracking-widest mb-2 font-headline">{loc.survivalOrganism}</p>
-              <div className="h-2 bg-surface-container-highest rounded-full overflow-hidden">
-                <motion.div className="h-full bg-tertiary rounded-full" initial={{ width: 0 }} animate={{ width: `${loc.survival}%` }} transition={{ duration: 1.2, delay: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }} />
+      {/* ── 主 UI（入场后淡入） ───────────────────────────── */}
+      <AnimatePresence>
+        {scenePhase === "background" && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1.0, ease: [0.25, 0.46, 0.45, 0.94] }}
+            className="relative z-10 flex flex-col flex-1 pt-2 lg:overflow-hidden"
+          >
+            <motion.div variants={stagger(50)} initial="hidden" animate="show" className="flex justify-between items-center mb-4 md:mb-6">
+              <div className="flex flex-wrap items-center gap-2 md:gap-4">
+                <motion.span variants={fadeSlideUp} className="text-lg md:text-xl font-black tracking-tighter text-primary italic font-headline">{copy.monitoring}</motion.span>
+                <div className="h-4 w-[1px] bg-outline-variant/30 hidden md:block" />
+                <motion.span variants={fadeSlideUp} className="font-headline tracking-tight uppercase text-xs md:text-sm font-bold text-primary border-b-2 border-primary pb-1">SOL 1242</motion.span>
+                <motion.span key={`coords-${locale}-${activeLocation}`} variants={fadeSlideUp} className="hidden md:block font-headline tracking-tight uppercase text-sm font-bold text-on-surface-variant">{loc.coords}</motion.span>
+                <motion.span key={`system-${locale}-${activeLocation}`} variants={fadeSlideUp} className={`hidden md:block font-headline tracking-tight uppercase text-sm font-bold ${loc.system === "optimal" ? "text-tertiary" : loc.system === "warning" ? "text-secondary" : "text-primary"}`}>
+                  {copy.system}: {SYSTEM_LABELS[locale][loc.system]}
+                </motion.span>
               </div>
-            </div>
-          </motion.div>
-        </motion.section>
+            </motion.div>
 
-        <motion.section
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.7, delay: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="hidden md:flex flex-1 relative items-center justify-center min-h-[520px] lg:min-h-[640px]"
-        >
-          <SolarSystemIframe className="w-[360px] h-[360px] md:w-[460px] md:h-[460px] lg:w-[540px] lg:h-[540px] xl:w-[620px] xl:h-[620px]" />
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2">
-            <p className="text-[9px] font-headline tracking-widest uppercase bg-surface-container-high/80 px-4 py-1 rounded-full border border-outline-variant/20 text-on-surface-variant/70">
-              {loc.survivalOrganism} · {copy.survivalProbability}
-            </p>
-          </div>
-        </motion.section>
-
-        <motion.section initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.3 }} className={`w-full lg:w-80 lg:h-full lg:pl-6 flex-col gap-4 overflow-hidden border-t lg:border-t-0 lg:border-l border-outline-variant/10 glass-panel pt-4 lg:pt-0 ${mobileTab === "geo" ? "flex" : "hidden"} lg:flex`}>
-          <div className="mb-4">
-            <div className="flex items-center gap-2 text-[#d4a843] mb-1">
-              <History size={18} />
-              <h2 className="text-sm font-bold tracking-widest uppercase font-headline">{copy.geoTitle}</h2>
+            <div className="flex lg:hidden gap-2 mb-4">
+              <button onClick={() => setMobileTab("env")} className={`relative flex-1 py-3 min-h-[44px] rounded-lg font-headline text-xs uppercase tracking-widest font-bold transition-colors ${mobileTab === "env" ? "text-primary" : "bg-surface-container-low/60 text-on-surface-variant border border-outline-variant/15"}`}>
+                {mobileTab === "env" && <motion.div layoutId="tab-indicator" className="absolute inset-0 rounded-lg bg-primary/15 border border-primary/30" transition={{ type: "spring", damping: 30, stiffness: 300 }} />}
+                <span className="relative z-10">{copy.envTab}</span>
+              </button>
+              <button onClick={() => setMobileTab("geo")} className={`relative flex-1 py-3 min-h-[44px] rounded-lg font-headline text-xs uppercase tracking-widest font-bold transition-colors ${mobileTab === "geo" ? "text-[#d4a843]" : "bg-surface-container-low/60 text-on-surface-variant border border-outline-variant/15"}`}>
+                {mobileTab === "geo" && <motion.div layoutId="tab-indicator" className="absolute inset-0 rounded-lg bg-[#d4a843]/15 border border-[#d4a843]/30" transition={{ type: "spring", damping: 30, stiffness: 300 }} />}
+                <span className="relative z-10">{copy.geoTab}</span>
+              </button>
             </div>
-            <p className="text-[10px] text-on-surface-variant uppercase">{copy.geoSub}</p>
-            <motion.div initial={{ width: 0 }} animate={{ width: "100%" }} transition={{ duration: 0.8, delay: 0.6 }} className="h-[1px] bg-gradient-to-r from-[#d4a843]/40 to-transparent mt-3" />
-          </div>
-          <motion.div variants={stagger(70)} initial="hidden" animate="show" className="flex-1 flex flex-col gap-3 overflow-y-auto pr-2">
-            {loc.geoSources.map((item) => (
-              <motion.div key={item.id} variants={fadeSlideRight} whileHover={{ x: 4, transition: { duration: 0.15 } }} className="group p-3 rounded-lg hover:bg-surface-container-highest/40 transition-all border-l-2 border-transparent hover:border-[#d4a843] cursor-pointer">
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-[10px] font-bold text-[#d4a843]">{item.source}</span>
-                  <span className="text-[9px] text-on-surface-variant font-mono">ID: {item.id}</span>
+
+            <div className="flex flex-col lg:flex-row lg:flex-1 lg:overflow-hidden gap-4 lg:gap-0">
+              {/* 左侧环境数据 */}
+              <motion.section variants={stagger(80)} initial="hidden" animate="show" className={`w-full lg:w-80 lg:h-full lg:pr-6 flex-col gap-4 overflow-y-auto ${mobileTab === "env" ? "flex" : "hidden"} lg:flex`}>
+                <motion.div variants={fadeSlideLeft} className="mb-2 lg:mb-4">
+                  <h1 className="text-xl md:text-2xl font-black font-headline text-on-surface leading-tight tracking-tighter">{copy.title1}<br />{copy.title2}</h1>
+                  <motion.div initial={{ width: 0 }} animate={{ width: 48 }} transition={{ duration: 0.6, delay: 0.4 }} className="h-1 bg-primary mt-2" />
+                </motion.div>
+                <EnvironmentalCard title={copy.temp} icon={Thermometer} value={loc.temperature.value} unit={loc.temperature.unit} description={loc.temperature.description} progress={{ current: loc.temperature.progress, min: copy.tempMin, max: copy.tempMax }} index={0} />
+                <EnvironmentalCard title={copy.rad} icon={AlertTriangle} value={loc.radiation.value} unit={loc.radiation.unit} color="secondary" description={loc.radiation.description} index={1} />
+                <EnvironmentalCard title={copy.pres} icon={Minimize2} value={loc.pressure.value} unit={loc.pressure.unit} description={loc.pressure.description} index={2} />
+                <motion.div initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.4, delay: 0.24 }} className="glass-panel rounded-xl p-4 border border-outline-variant/10">
+                  <div className="flex justify-between items-start mb-4">
+                    <span className="text-[10px] font-bold text-[#d4a843] tracking-widest uppercase">{copy.chem}</span>
+                    <FlaskConical size={16} className="text-[#d4a843]" />
+                  </div>
+                  <div className="space-y-3">
+                    {loc.chemicals.map((item, i) => (
+                      <div key={item.label}>
+                        <div className="flex justify-between text-[10px] mb-1">
+                          <span className={item.isHazard ? "text-secondary" : "text-on-surface"}>{item.label}</span>
+                          <span className={item.isHazard ? "text-secondary font-bold" : "text-on-surface font-bold"}>{item.value}</span>
+                        </div>
+                        <div className={`h-1 w-full rounded-full ${item.isHazard ? "bg-secondary/20" : "bg-surface-container-lowest"}`}>
+                          <motion.div className="h-full rounded-full" style={{ backgroundColor: item.color }} initial={{ width: 0 }} animate={{ width: item.value }} transition={{ duration: 1, delay: 0.5 + i * 0.15, ease: [0.25, 0.46, 0.45, 0.94] }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+                <motion.div key={`survival-mobile-${locale}-${activeLocation}`} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.6 }} className="flex items-center gap-4 glass-panel rounded-xl p-4 border border-tertiary/20 glow-tertiary lg:hidden">
+                  <div className="text-center shrink-0">
+                    <span className="text-3xl font-headline font-black text-tertiary">{loc.survival}%</span>
+                    <p className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest mt-1">{copy.survival}</p>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-[10px] font-bold text-on-surface uppercase tracking-widest mb-2 font-headline">{loc.survivalOrganism}</p>
+                    <div className="h-2 bg-surface-container-highest rounded-full overflow-hidden">
+                      <motion.div className="h-full bg-tertiary rounded-full" initial={{ width: 0 }} animate={{ width: `${loc.survival}%` }} transition={{ duration: 1.2, delay: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }} />
+                    </div>
+                  </div>
+                </motion.div>
+              </motion.section>
+
+              {/* 中间空间（透出背景太阳系） */}
+              <div className="hidden md:flex flex-1 relative items-end justify-center pb-4">
+                <p className="text-[9px] font-headline tracking-widest uppercase bg-black/40 backdrop-blur-sm px-4 py-1 rounded-full border border-white/10 text-white/50">
+                  {loc.survivalOrganism} · {copy.survivalProbability}
+                </p>
+              </div>
+
+              {/* 右侧地质数据 */}
+              <motion.section initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.3 }} className={`w-full lg:w-80 lg:h-full lg:pl-6 flex-col gap-4 overflow-hidden border-t lg:border-t-0 lg:border-l border-outline-variant/10 glass-panel pt-4 lg:pt-0 ${mobileTab === "geo" ? "flex" : "hidden"} lg:flex`}>
+                <div className="mb-4">
+                  <div className="flex items-center gap-2 text-[#d4a843] mb-1">
+                    <History size={18} />
+                    <h2 className="text-sm font-bold tracking-widest uppercase font-headline">{copy.geoTitle}</h2>
+                  </div>
+                  <p className="text-[10px] text-on-surface-variant uppercase">{copy.geoSub}</p>
+                  <motion.div initial={{ width: 0 }} animate={{ width: "100%" }} transition={{ duration: 0.8, delay: 0.6 }} className="h-[1px] bg-gradient-to-r from-[#d4a843]/40 to-transparent mt-3" />
                 </div>
-                <p className="text-xs text-on-surface font-medium mb-2 leading-snug">{item.title}</p>
-                <div className="flex items-center gap-2 text-[9px] text-primary">
-                  {item.isSim ? <FlaskConical size={10} /> : <MapPin size={10} />}
-                  <span>{item.loc}</span>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }} className="mt-4 pt-4 border-t border-outline-variant/10">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-[10px] text-on-surface-variant font-bold tracking-widest uppercase">{copy.systemActivity}</span>
-              <span className="w-2 h-2 rounded-full bg-tertiary animate-pulse" />
+                <motion.div variants={stagger(70)} initial="hidden" animate="show" className="flex-1 flex flex-col gap-3 overflow-y-auto pr-2">
+                  {loc.geoSources.map((item) => (
+                    <motion.div key={item.id} variants={fadeSlideRight} whileHover={{ x: 4, transition: { duration: 0.15 } }} className="group p-3 rounded-lg hover:bg-surface-container-highest/40 transition-all border-l-2 border-transparent hover:border-[#d4a843] cursor-pointer">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-[10px] font-bold text-[#d4a843]">{item.source}</span>
+                        <span className="text-[9px] text-on-surface-variant font-mono">ID: {item.id}</span>
+                      </div>
+                      <p className="text-xs text-on-surface font-medium mb-2 leading-snug">{item.title}</p>
+                      <div className="flex items-center gap-2 text-[9px] text-primary">
+                        {item.isSim ? <FlaskConical size={10} /> : <MapPin size={10} />}
+                        <span>{item.loc}</span>
+                      </div>
+                    </motion.div>
+                  ))}
+                </motion.div>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }} className="mt-4 pt-4 border-t border-outline-variant/10">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-[10px] text-on-surface-variant font-bold tracking-widest uppercase">{copy.systemActivity}</span>
+                    <span className="w-2 h-2 rounded-full bg-tertiary animate-pulse" />
+                  </div>
+                  <div className="bg-surface-container-lowest p-2 rounded border border-outline-variant/10">
+                    <p className="text-[9px] font-mono text-tertiary leading-tight">
+                      {loc.systemLog.map((line, i) => (
+                        <span key={`${line}-${i}`}>{line}{i < loc.systemLog.length - 1 && <br />}</span>
+                      ))}
+                    </p>
+                  </div>
+                </motion.div>
+              </motion.section>
             </div>
-            <div className="bg-surface-container-lowest p-2 rounded border border-outline-variant/10">
-              <p className="text-[9px] font-mono text-tertiary leading-tight">
-                {loc.systemLog.map((line, i) => (
-                  <span key={`${line}-${i}`}>{line}{i < loc.systemLog.length - 1 && <br />}</span>
-                ))}
-              </p>
-            </div>
-          </motion.div>
-        </motion.section>
-      </div>
 
-      <motion.nav variants={stagger(80)} initial="hidden" animate="show" className="flex justify-center gap-4 md:gap-8 items-center mt-4 md:mt-6 pb-2">
-        {ORDER.map((key) => {
-          const Icon = ICONS[key];
-          return (
-            <motion.button key={key} variants={fadeSlideUp} whileHover={{ y: -2, transition: { duration: 0.15 } }} whileTap={{ scale: 0.95 }} onClick={() => setActiveLocation(key)} className={`flex flex-col items-center justify-center px-4 md:px-6 py-2 rounded-xl transition-all cursor-pointer ${activeLocation === key ? "bg-gradient-to-br from-primary/20 to-primary/5 text-primary shadow-[0_0_15px_rgba(78,168,217,0.3)]" : "text-on-surface-variant opacity-60 hover:text-primary hover:opacity-100"}`}>
-              <Icon size={20} />
-              <span className="font-headline text-[10px] uppercase font-bold tracking-widest mt-1">{NAV_LABELS[locale][key]}</span>
-            </motion.button>
-          );
-        })}
-      </motion.nav>
-    </motion.div>
+            <motion.nav variants={stagger(80)} initial="hidden" animate="show" className="flex justify-center gap-4 md:gap-8 items-center mt-4 md:mt-6 pb-2">
+              {ORDER.map((key) => {
+                const Icon = ICONS[key];
+                return (
+                  <motion.button key={key} variants={fadeSlideUp} whileHover={{ y: -2, transition: { duration: 0.15 } }} whileTap={{ scale: 0.95 }} onClick={() => setActiveLocation(key)} className={`flex flex-col items-center justify-center px-4 md:px-6 py-2 rounded-xl transition-all cursor-pointer ${activeLocation === key ? "bg-gradient-to-br from-primary/20 to-primary/5 text-primary shadow-[0_0_15px_rgba(78,168,217,0.3)]" : "text-on-surface-variant opacity-60 hover:text-primary hover:opacity-100"}`}>
+                    <Icon size={20} />
+                    <span className="font-headline text-[10px] uppercase font-bold tracking-widest mt-1">{NAV_LABELS[locale][key]}</span>
+                  </motion.button>
+                );
+              })}
+            </motion.nav>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
