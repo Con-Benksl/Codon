@@ -11,7 +11,8 @@ import {
   MapPin,
   Search,
 } from "lucide-react";
-import { EnvironmentalCard, MarsDataGlobe } from "../components";
+import { EnvironmentalCard } from "../components";
+import ProceduralMarsGlobe from "../components/ProceduralMarsGlobe";
 import { useLocale, type Locale } from "../i18n/context";
 import { stagger, fadeSlideUp, fadeSlideLeft, fadeSlideRight, viewTransition } from "../lib/motion";
 
@@ -368,17 +369,7 @@ export default function EnvironmentView() {
           transition={{ duration: 0.7, delay: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
           className="hidden md:flex flex-1 relative items-center justify-center min-h-[520px] lg:min-h-[640px]"
         >
-          <MarsDataGlobe
-            data={{
-              temperature: loc.temperature.value,
-              radiation: `${loc.radiation.value} ${loc.radiation.unit}`,
-              pressure: loc.pressure.value,
-              survival: loc.survival,
-              locationName: loc.label,
-              systemStatus: loc.system,
-            }}
-            className="w-[360px] h-[360px] md:w-[460px] md:h-[460px] lg:w-[540px] lg:h-[540px] xl:w-[620px] xl:h-[620px]"
-          />
+          <ProceduralMarsGlobe className="w-[360px] h-[360px] md:w-[460px] md:h-[460px] lg:w-[540px] lg:h-[540px] xl:w-[620px] xl:h-[620px]" />
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2">
             <p className="text-[9px] font-headline tracking-widest uppercase bg-surface-container-high/80 px-4 py-1 rounded-full border border-outline-variant/20 text-on-surface-variant/70">
               {loc.survivalOrganism} · {copy.survivalProbability}
