@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { ProceduralMarsGlobe } from "./ProceduralMarsGlobe";
+import ProceduralMarsGlobe from "./ProceduralMarsGlobe";
 
 interface HudData {
   temperature: string;
