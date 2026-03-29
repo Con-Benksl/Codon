@@ -1,389 +1,411 @@
 /**
- * SolarSystemScene
+ * SolarSystemScene — 全屏入场动画 + 持久背景太阳系
  *
  * 阶段：
- *   intro  → 太阳系全景，镜头从远处缓慢推入
- *   zoom   → 自动拉近到火星
- *   locked → 锁定火星，可拖拽绕火星旋转
+ *  0 → GALAXY   : 银河星云全景，镜头极远
+ *  1 → APPROACH : 镜头向太阳系拉近，行星轨道浮现
+ *  2 → FOCUS    : 镜头锁定火星轨道，火星高亮
+ *  3 → LOCKED   : 全屏收缩，UI 层淡入，Three.js 场景转为背景
  */
-import { useRef, useEffect, useState, useMemo, useCallback } from "react";
+import { useRef, useEffect, useState, useCallback, useMemo } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useTexture, Stars } from "@react-three/drei";
+import { useTexture, Stars, Trail } from "@react-three/drei";
 import * as THREE from "three";
 import { motion, AnimatePresence } from "motion/react";
 
-// ─── 行星定义 ─────────────────────────────────────────────
+// ─── 常量 ──────────────────────────────────────────────────
+const PHASE_DURATIONS = [1200, 2200, 1800, 1000]; // ms per phase
+
+type Phase = 0 | 1 | 2 | 3;
+
 interface PlanetDef {
   name: string;
-  orbitR: number;      // AU 缩放单位
   radius: number;
-  tilt: number;        // 自转轴倾斜 rad
-  spinSpeed: number;   // 自转速度
-  orbitSpeed: number;  // 公转速度
-  texture: string;
+  orbitR: number;
+  speed: number; // rad/s
+  color: string;
+  emissive?: string;
+  textureUrl?: string;
   isMars?: boolean;
-  hasSaturnRing?: boolean;
 }
 
 const PLANETS: PlanetDef[] = [
-  { name: "Mercury", orbitR: 4,    radius: 0.18, tilt: 0.03,  spinSpeed: 0.2,  orbitSpeed: 2.0,  texture: "/textures/8k_mercury.jpg" },
-  { name: "Venus",   orbitR: 6.5,  radius: 0.28, tilt: 3.09,  spinSpeed: 0.1,  orbitSpeed: 1.4,  texture: "/textures/4k_venus_atmosphere.jpg" },
-  { name: "Earth",   orbitR: 9,    radius: 0.30, tilt: 0.41,  spinSpeed: 0.5,  orbitSpeed: 1.0,  texture: "/textures/8k_earth_daymap.jpg" },
-  { name: "Mars",    orbitR: 12,   radius: 0.22, tilt: 0.44,  spinSpeed: 0.48, orbitSpeed: 0.65, texture: "/textures/8k_mars.jpg", isMars: true },
-  { name: "Jupiter", orbitR: 22,   radius: 0.90, tilt: 0.05,  spinSpeed: 1.2,  orbitSpeed: 0.25, texture: "/textures/8k_jupiter.jpg" },
-  { name: "Saturn",  orbitR: 32,   radius: 0.75, tilt: 0.47,  spinSpeed: 1.0,  orbitSpeed: 0.18, texture: "/textures/8k_saturn.jpg", hasSaturnRing: true },
-  { name: "Uranus",  orbitR: 44,   radius: 0.45, tilt: 1.71,  spinSpeed: 0.7,  orbitSpeed: 0.10, texture: "/textures/2k_uranus.jpg" },
-  { name: "Neptune", orbitR: 56,   radius: 0.42, tilt: 0.49,  spinSpeed: 0.6,  orbitSpeed: 0.07, texture: "/textures/2k_neptune.jpg" },
+  { name: "Mercury", radius: 0.12, orbitR: 3.2, speed: 2.4, color: "#9e9e9e" },
+  { name: "Venus",   radius: 0.22, orbitR: 5.0, speed: 1.6, color: "#e8c97a" },
+  { name: "Earth",   radius: 0.24, orbitR: 7.2, speed: 1.0, color: "#4a90d9", emissive: "#0a2a4a" },
+  {
+    name: "Mars", radius: 0.18, orbitR: 10.0, speed: 0.65,
+    color: "#c1440e", emissive: "#3d1000",
+    textureUrl: "/textures/8k_mars.jpg",
+    isMars: true,
+  },
 ];
 
-const MARS_DEF = PLANETS.find(p => p.isMars)!;
+// ─── 相机动画参数 ──────────────────────────────────────────
+const CAM_KEYFRAMES = [
+  { pos: new THREE.Vector3(0, 80, 120), target: new THREE.Vector3(0, 0, 0), fov: 55 }, // phase 0 galaxy
+  { pos: new THREE.Vector3(0, 40,  60), target: new THREE.Vector3(0, 0, 0), fov: 45 }, // phase 1 approach
+  { pos: new THREE.Vector3(8,  6,  16), target: new THREE.Vector3(0, 0, 0), fov: 35 }, // phase 2 focus mars
+  { pos: new THREE.Vector3(0,  3,   6), target: new THREE.Vector3(0, 0, 0), fov: 28 }, // phase 3 locked
+];
 
-// ─── 轨道线（用 THREE 对象避免 JSX <line> 歧义） ────────
-function OrbitRing({ radius, faded }: { radius: number; faded?: boolean }) {
-  const obj = useMemo(() => {
-    const pts: THREE.Vector3[] = [];
-    for (let i = 0; i <= 128; i++) {
-      const a = (i / 128) * Math.PI * 2;
-      pts.push(new THREE.Vector3(Math.cos(a) * radius, 0, Math.sin(a) * radius));
-    }
-    const geo = new THREE.BufferGeometry().setFromPoints(pts);
-    const mat = new THREE.LineBasicMaterial({
-      color: "#ffffff",
-      transparent: true,
-      opacity: faded ? 0.04 : 0.10,
-    });
-    return new THREE.Line(geo, mat);
-  }, [radius, faded]);
-
-  return <primitive object={obj} />;
+// ─── easing ───────────────────────────────────────────────
+function easeInOutCubic(t: number) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
 
-// ─── 太阳 ─────────────────────────────────────────────────
+// ─── 太阳 ──────────────────────────────────────────────────
 function Sun() {
-  const tex = useTexture("/textures/8k_sun.jpg");
-  const ref = useRef<THREE.Mesh>(null);
-  useFrame((_, dt) => { if (ref.current) ref.current.rotation.y += dt * 0.05; });
-
+  const meshRef = useRef<THREE.Mesh>(null);
+  useFrame((_, delta) => {
+    if (meshRef.current) meshRef.current.rotation.y += delta * 0.05;
+  });
   return (
     <group>
-      <mesh ref={ref}>
-        <sphereGeometry args={[1.8, 64, 64]} />
-        <meshBasicMaterial map={tex} />
+      <mesh ref={meshRef}>
+        <sphereGeometry args={[1.2, 64, 64]} />
+        <meshStandardMaterial
+          color="#ff9d00"
+          emissive="#ff6600"
+          emissiveIntensity={3}
+          roughness={0.4}
+        />
       </mesh>
-      {/* 内外两层光晕 */}
-      {[2.4, 3.4].map((r, i) => (
-        <mesh key={r}>
-          <sphereGeometry args={[r, 32, 32]} />
-          <meshBasicMaterial color="#ff8800" transparent opacity={i === 0 ? 0.06 : 0.02} side={THREE.BackSide} />
-        </mesh>
-      ))}
-      <pointLight color="#fff5e0" intensity={150} distance={400} decay={2} />
+      {/* 日冕光晕 */}
+      <mesh>
+        <sphereGeometry args={[1.6, 32, 32]} />
+        <meshBasicMaterial color="#ff8800" transparent opacity={0.08} side={THREE.BackSide} />
+      </mesh>
+      <mesh>
+        <sphereGeometry args={[2.2, 32, 32]} />
+        <meshBasicMaterial color="#ff6600" transparent opacity={0.04} side={THREE.BackSide} />
+      </mesh>
+      <pointLight color="#ff9d00" intensity={120} distance={200} decay={2} />
     </group>
   );
 }
 
-// ─── 土星光环 ─────────────────────────────────────────────
-function SaturnRing({ radius }: { radius: number }) {
-  const ringTex = useTexture("/textures/8k_saturn_ring_alpha.png");
-  const geo = useMemo(() => new THREE.RingGeometry(radius * 1.3, radius * 2.2, 128), [radius]);
-  return (
-    <mesh geometry={geo} rotation={[-Math.PI / 2, 0, 0]}>
-      <meshBasicMaterial map={ringTex} transparent side={THREE.DoubleSide} opacity={0.85} />
-    </mesh>
+// ─── 轨道环 ────────────────────────────────────────────────
+function OrbitRing({ radius, highlight }: { radius: number; highlight?: boolean }) {
+  const points: THREE.Vector3[] = [];
+  for (let i = 0; i <= 128; i++) {
+    const a = (i / 128) * Math.PI * 2;
+    points.push(new THREE.Vector3(Math.cos(a) * radius, 0, Math.sin(a) * radius));
+  }
+  const geo = new THREE.BufferGeometry().setFromPoints(points);
+  // 用 primitive 避免 JSX <line> 与 SVG 冲突
+  const lineObj = new THREE.Line(
+    geo,
+    new THREE.LineBasicMaterial({
+      color: highlight ? "#e05020" : "#ffffff",
+      transparent: true,
+      opacity: highlight ? 0.45 : 0.12,
+    })
   );
+  return <primitive object={lineObj} />;
 }
 
-// ─── 单行星 ───────────────────────────────────────────────
-function Planet({
-  def,
-  phaseRef,
-  marsAngleRef,
-  marsPosRef,
-}: {
-  def: PlanetDef;
-  phaseRef: React.MutableRefObject<"intro" | "zoom" | "locked">;
-  marsAngleRef: React.MutableRefObject<number>;
-  marsPosRef: React.MutableRefObject<THREE.Vector3>;
-}) {
-  const tex = useTexture(def.texture);
+// ─── 单颗行星 ──────────────────────────────────────────────
+function Planet({ def, phase }: { def: PlanetDef; phase: Phase }) {
   const groupRef = useRef<THREE.Group>(null);
   const meshRef  = useRef<THREE.Mesh>(null);
-  const angle    = useRef(Math.random() * Math.PI * 2);
+  const angleRef = useRef(Math.random() * Math.PI * 2);
 
-  useFrame((_, dt) => {
-    angle.current += dt * def.orbitSpeed * 0.15;
-    const x = Math.cos(angle.current) * def.orbitR;
-    const z = Math.sin(angle.current) * def.orbitR;
+  const texture = def.textureUrl
+    ? useTexture(def.textureUrl)
+    : null;
+
+  useFrame((_, delta) => {
+    angleRef.current += delta * def.speed * (phase >= 1 ? 1 : 0.3);
     if (groupRef.current) {
-      groupRef.current.position.set(x, 0, z);
+      groupRef.current.position.x = Math.cos(angleRef.current) * def.orbitR;
+      groupRef.current.position.z = Math.sin(angleRef.current) * def.orbitR;
     }
-    if (meshRef.current) {
-      meshRef.current.rotation.y += dt * def.spinSpeed;
-    }
-    // 记录火星位置给相机用
-    if (def.isMars) {
-      marsAngleRef.current = angle.current;
-      marsPosRef.current.set(x, 0, z);
-    }
+    if (meshRef.current) meshRef.current.rotation.y += delta * 0.4;
   });
+
+  const isHighlighted = def.isMars && phase >= 2;
+  const scale = phase === 0 ? 0.6 : 1;
 
   return (
     <group ref={groupRef}>
-      <mesh ref={meshRef} rotation={[def.tilt, 0, 0]}>
-        <sphereGeometry args={[def.radius, 64, 64]} />
-        <meshStandardMaterial map={tex} roughness={0.8} metalness={0.05} />
+      <mesh ref={meshRef} scale={scale}>
+        <sphereGeometry args={[def.radius, 48, 48]} />
+        {texture ? (
+          <meshStandardMaterial
+            map={texture}
+            emissive={new THREE.Color(def.emissive ?? "#000000")}
+            emissiveIntensity={isHighlighted ? 1.2 : 0.3}
+            roughness={0.8}
+            metalness={0.1}
+          />
+        ) : (
+          <meshStandardMaterial
+            color={def.color}
+            emissive={new THREE.Color(def.emissive ?? "#000000")}
+            emissiveIntensity={isHighlighted ? 0.6 : 0}
+            roughness={0.7}
+          />
+        )}
       </mesh>
-      {def.hasSaturnRing && <SaturnRing radius={def.radius} />}
+      {/* 火星锁定光环 */}
+      {isHighlighted && (
+        <>
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[def.radius * 1.6, def.radius * 1.8, 64]} />
+            <meshBasicMaterial color="#e05020" transparent opacity={0.6} side={THREE.DoubleSide} />
+          </mesh>
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[def.radius * 2.0, def.radius * 2.1, 64]} />
+            <meshBasicMaterial color="#ff4400" transparent opacity={0.3} side={THREE.DoubleSide} />
+          </mesh>
+          <pointLight color="#ff4400" intensity={4} distance={8} decay={2} />
+        </>
+      )}
     </group>
   );
 }
 
-// ─── 相机控制器 ───────────────────────────────────────────
-type Phase = "intro" | "zoom" | "locked";
-
-function CameraController({
-  phaseRef,
-  marsPosRef,
-  dragState,
-}: {
-  phaseRef: React.MutableRefObject<Phase>;
-  marsPosRef: React.MutableRefObject<THREE.Vector3>;
-  dragState: React.MutableRefObject<{ theta: number; phi: number; dist: number }>;
-}) {
-  const { camera } = useThree();
-  const introT   = useRef(0);   // 0→1 intro 推进
-  const zoomT    = useRef(0);   // 0→1 zoom 推进
-  const lookTarget = useRef(new THREE.Vector3());
-
-  // intro 起始/终止相机位
-  const INTRO_FROM = new THREE.Vector3(0, 90, 130);
-  const INTRO_TO   = new THREE.Vector3(0, 45, 65);
-
-  function ease(t: number) {
-    return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-  }
-
-  useFrame((_, dt) => {
-    const phase = phaseRef.current;
-    const mars  = marsPosRef.current;
-
-    if (phase === "intro") {
-      introT.current = Math.min(introT.current + dt * 0.12, 1);
-      const t = ease(introT.current);
-      camera.position.lerpVectors(INTRO_FROM, INTRO_TO, t);
-      lookTarget.current.lerp(new THREE.Vector3(0, 0, 0), 0.05);
-      camera.lookAt(lookTarget.current);
-      (camera as THREE.PerspectiveCamera).fov = THREE.MathUtils.lerp(60, 52, t);
-      (camera as THREE.PerspectiveCamera).updateProjectionMatrix();
-
-    } else if (phase === "zoom") {
-      zoomT.current = Math.min(zoomT.current + dt * 0.35, 1);
-      const t = ease(zoomT.current);
-      // 目标：火星后方偏上
-      const target = mars.clone().add(new THREE.Vector3(0, 1.5, 4.5));
-      camera.position.lerp(target, t * 0.08 + 0.01);
-      lookTarget.current.lerp(mars, 0.04);
-      camera.lookAt(lookTarget.current);
-      const fov = THREE.MathUtils.lerp(
-        (camera as THREE.PerspectiveCamera).fov,
-        38,
-        0.03
-      );
-      (camera as THREE.PerspectiveCamera).fov = fov;
-      (camera as THREE.PerspectiveCamera).updateProjectionMatrix();
-
-    } else {
-      // locked：绕火星轨道旋转
-      const { theta, phi, dist } = dragState.current;
-      const x = mars.x + dist * Math.sin(phi) * Math.cos(theta);
-      const y = mars.y + dist * Math.cos(phi);
-      const z = mars.z + dist * Math.sin(phi) * Math.sin(theta);
-      camera.position.lerp(new THREE.Vector3(x, y, z), 0.08);
-      lookTarget.current.lerp(mars, 0.08);
-      camera.lookAt(lookTarget.current);
-      // 自动慢转
-      dragState.current.theta += dt * 0.18;
+// ─── 小行星带 ─────────────────────────────────────────────
+function AsteroidBelt() {
+  const count = 600;
+  const geo = useMemo(() => {
+    const arr = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const r = 11.5 + Math.random() * 2.0;
+      arr[i * 3]     = Math.cos(angle) * r;
+      arr[i * 3 + 1] = (Math.random() - 0.5) * 0.4;
+      arr[i * 3 + 2] = Math.sin(angle) * r;
     }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.BufferAttribute(arr, 3));
+    return g;
+  }, []);
+
+  return (
+    <points geometry={geo}>
+      <pointsMaterial color="#888880" size={0.04} transparent opacity={0.5} sizeAttenuation />
+    </points>
+  );
+}
+
+// ─── 相机控制器 ────────────────────────────────────────────
+function CameraRig({ phase, progress }: { phase: Phase; progress: number }) {
+  const { camera } = useThree();
+  const t = easeInOutCubic(progress);
+
+  useFrame(() => {
+    const from = CAM_KEYFRAMES[phase];
+    const to   = CAM_KEYFRAMES[Math.min(phase + 1, 3)];
+
+    camera.position.lerpVectors(from.pos, to.pos, t);
+
+    const targetPos = new THREE.Vector3().lerpVectors(from.target, to.target, t);
+    camera.lookAt(targetPos);
+
+    const fov = THREE.MathUtils.lerp(from.fov, to.fov, t);
+    (camera as THREE.PerspectiveCamera).fov = fov;
+    (camera as THREE.PerspectiveCamera).updateProjectionMatrix();
   });
 
   return null;
 }
 
-// ─── 主场景内容 ───────────────────────────────────────────
-function SceneContent({
-  phaseRef,
-  marsPosRef,
-  marsAngleRef,
-  dragState,
-}: {
-  phaseRef: React.MutableRefObject<Phase>;
-  marsPosRef: React.MutableRefObject<THREE.Vector3>;
-  marsAngleRef: React.MutableRefObject<number>;
-  dragState: React.MutableRefObject<{ theta: number; phi: number; dist: number }>;
-}) {
-  const milkyWay = useTexture("/textures/8k_stars_milky_way.jpg");
+// ─── 内部 3D 场景 ──────────────────────────────────────────
+function Scene({ phase, progress }: { phase: Phase; progress: number }) {
+  const milkyWayTex = useTexture("/textures/8k_stars_milky_way.jpg");
 
   return (
     <>
-      {/* 银河球壳 */}
+      {/* 银河背景球 */}
       <mesh scale={[-1, 1, 1]}>
-        <sphereGeometry args={[500, 64, 64]} />
-        <meshBasicMaterial map={milkyWay} side={THREE.BackSide} />
+        <sphereGeometry args={[300, 64, 64]} />
+        <meshBasicMaterial map={milkyWayTex} side={THREE.BackSide} />
       </mesh>
 
-      <Stars radius={300} depth={80} count={6000} factor={3} saturation={0.2} fade speed={0.3} />
+      {/* 额外星点层 */}
+      <Stars radius={200} depth={60} count={8000} factor={4} saturation={0.3} fade speed={0.4} />
 
-      <ambientLight intensity={0.06} />
+      {/* 环境光 */}
+      <ambientLight intensity={0.15} />
 
       <Sun />
 
-      {PLANETS.map(def => (
-        <group key={def.name}>
-          <OrbitRing radius={def.orbitR} faded={def.orbitR > 20} />
-          <Planet
-            def={def}
-            phaseRef={phaseRef}
-            marsAngleRef={marsAngleRef}
-            marsPosRef={marsPosRef}
-          />
+      {PLANETS.map((p) => (
+        <group key={p.name}>
+          <OrbitRing radius={p.orbitR} highlight={p.isMars && phase >= 2} />
+          <Planet def={p} phase={phase} />
         </group>
       ))}
 
-      <CameraController
-        phaseRef={phaseRef}
-        marsPosRef={marsPosRef}
-        dragState={dragState}
-      />
+      <AsteroidBelt />
+
+      <CameraRig phase={phase} progress={progress} />
     </>
   );
 }
 
-// ─── HUD ──────────────────────────────────────────────────
-function Hud({ phase }: { phase: Phase }) {
-  return (
-    <AnimatePresence mode="wait">
-      {phase !== "locked" && (
-        <motion.div
-          key={phase}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.6 }}
-          className="absolute inset-0 pointer-events-none flex flex-col items-center justify-end pb-10"
-        >
-          <motion.p
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="font-mono text-[11px] tracking-[0.25em] uppercase text-cyan-300/60"
-          >
-            {phase === "intro" ? "SOLAR SYSTEM · SOL" : "LOCKING ON MARS ···"}
-          </motion.p>
-        </motion.div>
-      )}
+// ─── HUD 文字叠层 ──────────────────────────────────────────
+const HUD_LINES: Record<Phase, { title: string; sub: string }> = {
+  0: { title: "MILKY WAY GALAXY", sub: "NAVIGATING TO SOL SYSTEM · 26,000 LY" },
+  1: { title: "INNER SOLAR SYSTEM", sub: "SCANNING TERRESTRIAL PLANETS · 1 AU" },
+  2: { title: "MARS DETECTED", sub: "LOCKING TRAJECTORY · HOHMANN TRANSFER" },
+  3: { title: "MARS LOCKED", sub: "ARES MONITORING SYSTEM ONLINE" },
+};
 
-      {phase === "locked" && (
-        <motion.div
-          key="locked"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1 }}
-          className="absolute bottom-4 right-5 pointer-events-none flex items-center gap-2"
-        >
-          <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
-          <span className="font-mono text-[9px] text-red-400/60 tracking-widest uppercase">
-            MARS LOCKED · SOL 1242
-          </span>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-}
-
-// ─── 主导出 ───────────────────────────────────────────────
+// ─── 主导出组件 ────────────────────────────────────────────
 interface Props {
   onComplete?: () => void;
   className?: string;
 }
 
 export default function SolarSystemScene({ onComplete, className }: Props) {
-  const [phase, setPhase] = useState<Phase>("intro");
-  const phaseRef     = useRef<Phase>("intro");
-  const marsPosRef   = useRef(new THREE.Vector3(MARS_DEF.orbitR, 0, 0));
-  const marsAngleRef = useRef(0);
+  const [phase, setPhase]       = useState<Phase>(0);
+  const [progress, setProgress] = useState(0);
+  const [done, setDone]         = useState(false);
+  const startRef = useRef<number | null>(null);
+  const rafRef   = useRef<number>(0);
 
-  // 拖拽状态：theta=水平角, phi=仰角, dist=距离
-  const dragState = useRef({ theta: 0, phi: Math.PI / 3, dist: 3.5 });
-  const pointerDown = useRef<{ x: number; y: number; theta: number; phi: number } | null>(null);
+  const tick = useCallback((now: number) => {
+    if (startRef.current === null) startRef.current = now;
+    const elapsed = now - startRef.current;
+    const dur     = PHASE_DURATIONS[phase];
+    const p       = Math.min(elapsed / dur, 1);
+    setProgress(p);
 
-  // 阶段推进
+    if (p >= 1) {
+      if (phase < 3) {
+        const next = (phase + 1) as Phase;
+        setPhase(next);
+        setProgress(0);
+        startRef.current = now;
+      } else {
+        setDone(true);
+        onComplete?.();
+        return;
+      }
+    }
+    rafRef.current = requestAnimationFrame(tick);
+  }, [phase, onComplete]);
+
   useEffect(() => {
-    const t1 = setTimeout(() => {
-      phaseRef.current = "zoom";
-      setPhase("zoom");
-    }, 2800);
-    const t2 = setTimeout(() => {
-      phaseRef.current = "locked";
-      setPhase("locked");
-      onComplete?.();
-    }, 6500);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, [onComplete]);
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [tick]);
 
-  // 鼠标 / 触摸拖拽
-  const onPointerDown = useCallback((e: React.PointerEvent) => {
-    if (phaseRef.current !== "locked") return;
-    pointerDown.current = {
-      x: e.clientX,
-      y: e.clientY,
-      theta: dragState.current.theta,
-      phi: dragState.current.phi,
-    };
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
-  }, []);
-
-  const onPointerMove = useCallback((e: React.PointerEvent) => {
-    if (!pointerDown.current) return;
-    const dx = (e.clientX - pointerDown.current.x) * 0.006;
-    const dy = (e.clientY - pointerDown.current.y) * 0.006;
-    dragState.current.theta = pointerDown.current.theta - dx;
-    dragState.current.phi   = Math.max(0.2, Math.min(Math.PI - 0.2, pointerDown.current.phi + dy));
-  }, []);
-
-  const onPointerUp = useCallback(() => {
-    pointerDown.current = null;
-  }, []);
-
-  // 滚轮缩放
-  const onWheel = useCallback((e: React.WheelEvent) => {
-    if (phaseRef.current !== "locked") return;
-    dragState.current.dist = Math.max(1.5, Math.min(12, dragState.current.dist + e.deltaY * 0.005));
-  }, []);
+  const hud = HUD_LINES[phase];
 
   return (
-    <div
-      className={`relative ${className ?? ""}`}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerLeave={onPointerUp}
-      onWheel={onWheel}
-      style={{ cursor: phase === "locked" ? "grab" : "default" }}
-    >
+    <div className={`relative ${className ?? ""}`}>
+      {/* Three.js 画布 */}
       <Canvas
-        camera={{ position: [0, 90, 130], fov: 60, near: 0.1, far: 2000 }}
+        camera={{ position: [0, 80, 120], fov: 55, near: 0.1, far: 1000 }}
         gl={{ antialias: true, alpha: false }}
-        style={{ background: "#00020a" }}
+        style={{ background: "#000508" }}
         className="w-full h-full"
       >
-        <SceneContent
-          phaseRef={phaseRef}
-          marsPosRef={marsPosRef}
-          marsAngleRef={marsAngleRef}
-          dragState={dragState}
-        />
+        <Scene phase={phase} progress={progress} />
       </Canvas>
 
-      <Hud phase={phase} />
+      {/* HUD 叠层 */}
+      <AnimatePresence mode="wait">
+        {!done && (
+          <motion.div
+            key={phase}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.4 }}
+            className="absolute inset-0 pointer-events-none flex flex-col items-center justify-end pb-12"
+          >
+            {/* 扫描线装饰 */}
+            <div className="absolute inset-0 overflow-hidden opacity-10">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute w-full h-[1px] bg-cyan-400"
+                  style={{ top: `${15 + i * 14}%` }}
+                  animate={{ opacity: [0, 0.6, 0], x: ["-100%", "100%"] }}
+                  transition={{ duration: 3 + i * 0.4, repeat: Infinity, delay: i * 0.5 }}
+                />
+              ))}
+            </div>
+
+            {/* 中心准星 */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                className="w-24 h-24 border border-cyan-500/30 rounded-full"
+              />
+              <motion.div
+                animate={{ rotate: -360 }}
+                transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
+                className="absolute inset-3 border border-cyan-500/20 rounded-full"
+              />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-cyan-400 rounded-full" />
+              {/* 四角瞄准线 */}
+              {[[-1,-1],[1,-1],[-1,1],[1,1]].map(([sx,sy],i)=>(
+                <div key={i} className="absolute top-1/2 left-1/2" style={{
+                  width: 12, height: 12,
+                  borderTop: sy < 0 ? "1.5px solid rgba(78,168,217,0.6)" : "none",
+                  borderBottom: sy > 0 ? "1.5px solid rgba(78,168,217,0.6)" : "none",
+                  borderLeft: sx < 0 ? "1.5px solid rgba(78,168,217,0.6)" : "none",
+                  borderRight: sx > 0 ? "1.5px solid rgba(78,168,217,0.6)" : "none",
+                  transform: `translate(${sx > 0 ? "8px" : "calc(-100% - 8px)"}, ${sy > 0 ? "8px" : "calc(-100% - 8px)"})`
+                }} />
+              ))}
+            </div>
+
+            {/* 顶部坐标 */}
+            <div className="absolute top-6 left-1/2 -translate-x-1/2 font-mono text-[10px] text-cyan-400/60 tracking-widest">
+              RA 17h 45m 40s · DEC -29° 0' 28"
+            </div>
+
+            {/* 底部 HUD 文字 */}
+            <div className="text-center">
+              <p className="font-mono text-[10px] text-cyan-400/50 tracking-[0.3em] uppercase mb-1">
+                {phase === 3 ? "SYSTEM ONLINE" : `PHASE ${phase + 1}/4`}
+              </p>
+              <h2 className="font-headline text-2xl md:text-3xl font-black tracking-tighter text-white mb-1">
+                {hud.title}
+              </h2>
+              <p className="font-mono text-[11px] text-cyan-300/70 tracking-widest">{hud.sub}</p>
+            </div>
+
+            {/* 进度条 */}
+            <div className="mt-6 w-48 h-[2px] bg-white/10 rounded-full overflow-hidden">
+              <motion.div
+                className="h-full rounded-full"
+                style={{ background: "linear-gradient(90deg, #4ea8d9, #e05020)" }}
+                animate={{
+                  width: `${((phase * PHASE_DURATIONS[phase] + progress * PHASE_DURATIONS[phase]) /
+                    PHASE_DURATIONS.reduce((a, b) => a + b, 0)) * 100}%`
+                }}
+                transition={{ duration: 0.1 }}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 完成后的角落标识 */}
+      <AnimatePresence>
+        {done && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1 }}
+            className="absolute bottom-4 right-4 pointer-events-none"
+          >
+            <div className="flex items-center gap-2 font-mono text-[9px] text-cyan-400/50 tracking-widest uppercase">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
+              MARS LOCKED · SOL 1242
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
