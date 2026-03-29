@@ -386,9 +386,15 @@ export default function EnvironmentView() {
             <p className="text-[10px] text-on-surface-variant uppercase">{copy.geoSub}</p>
             <motion.div initial={{ width: 0 }} animate={{ width: "100%" }} transition={{ duration: 0.8, delay: 0.6 }} className="h-[1px] bg-gradient-to-r from-[#d4a843]/40 to-transparent mt-3" />
           </div>
-          <motion.div variants={stagger(70)} initial="hidden" animate="show" className="flex-1 flex flex-col gap-3 overflow-y-auto pr-2">
+          <motion.div variants={stagger(70)} initial="hidden" animate="show" className="flex-1 flex flex-col gap-3 overflow-y-auto pr-1">
             {loc.geoSources.map((item) => (
-              <motion.div key={item.id} variants={fadeSlideRight} whileHover={{ x: 4, transition: { duration: 0.15 } }} className="group p-3 rounded-lg hover:bg-surface-container-highest/40 transition-all border-l-2 border-transparent hover:border-[#d4a843] cursor-pointer">
+              <motion.div
+                key={item.id}
+                variants={fadeSlideRight}
+                whileHover={{ x: 4, transition: { duration: 0.15 } }}
+                className="group relative overflow-hidden rounded-xl border border-outline-variant/12 bg-surface-container-low/35 p-3 transition-all hover:border-[#d4a843]/35 hover:bg-surface-container-highest/35 cursor-pointer"
+              >
+                <span className="absolute inset-y-2 left-0 w-px rounded-full bg-[#d4a843]/0 transition-colors duration-150 group-hover:bg-[#d4a843]" />
                 <div className="flex justify-between items-center mb-1">
                   <span className="text-[10px] font-bold text-[#d4a843]">{item.source}</span>
                   <span className="text-[9px] text-on-surface-variant font-mono">ID: {item.id}</span>

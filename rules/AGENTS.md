@@ -24,6 +24,7 @@ This repository has a split frontend/backend layout.
 - Frontend: use TypeScript, semicolons, and existing quote style in the touched file. Components and views use PascalCase, for example `ProjectsView.tsx`; helpers and state variables use camelCase.
 - Backend: follow PEP 8 with 4-space indentation. Use snake_case for files, functions, and service modules.
 - Keep API field names and route contracts stable across `frontend/src/api/` and `backend/app/api/v1/`.
+- Read, write, and save text files as UTF-8 by default. When fixing garbled text or localization content, preserve valid Unicode characters and avoid introducing non-UTF-8 encodings.
 
 ## Testing Guidelines
 There is no committed automated suite in the current tree, so contributors must do focused manual checks.
