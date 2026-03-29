@@ -1,6 +1,7 @@
 /**
- * Procedural Mars globe — Canvas 2D ray-casting with drag-to-rotate (360°) + pinch/scroll zoom.
- * Zero external dependencies. Photorealistic texture via multi-octave fBm noise.
+ * Procedural Mars globe — Canvas 2D ray-casting, ported from multi-agent HTML design.
+ * Texture: random ellipses + craters + dust bands + polar ice (same as reference design).
+ * Supports drag-to-rotate (360°) + scroll/pinch zoom, inertia, half-resolution offscreen render.
  */
 import { useEffect, useRef, useCallback } from "react";
 
@@ -8,205 +9,130 @@ interface Props {
   className?: string;
 }
 
-// ---------- Noise helpers ----------
-function hash(x: number, y: number): number {
-  let h = ((x * 1619 + y * 31337) ^ (x * 31337 + y * 1619)) & 0x7fffffff;
-  h = ((h >> 16) ^ h) * 0x45d9f3b;
-  h = ((h >> 16) ^ h) * 0x45d9f3b;
-  h = (h >> 16) ^ h;
-  return (h & 0x7fffffff) / 0x7fffffff;
-}
-
-function smoothstep(t: number): number {
-  return t * t * (3 - 2 * t);
-}
-
-function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t;
-}
+// ---------- Texture constants ----------
+const TW = 512;
+const TH = 256;
 
 function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v));
 }
 
-function valueNoise(x: number, y: number): number {
-  const ix = Math.floor(x);
-  const iy = Math.floor(y);
-  const fx = x - ix;
-  const fy = y - iy;
-  const ux = smoothstep(fx);
-  const uy = smoothstep(fy);
-  return lerp(
-    lerp(hash(ix, iy), hash(ix + 1, iy), ux),
-    lerp(hash(ix, iy + 1), hash(ix + 1, iy + 1), ux),
-    uy
-  );
-}
+// Generate equirectangular texture once (matches HTML MarsGlobe._makeTex)
+let marsTexCache: Uint8ClampedArray | null = null;
 
-function fbm(x: number, y: number, octaves = 7): number {
-  let val = 0;
-  let amp = 0.5;
-  let freq = 1;
-  for (let i = 0; i < octaves; i++) {
-    val += amp * valueNoise(x * freq, y * freq);
-    amp *= 0.5;
-    freq *= 2.07;
-  }
-  return val;
-}
+function generateMarsTexture(): Uint8ClampedArray {
+  if (marsTexCache) return marsTexCache;
 
-// ---------- Texture generation (cached) ----------
-const TEX_SIZE = 768;
-let marsTexture: ImageData | null = null;
+  const oc = document.createElement("canvas");
+  oc.width = TW;
+  oc.height = TH;
+  const c = oc.getContext("2d")!;
 
-function generateMarsTexture(): ImageData {
-  if (marsTexture) return marsTexture;
-  const data = new Uint8ClampedArray(TEX_SIZE * TEX_SIZE * 4);
+  // Base rust fill
+  c.fillStyle = "#b03a14";
+  c.fillRect(0, 0, TW, TH);
 
-  for (let ty = 0; ty < TEX_SIZE; ty++) {
-    for (let tx = 0; tx < TEX_SIZE; tx++) {
-      const u = tx / TEX_SIZE;
-      const v = ty / TEX_SIZE;
-
-      // Equirectangular → sphere coords for seamless wrapping
-      const lon = u * Math.PI * 2;
-      const lat = (v - 0.5) * Math.PI;
-      const sx = Math.cos(lat) * Math.cos(lon);
-      const sy = Math.sin(lat);
-      const sz = Math.cos(lat) * Math.sin(lon);
-
-      // Multi-scale noise
-      const n1 = fbm(sx * 2.5 + 10, sy * 2.5 + sz * 2.5, 8);
-      const n2 = fbm(sx * 5.5 + 20, sy * 5.5 + sz * 5.5, 6);
-      const n3 = fbm(sx * 11 + 5, sy * 11 + sz * 11, 5);
-      const n4 = fbm(sx * 22, sy * 22 + sz * 22, 4);
-
-      const base = n1 * 0.52 + n2 * 0.28 + n3 * 0.14 + n4 * 0.06;
-
-      // ── 6-tier Mars color palette ──
-      let r: number, g: number, b: number;
-
-      if (base > 0.72) {
-        // Highland — ochre orange (Tharsis plateau style)
-        const t = (base - 0.72) / 0.28;
-        r = lerp(195, 218, t);
-        g = lerp(105, 125, t);
-        b = lerp(45, 58, t);
-      } else if (base > 0.55) {
-        // Plains — rust red
-        const t = (base - 0.55) / 0.17;
-        r = lerp(165, 195, t);
-        g = lerp(72, 105, t);
-        b = lerp(32, 45, t);
-      } else if (base > 0.40) {
-        // Lowland — dark ochre-red
-        const t = (base - 0.40) / 0.15;
-        r = lerp(128, 165, t);
-        g = lerp(52, 72, t);
-        b = lerp(24, 32, t);
-      } else if (base > 0.26) {
-        // Basin — dark brown
-        const t = (base - 0.26) / 0.14;
-        r = lerp(90, 128, t);
-        g = lerp(36, 52, t);
-        b = lerp(16, 24, t);
-      } else {
-        // Canyon floor — near-black brown
-        const t = base / 0.26;
-        r = lerp(52, 90, t);
-        g = lerp(20, 36, t);
-        b = lerp(8, 16, t);
-      }
-
-      // ── Valles Marineris (wide canyon system) ──
-      const vmPerturbation = 0.28 * valueNoise(lon * 2, lat * 8);
-      const vmLat = lat + 0.055 + vmPerturbation * 0.04;
-      const vmLon = ((lon - 5.2) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
-      const vmMask =
-        clamp(1 - Math.abs(vmLat) / 0.18, 0, 1) *
-        clamp(1 - Math.abs(Math.sin(vmLon * 0.5 - 0.4)) / 0.55, 0, 1);
-      if (vmMask > 0) {
-        const depth = vmMask * 0.72;
-        r = lerp(r, r * 0.52, depth);
-        g = lerp(g, g * 0.47, depth);
-        b = lerp(b, b * 0.42, depth);
-      }
-
-      // ── Olympus Mons (bright highland dome) ──
-      const omLon = ((lon - 2.6) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
-      const omDist = Math.sqrt(omLon * omLon + (lat - 0.32) * (lat - 0.32));
-      const omMask = clamp(1 - omDist / 0.22, 0, 1);
-      if (omMask > 0) {
-        const lift = omMask * omMask * 0.55;
-        r = clamp(r + 28 * lift, 0, 255);
-        g = clamp(g + 18 * lift, 0, 255);
-        b = clamp(b + 8 * lift, 0, 255);
-      }
-
-      // ── Hellas Basin (dark depression) ──
-      const hbLon = ((lon - 4.4) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
-      const hbDist = Math.sqrt((hbLon * 0.7) * (hbLon * 0.7) + (lat + 0.75) * (lat + 0.75));
-      const hbMask = clamp(1 - hbDist / 0.35, 0, 1);
-      if (hbMask > 0) {
-        const depth = hbMask * hbMask * 0.45;
-        r = lerp(r, r * 0.62, depth);
-        g = lerp(g, g * 0.58, depth);
-        b = lerp(b, b * 0.55, depth);
-      }
-
-      // ── Polar ice caps ──
-      const latAbs = Math.abs(lat) / (Math.PI / 2);
-      const polarBlend = clamp((latAbs - 0.80) / 0.20, 0, 1);
-      if (polarBlend > 0) {
-        const pb = polarBlend * polarBlend;
-        // Cold white with blue tint
-        r = lerp(r, 195, pb);
-        g = lerp(g, 210, pb);
-        b = lerp(b, 225, pb);
-      }
-
-      // ── Fine dust texture overlay ──
-      const dust = n4 * 0.12 - 0.06;
-      r = clamp(r + dust * 15, 0, 255);
-      g = clamp(g + dust * 10, 0, 255);
-
-      const idx = (ty * TEX_SIZE + tx) * 4;
-      data[idx]     = r;
-      data[idx + 1] = g;
-      data[idx + 2] = b;
-      data[idx + 3] = 255;
-    }
+  // Large terrain patches
+  const tones = [
+    "#c24420","#cf4e28","#a02e10","#b83c18","#d05530",
+    "#8a2508","#be3e1e","#d45830","#962e0e","#e06538",
+  ];
+  for (let i = 0; i < 130; i++) {
+    const x  = Math.random() * TW;
+    const y  = Math.random() * TH;
+    const rx = Math.random() * 65 + 8;
+    const ry = Math.random() * 28 + 6;
+    c.beginPath();
+    c.ellipse(x, y, rx, ry, Math.random() * Math.PI, 0, Math.PI * 2);
+    const alpha = Math.floor(55 + Math.random() * 105).toString(16).padStart(2, "0");
+    c.fillStyle = tones[Math.floor(Math.random() * tones.length)] + alpha;
+    c.fill();
   }
 
-  marsTexture = new ImageData(data, TEX_SIZE, TEX_SIZE);
-  return marsTexture;
+  // Fine-grained detail blobs
+  for (let i = 0; i < 520; i++) {
+    const x = Math.random() * TW;
+    const y = Math.random() * TH;
+    const r = Math.random() * 16 + 1;
+    const h = Math.random() * 30 + 5;
+    const l = Math.random() * 32 + 18;
+    const a = Math.random() * 0.52;
+    c.beginPath();
+    c.arc(x, y, r, 0, Math.PI * 2);
+    c.fillStyle = `hsla(${h},62%,${l}%,${a})`;
+    c.fill();
+  }
+
+  // Dust band streaks
+  for (let i = 0; i < 22; i++) {
+    const x = Math.random() * TW;
+    const y = TH * 0.25 + Math.random() * TH * 0.5;
+    c.beginPath();
+    c.ellipse(x, y, Math.random() * 85 + 18, Math.random() * 20 + 5, Math.random() * 0.6, 0, Math.PI * 2);
+    c.fillStyle = `rgba(205,135,72,${Math.random() * 0.2 + 0.04})`;
+    c.fill();
+  }
+
+  // Impact craters (dark circles)
+  for (let i = 0; i < 38; i++) {
+    const x = Math.random() * TW;
+    const y = Math.random() * TH;
+    const r = Math.random() * 11 + 2;
+    c.beginPath();
+    c.arc(x, y, r, 0, Math.PI * 2);
+    c.fillStyle = `rgba(35,12,4,${Math.random() * 0.28 + 0.08})`;
+    c.fill();
+  }
+
+  // North polar ice cap
+  const ng = c.createRadialGradient(TW / 2, 0, 0, TW / 2, 0, TH * 0.22);
+  ng.addColorStop(0,    "rgba(235,228,218,.98)");
+  ng.addColorStop(0.55, "rgba(218,212,202,.55)");
+  ng.addColorStop(0.85, "rgba(200,194,184,.18)");
+  ng.addColorStop(1,    "rgba(190,184,174,0)");
+  c.fillStyle = ng;
+  c.fillRect(0, 0, TW, TH * 0.3);
+
+  // South polar ice cap
+  const sg = c.createRadialGradient(TW / 2, TH, 0, TW / 2, TH, TH * 0.15);
+  sg.addColorStop(0,   "rgba(228,222,212,.9)");
+  sg.addColorStop(0.6, "rgba(210,204,194,.38)");
+  sg.addColorStop(1,   "rgba(195,189,179,0)");
+  c.fillStyle = sg;
+  c.fillRect(0, TH * 0.78, TW, TH * 0.22);
+
+  marsTexCache = c.getImageData(0, 0, TW, TH).data;
+  return marsTexCache;
 }
 
 // ---------- Component ----------
 export default function ProceduralMarsGlobe({ className = "" }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Off-screen canvas for half-res rendering (perf ~4x)
+  const offRef = useRef<HTMLCanvasElement | null>(null);
+
   const stateRef = useRef({
-    yaw: 0.4,
-    pitch: 0.12,
-    scale: 1,
+    rot:      1.1,   // yaw rotation (radians)
+    pitch:    0.0,   // vertical tilt (radians)
+    scale:    1.0,
     dragging: false,
-    lastX: 0,
-    lastY: 0,
-    velX: 0,
-    velY: 0,
-    rafId: 0,
-    texCanvas: null as HTMLCanvasElement | null,
+    lx: 0, ly: 0,
+    velX: 0, velY: 0,
+    rafId:    0,
+    tick:     0,
   });
 
-  const getTexCanvas = useCallback(() => {
-    const s = stateRef.current;
-    if (s.texCanvas) return s.texCanvas;
-    const tc = document.createElement("canvas");
-    tc.width = TEX_SIZE;
-    tc.height = TEX_SIZE;
-    tc.getContext("2d")!.putImageData(generateMarsTexture(), 0, 0);
-    s.texCanvas = tc;
-    return tc;
+  const getOffCanvas = useCallback((halfSize: number) => {
+    if (!offRef.current) {
+      offRef.current = document.createElement("canvas");
+    }
+    const oc = offRef.current;
+    if (oc.width !== halfSize || oc.height !== halfSize) {
+      oc.width  = halfSize;
+      oc.height = halfSize;
+    }
+    return oc;
   }, []);
 
   const render = useCallback(() => {
@@ -214,144 +140,134 @@ export default function ProceduralMarsGlobe({ className = "" }: Props) {
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    const { yaw, pitch, scale } = stateRef.current;
 
-    const W = canvas.width;
-    const H = canvas.height;
-    const cx = W / 2;
-    const cy = H / 2;
-    const radius = Math.min(W, H) * 0.47 * scale;
+    const { rot, pitch, scale, tick } = stateRef.current;
+    const SZ = canvas.width;
+    const R  = SZ / 2;
 
-    ctx.clearRect(0, 0, W, H);
+    // Half-resolution offscreen sphere
+    const radius  = R * 0.94 * scale;
+    const HALF    = Math.round(SZ / 2);
+    const HR      = HALF / 2;
+    const offCv   = getOffCanvas(HALF);
+    const oc      = offCv.getContext("2d")!;
+    const id      = oc.createImageData(HALF, HALF);
+    const d       = id.data;
 
-    // Ray-cast sphere
-    const texCanvas = getTexCanvas();
-    const texCtx = texCanvas.getContext("2d")!;
-    const texData = texCtx.getImageData(0, 0, TEX_SIZE, TEX_SIZE);
-    const imgData = ctx.createImageData(W, H);
+    const tex     = generateMarsTexture();
+    const I2P     = 1 / (Math.PI * 2);
+    const IP      = 1 / Math.PI;
+    // Light direction (top-left, matching reference)
+    const LX = -0.38, LY = -0.52, LZ = 0.76;
+    const AMB = 0.2;
 
-    const sinPitch = Math.sin(pitch);
-    const cosPitch = Math.cos(pitch);
+    const sinP = Math.sin(pitch);
+    const cosP = Math.cos(pitch);
 
-    // Light direction (top-right, normalized)
-    const lx = 0.55, ly = -0.65, lz = 0.52;
+    for (let py = 0; py < HALF; py++) {
+      const ny  = (py - HR) / HR;
+      const ny2 = ny * ny;
+      for (let px = 0; px < HALF; px++) {
+        const nx  = (px - HR) / HR;
+        const d2  = nx * nx + ny2;
+        if (d2 > 1) continue;
+        const nz = Math.sqrt(1 - d2);
 
-    for (let py = 0; py < H; py++) {
-      for (let px = 0; px < W; px++) {
-        const nx = (px - cx) / radius;
-        const ny = (py - cy) / radius;
-        const nz2 = 1 - nx * nx - ny * ny;
-        if (nz2 < 0) continue;
-        const nz = Math.sqrt(nz2);
+        // Apply pitch rotation
+        const ry2 = ny * cosP - nz * sinP;
+        const rz2 = ny * sinP + nz * cosP;
 
-        // Rotate by pitch
-        const ry = ny * cosPitch - nz * sinPitch;
-        const rz = ny * sinPitch + nz * cosPitch;
+        const ph = Math.asin(clamp(-ry2, -1, 1));
+        const th = Math.atan2(nx, rz2) + rot;
 
-        // Spherical coords
-        const lat = Math.asin(clamp(ry, -1, 1));
-        const lon = Math.atan2(nx, rz) + yaw;
+        let tx = (((th * I2P) % 1 + 1) % 1 * TW) | 0;
+        let ty = ((0.5 - ph * IP) * TH) | 0;
+        if (tx >= TW) tx = TW - 1;
+        if (ty < 0)   ty = 0;
+        if (ty >= TH) ty = TH - 1;
 
-        const u = ((lon / (Math.PI * 2)) % 1 + 1) % 1;
-        const v = (lat + Math.PI / 2) / Math.PI;
+        const ti   = (ty * TW + tx) * 4;
+        const diff = Math.max(0, nx * LX + (-ry2) * LY + rz2 * LZ);
+        const lt   = AMB + (1 - AMB) * diff;
+        const pi   = (py * HALF + px) * 4;
 
-        const tx = Math.floor(u * (TEX_SIZE - 1));
-        const ty2 = Math.floor(v * (TEX_SIZE - 1));
-        const ti = (ty2 * TEX_SIZE + tx) * 4;
-
-        // Non-linear Lambert shading
-        const rawDiff = lx * nx + ly * ny + lz * nz;
-        const diff = rawDiff * rawDiff * 0.35 + rawDiff * 0.65;
-        const d = clamp(diff, 0.03, 1.0);
-
-        const pi = (py * W + px) * 4;
-        imgData.data[pi]     = clamp(texData.data[ti]     * d * 1.12, 0, 255);
-        imgData.data[pi + 1] = clamp(texData.data[ti + 1] * d * 1.06, 0, 255);
-        imgData.data[pi + 2] = clamp(texData.data[ti + 2] * d, 0, 255);
-        imgData.data[pi + 3] = 255;
+        d[pi]     = Math.min(255, (tex[ti]     * lt * 1.08) | 0);
+        d[pi + 1] = Math.min(255, (tex[ti + 1] * lt * 0.94) | 0);
+        d[pi + 2] = Math.min(255, (tex[ti + 2] * lt * 0.82) | 0);
+        d[pi + 3] = 255;
       }
     }
+    oc.putImageData(id, 0, 0);
 
-    ctx.putImageData(imgData, 0, 0);
+    // Scale up to main canvas (GPU bilinear smooth)
+    ctx.clearRect(0, 0, SZ, SZ);
+    ctx.imageSmoothingEnabled  = true;
+    ctx.imageSmoothingQuality  = "high";
 
-    // ── Atmospheric edge glow (blue + orange rim) ──
-    const atmosBlue = ctx.createRadialGradient(cx, cy, radius * 0.86, cx, cy, radius * 1.14);
-    atmosBlue.addColorStop(0, "rgba(78,168,217,0)");
-    atmosBlue.addColorStop(0.55, "rgba(78,168,217,0.10)");
-    atmosBlue.addColorStop(0.8, "rgba(78,168,217,0.05)");
-    atmosBlue.addColorStop(1, "rgba(78,168,217,0)");
-    ctx.beginPath();
-    ctx.arc(cx, cy, radius * 1.14, 0, Math.PI * 2);
-    ctx.fillStyle = atmosBlue;
-    ctx.fill();
-
-    // Orange atmosphere on terminator side
-    const atmosOrange = ctx.createRadialGradient(
-      cx + radius * 0.3, cy + radius * 0.2, radius * 0.7,
-      cx + radius * 0.3, cy + radius * 0.2, radius * 1.1
-    );
-    atmosOrange.addColorStop(0, "rgba(200,100,50,0)");
-    atmosOrange.addColorStop(0.6, "rgba(200,100,50,0.08)");
-    atmosOrange.addColorStop(1, "rgba(200,100,50,0)");
-    ctx.beginPath();
-    ctx.arc(cx, cy, radius * 1.1, 0, Math.PI * 2);
-    ctx.fillStyle = atmosOrange;
-    ctx.fill();
-
-    // ── Specular highlight ──
+    // Clip to circle first
     ctx.save();
     ctx.beginPath();
-    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.arc(R, R, radius, 0, Math.PI * 2);
     ctx.clip();
+    ctx.drawImage(offCv, R - radius, R - radius, radius * 2, radius * 2);
+    ctx.restore();
+
+    // Atmosphere halo
+    const ag = ctx.createRadialGradient(R, R, radius * 0.88, R, R, radius * 1.15);
+    ag.addColorStop(0,    "rgba(210,90,35,0)");
+    ag.addColorStop(0.35, "rgba(200,72,28,.13)");
+    ag.addColorStop(0.7,  "rgba(180,52,18,.24)");
+    ag.addColorStop(1,    "rgba(160,42,12,0)");
+    ctx.fillStyle = ag;
+    ctx.beginPath();
+    ctx.arc(R, R, radius * 1.15, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Specular highlight
     const spec = ctx.createRadialGradient(
-      cx - radius * 0.30, cy - radius * 0.30, 0,
-      cx - radius * 0.10, cy - radius * 0.08, radius * 0.60
+      R - radius * 0.28, R - radius * 0.30, 0,
+      R - radius * 0.28, R - radius * 0.30, radius * 0.55,
     );
-    spec.addColorStop(0, "rgba(255,240,220,0.14)");
-    spec.addColorStop(0.4, "rgba(255,220,180,0.06)");
-    spec.addColorStop(1, "rgba(255,255,255,0)");
+    spec.addColorStop(0, "rgba(255,195,145,.09)");
+    spec.addColorStop(1, "rgba(255,195,145,0)");
     ctx.fillStyle = spec;
-    ctx.fillRect(0, 0, W, H);
-    ctx.restore();
+    ctx.beginPath();
+    ctx.arc(R, R, radius, 0, Math.PI * 2);
+    ctx.fill();
 
-    // ── Edge darkening (limb effect) ──
+    // Limb darkening
     ctx.save();
     ctx.beginPath();
-    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.arc(R, R, radius, 0, Math.PI * 2);
     ctx.clip();
-    const limb = ctx.createRadialGradient(cx, cy, radius * 0.55, cx, cy, radius);
-    limb.addColorStop(0, "rgba(0,0,0,0)");
-    limb.addColorStop(0.7, "rgba(0,0,0,0.08)");
-    limb.addColorStop(1, "rgba(0,0,0,0.52)");
+    const limb = ctx.createRadialGradient(R, R, radius * 0.55, R, R, radius);
+    limb.addColorStop(0,   "rgba(0,0,0,0)");
+    limb.addColorStop(0.7, "rgba(0,0,0,0.06)");
+    limb.addColorStop(1,   "rgba(0,0,0,0.50)");
     ctx.fillStyle = limb;
-    ctx.fillRect(0, 0, W, H);
+    ctx.fillRect(0, 0, SZ, SZ);
     ctx.restore();
-  }, [getTexCanvas]);
 
-  // Auto-rotate + inertia loop
+    // tick for external use
+    stateRef.current.tick = tick + 1;
+  }, [getOffCanvas]);
+
+  // Animation loop: auto-rotate + inertia
   useEffect(() => {
     const s = stateRef.current;
-    let lastTime = performance.now();
 
-    const loop = (now: number) => {
-      const dt = Math.min(now - lastTime, 50);
-      lastTime = now;
-
+    const loop = () => {
       if (!s.dragging) {
-        // Inertia decay
-        s.velX *= 0.91;
-        s.velY *= 0.91;
-        // Slow auto-rotate when nearly idle
+        s.velX *= 0.92;
+        s.velY *= 0.92;
         if (Math.abs(s.velX) < 0.0008 && Math.abs(s.velY) < 0.0008) {
-          s.velX = 0.0003 * (dt / 16.7);
+          s.velX = 0.003; // default auto-rotate speed (matching reference: .003)
         }
-        if (Math.abs(s.velX) > 0.00005 || Math.abs(s.velY) > 0.00005) {
-          s.yaw += s.velX;
-          s.pitch += s.velY;
-          s.pitch = clamp(s.pitch, -Math.PI / 2 + 0.01, Math.PI / 2 - 0.01);
-          render();
-        }
+        s.rot   += s.velX;
+        s.pitch += s.velY;
+        s.pitch = clamp(s.pitch, -Math.PI / 2 + 0.01, Math.PI / 2 - 0.01);
       }
+      render();
       s.rafId = requestAnimationFrame(loop);
     };
 
@@ -360,11 +276,12 @@ export default function ProceduralMarsGlobe({ className = "" }: Props) {
     return () => cancelAnimationFrame(s.rafId);
   }, [render]);
 
+  // Pointer drag
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     const s = stateRef.current;
     s.dragging = true;
-    s.lastX = e.clientX;
-    s.lastY = e.clientY;
+    s.lx = e.clientX;
+    s.ly = e.clientY;
     s.velX = 0;
     s.velY = 0;
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
@@ -373,15 +290,15 @@ export default function ProceduralMarsGlobe({ className = "" }: Props) {
   const onPointerMove = useCallback((e: React.PointerEvent) => {
     const s = stateRef.current;
     if (!s.dragging) return;
-    const dx = e.clientX - s.lastX;
-    const dy = e.clientY - s.lastY;
-    s.velX = dx * 0.005;
-    s.velY = dy * 0.005;
-    s.yaw += s.velX;
+    const dx = e.clientX - s.lx;
+    const dy = e.clientY - s.ly;
+    s.velX = dx * 0.0065;
+    s.velY = dy * 0.004;
+    s.rot   += s.velX;
     s.pitch += s.velY;
     s.pitch = clamp(s.pitch, -Math.PI / 2 + 0.01, Math.PI / 2 - 0.01);
-    s.lastX = e.clientX;
-    s.lastY = e.clientY;
+    s.lx = e.clientX;
+    s.ly = e.clientY;
     render();
   }, [render]);
 
@@ -389,6 +306,7 @@ export default function ProceduralMarsGlobe({ className = "" }: Props) {
     stateRef.current.dragging = false;
   }, []);
 
+  // Scroll zoom
   const onWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
     const s = stateRef.current;
@@ -396,6 +314,7 @@ export default function ProceduralMarsGlobe({ className = "" }: Props) {
     render();
   }, [render]);
 
+  // Pinch zoom
   const touchRef = useRef({ dist: 0 });
   const onTouchStart = useCallback((e: React.TouchEvent) => {
     if (e.touches.length === 2) {
@@ -416,13 +335,13 @@ export default function ProceduralMarsGlobe({ className = "" }: Props) {
     }
   }, [render]);
 
-  // ResizeObserver — re-init canvas size on container resize
+  // Resize observer — update canvas physical size
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ro = new ResizeObserver(() => {
       const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width * devicePixelRatio;
+      canvas.width  = rect.width  * devicePixelRatio;
       canvas.height = rect.height * devicePixelRatio;
       render();
     });
@@ -438,12 +357,11 @@ export default function ProceduralMarsGlobe({ className = "" }: Props) {
       <canvas
         ref={canvasRef}
         style={{
-          width: "100%",
-          height: "100%",
-          display: "block",
+          width:       "100%",
+          height:      "100%",
+          display:     "block",
           touchAction: "none",
-          cursor: "grab",
-          clipPath: "circle(50% at 50% 50%)",
+          cursor:      "grab",
         }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
