@@ -392,9 +392,10 @@ export default function EnvironmentView() {
                 key={item.id}
                 variants={fadeSlideRight}
                 whileHover={{ x: 4, transition: { duration: 0.15 } }}
-                className="group relative overflow-hidden rounded-xl border border-[#232a2f] bg-[#161c20] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] transition-all hover:border-[#3a3020] hover:bg-[#192026] cursor-pointer"
+                className="group relative overflow-hidden rounded-xl border border-outline-variant/10 bg-surface-container-high/22 p-3 backdrop-blur-md transition-all hover:bg-surface-container-high/30 hover:border-outline-variant/16 cursor-pointer"
               >
-                <span className="absolute inset-y-3 left-0 w-px rounded-full bg-[#d4a843]/0 transition-colors duration-150 group-hover:bg-[#d4a843]" />
+                <span className="absolute inset-y-3 left-0 w-px rounded-full bg-[#d4a843]/0 transition-colors duration-150 group-hover:bg-[#d4a843]/75" />
+                <span className="absolute inset-x-0 top-0 h-px bg-white/3 pointer-events-none" />
                 <div className="flex justify-between items-center mb-1">
                   <span className="text-[10px] font-bold text-[#d4a843]">{item.source}</span>
                   <span className="text-[9px] text-on-surface-variant font-mono">ID: {item.id}</span>
