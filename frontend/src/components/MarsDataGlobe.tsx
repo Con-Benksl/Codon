@@ -30,14 +30,6 @@ const STATUS_LABELS = {
   warning: "WARNING",
 };
 
-const DATA_RAYS = [0, 45, 90, 135, 180, 225, 270, 315];
-
-// Latitude lines projected as ellipses onto globe face
-// lat in degrees → ellipse rx=globeR, ry=globeR*cos(lat°), cy offset=globeR*sin(lat°)
-const GLOBE_R = 94; // matches the 68% * 150 ≈ 102 in viewBox coords, using inner-fit radius
-const LAT_LINES = [-60, -30, 30, 60];
-const LON_COUNT = 6;
-
 export default function MarsDataGlobe({ data, className = "" }: MarsDataGlobeProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const statusColor = STATUS_COLORS[data.systemStatus];
@@ -47,20 +39,6 @@ export default function MarsDataGlobe({ data, className = "" }: MarsDataGlobePro
   // Circumference for survival arc (r=52 → C = 2π*52 ≈ 326.7)
   const arcCircumference = 2 * Math.PI * 52;
   const arcOffset = arcCircumference * (1 - survivalPct / 100);
-
-  // Generate lat grid ellipses
-  const latEllipses = LAT_LINES.map((deg) => {
-    const rad = (deg * Math.PI) / 180;
-    const ry = GLOBE_R * Math.cos(rad);
-    const dy = GLOBE_R * Math.sin(rad);
-    return { ry, dy, deg };
-  });
-
-  // Generate lon grid lines (projected as vertical-ish ellipse arcs)
-  const lonLines = Array.from({ length: LON_COUNT }, (_, i) => {
-    const angle = (i * Math.PI) / LON_COUNT;
-    return angle;
-  });
 
   return (
     <div className={`relative flex items-center justify-center ${className}`}>
@@ -79,18 +57,6 @@ export default function MarsDataGlobe({ data, className = "" }: MarsDataGlobePro
         className="absolute inset-0 w-full h-full"
         style={{ overflow: "visible" }}
       >
-        <defs>
-          {/* Scan arc gradient */}
-          <linearGradient id="scanArcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor={statusColor} stopOpacity="0" />
-            <stop offset="60%" stopColor={statusColor} stopOpacity="0.65" />
-            <stop offset="100%" stopColor={statusColor} stopOpacity="0.15" />
-          </linearGradient>
-          {/* Data card glass */}
-          <filter id="cardBlur">
-            <feGaussianBlur stdDeviation="0.8" />
-          </filter>
-        </defs>
 
         {/* ── Outermost orbit ring (slow) ── */}
         <g className="orbit-slow" style={{ transformOrigin: "150px 150px" }}>
@@ -182,136 +148,6 @@ export default function MarsDataGlobe({ data, className = "" }: MarsDataGlobePro
           })}
         </g>
 
-        {/* ── Scan arc (fast CW sweep) ── */}
-        <g className="orbit-cw-fast">
-          <path
-            d={`M 150 56 A 94 94 0 0 1 ${150 + 94 * Math.sin(Math.PI / 3)} ${150 - 94 * Math.cos(Math.PI / 3)}`}
-            fill="none"
-            stroke={`url(#scanArcGrad)`}
-            strokeWidth="1.5"
-          />
-        </g>
-
-        {/* ── Coordinate crosshair ── */}
-        <line x1="150" y1="56" x2="150" y2="244" stroke="rgba(129,207,255,0.06)" strokeWidth="0.4" />
-        <line x1="56" y1="150" x2="244" y2="150" stroke="rgba(129,207,255,0.06)" strokeWidth="0.4" />
-
-        {/* ── Latitude grid (projected ellipses on globe face) ── */}
-        <g opacity="1">
-          {latEllipses.map(({ ry, dy, deg }) => (
-            <ellipse
-              key={deg}
-              cx="150"
-              cy={150 + dy}
-              rx={GLOBE_R - 2}
-              ry={Math.abs(ry)}
-              fill="none"
-              stroke="rgba(129,207,255,0.055)"
-              strokeWidth="0.4"
-              strokeDasharray="2 4"
-            />
-          ))}
-          {/* Equator — slightly more visible */}
-          <ellipse
-            cx="150" cy="150"
-            rx={GLOBE_R - 2} ry={GLOBE_R - 2}
-            fill="none"
-            stroke="rgba(129,207,255,0.10)"
-            strokeWidth="0.5"
-            strokeDasharray="3 5"
-          />
-          {/* Equator label */}
-          <text x="246" y="152" fontSize="3.5" fontFamily="IBM Plex Mono, monospace" fill="rgba(129,207,255,0.35)" letterSpacing="0.5">0°</text>
-          <text x="246" y="122" fontSize="3.5" fontFamily="IBM Plex Mono, monospace" fill="rgba(129,207,255,0.25)" letterSpacing="0.5">+30°</text>
-          <text x="246" y="182" fontSize="3.5" fontFamily="IBM Plex Mono, monospace" fill="rgba(129,207,255,0.25)" letterSpacing="0.5">-30°</text>
-        </g>
-
-        {/* ── Longitude grid (vertical great-circle arcs) ── */}
-        <g opacity="1">
-          {lonLines.map((angle, i) => {
-            const cosA = Math.cos(angle);
-            // Project as narrow ellipse: rx = GLOBE_R*|sinA|, ry = GLOBE_R
-            const rx = (GLOBE_R - 2) * Math.abs(Math.sin(angle) === 0 ? 0.01 : Math.sin(angle));
-            return (
-              <ellipse
-                key={i}
-                cx="150" cy="150"
-                rx={rx}
-                ry={GLOBE_R - 2}
-                fill="none"
-                stroke="rgba(129,207,255,0.05)"
-                strokeWidth="0.4"
-                strokeDasharray="2 4"
-                transform={`rotate(${(angle * 180) / Math.PI}, 150, 150)`}
-              />
-            );
-          })}
-        </g>
-
-        {/* ── Data rays (pulsing) ── */}
-        {DATA_RAYS.map((angle, i) => {
-          const rad = (angle * Math.PI) / 180;
-          const innerR = 66;
-          const outerR = 80 + (i % 3) * 5;
-          const x1 = 150 + innerR * Math.sin(rad);
-          const y1 = 150 - innerR * Math.cos(rad);
-          const x2 = 150 + outerR * Math.sin(rad);
-          const y2 = 150 - outerR * Math.cos(rad);
-          return (
-            <motion.line
-              key={angle}
-              x1={x1} y1={y1} x2={x2} y2={y2}
-              stroke={statusColor}
-              strokeWidth="0.7"
-              animate={{ opacity: [0.15, 0.75, 0.15] }}
-              transition={{
-                duration: 2 + (i % 3) * 0.8,
-                delay: i * 0.22,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            />
-          );
-        })}
-
-        {/* ── Measurement rulers (4 directions) ── */}
-        {[0, 90, 180, 270].map((angle) => {
-          const rad = (angle * Math.PI) / 180;
-          const x1 = 150 + 91 * Math.sin(rad);
-          const y1 = 150 - 91 * Math.cos(rad);
-          const x2 = 150 + 103 * Math.sin(rad);
-          const y2 = 150 - 103 * Math.cos(rad);
-          // Perpendicular tick at outer end
-          const tx = 3 * Math.cos(rad);
-          const ty = 3 * Math.sin(rad);
-          return (
-            <g key={`ruler-${angle}`} opacity="0.45">
-              <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={statusColor} strokeWidth="0.6" />
-              <line x1={x2 - tx} y1={y2 - ty} x2={x2 + tx} y2={y2 + ty} stroke={statusColor} strokeWidth="1" />
-            </g>
-          );
-        })}
-        {/* Diameter label */}
-        <text x="257" y="150" fontSize="3.8" fontFamily="IBM Plex Mono, monospace" fill={`${statusColor}60`} letterSpacing="0.3">∅ 6792km</text>
-
-        {/* ── Inner tick ring (r=56) ── */}
-        <g transform="translate(150,150)">
-          {Array.from({ length: 24 }, (_, i) => {
-            const ang = (i * Math.PI * 2) / 24;
-            const r1 = 54;
-            const r2 = i % 3 === 0 ? 50 : 52;
-            return (
-              <line
-                key={i}
-                x1={r2 * Math.sin(ang)} y1={-r2 * Math.cos(ang)}
-                x2={r1 * Math.sin(ang)} y2={-r1 * Math.cos(ang)}
-                stroke={`${statusColor}`}
-                strokeWidth={i % 3 === 0 ? "0.8" : "0.4"}
-                opacity={i % 3 === 0 ? "0.35" : "0.18"}
-              />
-            );
-          })}
-        </g>
 
         {/* ── Survival arc + center readout ── */}
         <g transform="translate(150,150)">
