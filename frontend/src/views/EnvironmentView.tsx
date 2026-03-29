@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { motion } from "motion/react";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import {
   Activity,
   Mountain,
@@ -12,7 +12,6 @@ import {
   Search,
 } from "lucide-react";
 import { EnvironmentalCard } from "../components";
-import ProceduralMarsGlobe from "../components/ProceduralMarsGlobe";
 import { useLocale, type Locale } from "../i18n/context";
 import { stagger, fadeSlideUp, fadeSlideLeft, fadeSlideRight, viewTransition } from "../lib/motion";
 
@@ -289,6 +288,148 @@ const DATA: Record<Locale, Record<LocationKey, LocationData>> = {
 const ORDER: LocationKey[] = ["jezero", "valles", "gale", "utopia"];
 const ICONS: Record<LocationKey, typeof MapPin> = { jezero: MapPin, valles: Mountain, gale: Activity, utopia: Search };
 
+// 银河拉近动画帧序列
+const ZOOM_STEPS = [
+  { text: "INITIALIZING NAVIGATION SYSTEM...", scale: 0.08, opacity: 0.4, duration: 600 },
+  { text: "LOCATING MILKY WAY CORE...", scale: 0.15, opacity: 0.6, duration: 700 },
+  { text: "ZOOMING TO SOLAR SYSTEM...", scale: 0.35, opacity: 0.75, duration: 800 },
+  { text: "APPROACHING INNER PLANETS...", scale: 0.6, opacity: 0.85, duration: 700 },
+  { text: "LOCKING ON MARS ORBIT...", scale: 0.85, opacity: 0.95, duration: 600 },
+  { text: "MARS VIEW LOCKED ✓", scale: 1, opacity: 1, duration: 500 },
+];
+
+function SolarSystemIframe({ className }: { className?: string }) {
+  const [zoomStep, setZoomStep] = useState(0);
+  const [overlayVisible, setOverlayVisible] = useState(true);
+  const [iframeReady, setIframeReady] = useState(false);
+
+  useEffect(() => {
+    // 预加载 iframe，延迟后开始动画
+    const preloadTimer = setTimeout(() => setIframeReady(true), 300);
+    return () => clearTimeout(preloadTimer);
+  }, []);
+
+  useEffect(() => {
+    if (!iframeReady) return;
+    if (zoomStep >= ZOOM_STEPS.length) {
+      // 所有步骤完成，延迟后隐藏覆盖层
+      const hideTimer = setTimeout(() => setOverlayVisible(false), 600);
+      return () => clearTimeout(hideTimer);
+    }
+    const timer = setTimeout(() => {
+      setZoomStep((s) => s + 1);
+    }, ZOOM_STEPS[zoomStep]?.duration ?? 500);
+    return () => clearTimeout(timer);
+  }, [zoomStep, iframeReady]);
+
+  const currentStep = ZOOM_STEPS[Math.min(zoomStep, ZOOM_STEPS.length - 1)];
+
+  return (
+    <div className={`relative overflow-hidden rounded-2xl ${className ?? ""}`}>
+      {/* 实际 iframe */}
+      <iframe
+        src="https://www.solarsystemscope.com/iframe"
+        style={{
+          width: "100%",
+          height: "100%",
+          border: "2px solid #0f5c6e",
+          borderRadius: "16px",
+          display: "block",
+        }}
+        allowFullScreen
+        title="Solar System Scope"
+      />
+
+      {/* 拉近动画覆盖层 */}
+      <AnimatePresence>
+        {overlayVisible && (
+          <motion.div
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
+            className="absolute inset-0 rounded-2xl overflow-hidden flex flex-col items-center justify-center"
+            style={{ background: "radial-gradient(ellipse at center, #050d1a 0%, #000508 60%, #000000 100%)" }}
+          >
+            {/* 星空背景粒子效果 */}
+            <div className="absolute inset-0 overflow-hidden">
+              {Array.from({ length: 80 }).map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute rounded-full bg-white"
+                  style={{
+                    width: Math.random() * 2 + 0.5,
+                    height: Math.random() * 2 + 0.5,
+                    left: `${Math.random() * 100}%`,
+                    top: `${Math.random() * 100}%`,
+                    opacity: Math.random() * 0.6 + 0.1,
+                  }}
+                  animate={{
+                    scale: currentStep ? [1, currentStep.scale * 8 + 1, 1] : 1,
+                    opacity: [null, 0.8, Math.random() * 0.4 + 0.1],
+                  }}
+                  transition={{ duration: 1.5, ease: "easeInOut", repeat: Infinity, repeatType: "reverse" }}
+                />
+              ))}
+            </div>
+
+            {/* 银河系缩放圆环 */}
+            <div className="relative flex items-center justify-center mb-8">
+              {[1, 0.7, 0.45, 0.25].map((ringScale, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute rounded-full border border-cyan-500/20"
+                  style={{ width: 220 * ringScale, height: 220 * ringScale }}
+                  animate={{
+                    scale: iframeReady ? [1, currentStep.scale * 0.4 + 0.8, 1] : 1,
+                    opacity: currentStep.opacity * (1 - i * 0.2),
+                    borderColor: i === 0 ? "rgba(78,168,217,0.4)" : undefined,
+                  }}
+                  transition={{ duration: 1.2, ease: [0.25, 0.46, 0.45, 0.94], delay: i * 0.05 }}
+                />
+              ))}
+              {/* 中心火星标记 */}
+              <motion.div
+                className="w-8 h-8 rounded-full flex items-center justify-center"
+                style={{ background: "radial-gradient(circle, #c1440e 0%, #8b2500 60%, #3d1000 100%)" }}
+                animate={{
+                  scale: iframeReady ? currentStep.scale * 0.5 + 0.5 : 0.5,
+                  boxShadow: zoomStep >= ZOOM_STEPS.length
+                    ? "0 0 20px rgba(193,68,14,0.8), 0 0 40px rgba(193,68,14,0.4)"
+                    : "0 0 8px rgba(193,68,14,0.4)",
+                }}
+                transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+              />
+            </div>
+
+            {/* 进度文字 */}
+            <AnimatePresence mode="wait">
+              <motion.p
+                key={zoomStep}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.3 }}
+                className="font-mono text-[11px] tracking-widest uppercase text-cyan-400/80 text-center px-4"
+              >
+                {currentStep.text}
+              </motion.p>
+            </AnimatePresence>
+
+            {/* 进度条 */}
+            <div className="mt-4 w-48 h-[2px] bg-cyan-900/40 rounded-full overflow-hidden">
+              <motion.div
+                className="h-full bg-cyan-400/70 rounded-full"
+                animate={{ width: `${(Math.min(zoomStep, ZOOM_STEPS.length) / ZOOM_STEPS.length) * 100}%` }}
+                transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export default function EnvironmentView() {
   const { locale } = useLocale();
   const copy = COPY[locale];
@@ -369,7 +510,7 @@ export default function EnvironmentView() {
           transition={{ duration: 0.7, delay: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
           className="hidden md:flex flex-1 relative items-center justify-center min-h-[520px] lg:min-h-[640px]"
         >
-          <ProceduralMarsGlobe className="w-[360px] h-[360px] md:w-[460px] md:h-[460px] lg:w-[540px] lg:h-[540px] xl:w-[620px] xl:h-[620px]" />
+          <SolarSystemIframe className="w-[360px] h-[360px] md:w-[460px] md:h-[460px] lg:w-[540px] lg:h-[540px] xl:w-[620px] xl:h-[620px]" />
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2">
             <p className="text-[9px] font-headline tracking-widest uppercase bg-surface-container-high/80 px-4 py-1 rounded-full border border-outline-variant/20 text-on-surface-variant/70">
               {loc.survivalOrganism} · {copy.survivalProbability}
