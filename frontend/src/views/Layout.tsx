@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Fragment } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   LayoutGrid,
@@ -12,14 +12,17 @@ import {
   Bell,
   Globe,
   Network,
+  Menu,
+  X,
   FolderOpen,
+  Settings,
   LogOut,
   LogIn,
   ChevronDown,
 } from "lucide-react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
-import { Starfield, AmbientGlow, MarsStatusGlobe, Avatar, AiChatWidget } from "../components";
+import { NavItem, Starfield, AmbientGlow, MarsStatusGlobe, Avatar, AiChatWidget } from "../components";
 import { getCurrentUser, logout, type User } from "../api";
 import { useLocale } from "../i18n/context";
 
@@ -76,6 +79,7 @@ function getActiveKey(pathname: string, navItems: NavConfig[]): string {
 }
 
 export default function Layout() {
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const { locale, setLocale, t } = useLocale();
@@ -86,8 +90,10 @@ export default function Layout() {
 
   const NAV_ITEMS = buildNavItems(t);
   const MAIN_NAV = NAV_ITEMS.filter((n) => n.group === "main");
+  const UTIL_NAV = NAV_ITEMS.filter((n) => n.group === "util");
 
   const activeKey = getActiveKey(location.pathname, NAV_ITEMS);
+  const activeNav = NAV_ITEMS.find((n) => n.key === activeKey) ?? NAV_ITEMS[0];
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -115,8 +121,44 @@ export default function Layout() {
   };
 
   const goTo = (item: NavConfig) => {
-    if (!item.disabled) navigate(item.path);
+    if (!item.disabled) {
+      navigate(item.path);
+      setDrawerOpen(false);
+    }
   };
+
+  const renderSideNav = (showLabels: boolean) => (
+    <>
+      <div className="p-4 flex flex-col gap-4 flex-1">
+        {MAIN_NAV.map((item) => (
+          <Fragment key={item.key}>
+            <NavItem
+              icon={item.icon}
+              label={item.label}
+              active={activeKey === item.key}
+              disabled={item.disabled}
+              alwaysShowLabel={showLabels}
+              onClick={() => goTo(item)}
+            />
+          </Fragment>
+        ))}
+      </div>
+
+      <div className="p-4 border-t border-outline-variant/10 flex flex-col gap-2 safe-bottom">
+        {UTIL_NAV.map((item) => (
+          <Fragment key={item.key}>
+            <NavItem
+              icon={item.icon}
+              label={item.label}
+              disabled={item.disabled}
+              alwaysShowLabel={showLabels}
+              onClick={() => goTo(item)}
+            />
+          </Fragment>
+        ))}
+      </div>
+    </>
+  );
 
   return (
     <div className="min-h-screen bg-transparent text-on-background font-body selection:bg-primary/30 selection:text-primary">
@@ -125,6 +167,14 @@ export default function Layout() {
 
       <header className="fixed top-0 w-full z-50 flex justify-between items-center px-4 md:px-6 safe-h-header safe-top bg-surface-container/60 backdrop-blur-xl border-b border-outline-variant/15 shadow-[0_20px_50px_rgba(78,168,217,0.08)] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[1px] after:bg-gradient-to-r after:from-primary/60 after:via-primary/20 after:to-transparent after:pointer-events-none relative">
         <div className="flex items-center gap-3">
+          <button
+            className="md:hidden p-2 rounded-lg hover:bg-surface-variant/50 active:bg-surface-variant transition-all"
+            onClick={() => setDrawerOpen(true)}
+            aria-label={t("header.openMenu")}
+          >
+            <Menu size={20} className="text-on-surface-variant" />
+          </button>
+
           <span className="text-lg md:text-xl font-black tracking-[0.1em] text-primary font-headline">
             MARTIAN BIOLAB AI
           </span>
@@ -134,7 +184,7 @@ export default function Layout() {
           </h1>
         </div>
 
-        <nav className="flex items-center gap-8 font-headline tracking-tighter text-sm uppercase">
+        <nav className="hidden md:flex items-center gap-8 font-headline tracking-tighter text-sm uppercase">
           {MAIN_NAV.map((item) => (
             <button
               key={item.key}
@@ -251,7 +301,66 @@ export default function Layout() {
         </div>
       </header>
 
-      <main className="safe-pt-main safe-pb-main px-4 md:px-8 min-h-screen">
+      <AnimatePresence>
+        {drawerOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-background/70 z-50 md:hidden"
+              onClick={() => setDrawerOpen(false)}
+              aria-hidden="true"
+            />
+
+            <motion.aside
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 280 }}
+              drag="x"
+              dragConstraints={{ right: 0 }}
+              dragElastic={{ right: 0, left: 0.3 }}
+              onDragEnd={(_, info) => {
+                if (info.offset.x < -60 || info.velocity.x < -400) setDrawerOpen(false);
+              }}
+              className="fixed left-0 top-0 h-full w-72 z-50 bg-[#060810]/85 backdrop-blur-2xl border-r border-outline-variant/20 flex flex-col md:hidden shadow-2xl"
+              aria-label="Primary navigation"
+            >
+              <div className="flex items-center justify-between px-4 safe-h-header safe-top border-b border-outline-variant/15 shrink-0">
+                <span className="text-base font-black tracking-[0.08em] text-primary font-headline">
+                  MARTIAN BIOLAB AI
+                </span>
+                <button
+                  onClick={() => setDrawerOpen(false)}
+                  className="p-2 rounded-lg hover:bg-surface-variant/50 active:bg-surface-variant transition-all"
+                  aria-label={t("header.closeMenu")}
+                >
+                  <X size={18} className="text-on-surface-variant" />
+                </button>
+              </div>
+
+              <div className="px-4 py-3 border-b border-outline-variant/10">
+                <p className="text-[10px] text-on-surface-variant font-headline uppercase tracking-widest">
+                  {t("header.current")}
+                  <span className="text-primary ml-1">
+                    {activeNav.labelShort} {t("header.view")}
+                  </span>
+                </p>
+              </div>
+
+              {renderSideNav(true)}
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+
+      <aside className="hidden md:flex fixed left-0 top-16 h-[calc(100vh-64px)] z-40 flex-col bg-[#060810]/80 backdrop-blur-2xl border-r border-outline-variant/15 w-20 hover:w-64 transition-all duration-300 group overflow-hidden">
+        {renderSideNav(false)}
+      </aside>
+
+      <main className="ml-0 md:ml-20 safe-pt-main safe-pb-main px-4 md:px-8 min-h-screen">
         <Outlet />
       </main>
 
