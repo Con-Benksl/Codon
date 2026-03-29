@@ -121,7 +121,7 @@ export default function OrchestratorView() {
   };
 
   const completedCount = agentRuns.filter((r) => r.status === "completed").length;
-  const allDone = agentRuns.length === 6 && completedCount === 6;
+  const allDone = agentRuns.length >= 3 && completedCount >= 3;
 
   return (
     <motion.div
@@ -279,13 +279,13 @@ export default function OrchestratorView() {
                 >
                   <CheckCircle2 size={15} className="text-emerald-400 shrink-0" />
                   <p className="text-sm text-emerald-400 font-headline flex-1">
-                    {isZh ? `全部 6 个 Agent 完成 · 设计方案已生成` : `All 6 agents completed · Design ready`}
+                    {isZh ? `全部 Agent 完成 · 设计方案已生成` : `All agents completed · Design ready`}
                   </p>
                   <button
-                    onClick={() => navigate("/output")}
+                    onClick={() => navigate("/synthesis")}
                     className="text-[11px] font-headline text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-lg hover:bg-emerald-500/10 transition-colors uppercase tracking-wider"
                   >
-                    {isZh ? "查看输出" : "View Output"}
+                    {isZh ? "查看合成" : "View Synthesis"}
                   </button>
                 </motion.div>
               )}
@@ -371,7 +371,7 @@ export default function OrchestratorView() {
                   initial={{ opacity: 0.4, y: -3 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3 }}
-                  className="text-base font-headline font-bold text-on-surface block mt-0.5"
+                  className="text-base font-data font-bold text-on-surface block mt-0.5"
                 >
                   {s.val}
                 </motion.span>
@@ -381,9 +381,9 @@ export default function OrchestratorView() {
         </div>
       </motion.section>
 
-      {/* ───── 验证层 + 输出按钮 ───── */}
+      {/* ───── 验证层 + 合成按钮 ───── */}
       <VerificationSection isZh={isZh} />
-      <DesignSpecBar isZh={isZh} onNavigateOutput={() => navigate("/output")} />
+      <DesignSpecBar isZh={isZh} onNavigateOutput={() => navigate("/synthesis")} />
 
       {/* ───── Agent 详情面板 ───── */}
       <AnimatePresence>

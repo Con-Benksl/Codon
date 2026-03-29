@@ -11,7 +11,7 @@ import {
   MapPin,
   Search,
 } from "lucide-react";
-import { EnvironmentalCard, ProceduralMarsGlobe } from "../components";
+import { EnvironmentalCard, MarsDataGlobe } from "../components";
 import { useLocale, type Locale } from "../i18n/context";
 import { stagger, fadeSlideUp, fadeSlideLeft, fadeSlideRight, viewTransition } from "../lib/motion";
 
@@ -362,46 +362,28 @@ export default function EnvironmentView() {
           </motion.div>
         </motion.section>
 
-        <motion.section initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.7, delay: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }} className="hidden md:flex flex-1 relative items-center justify-center min-h-[420px]">
-          <div className="relative w-[360px] h-[360px] md:w-[420px] md:h-[420px] xl:w-[500px] xl:h-[500px]">
-            <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1.25 }} transition={{ duration: 1, delay: 0.5 }} className="absolute inset-0 border border-primary/5 rounded-full" />
-            <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1.1 }} transition={{ duration: 1, delay: 0.6 }} className="absolute inset-0 border border-primary/10 rounded-full mars-orbit border-dashed" />
-            <motion.div initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8, delay: 0.3, ease: [0.34, 1.56, 0.64, 1] }} className="absolute inset-0 rounded-full bg-gradient-to-br from-[#1c2024] via-[#0a0f13] to-[#101418] shadow-[inset_0_0_100px_rgba(78,168,217,0.2)] flex items-center justify-center overflow-hidden border border-outline-variant/20">
-              <ProceduralMarsGlobe className="w-full h-full opacity-80 mix-blend-screen" />
-              <div className="absolute inset-0 bg-gradient-to-tr from-secondary/10 via-transparent to-primary/10" />
-            </motion.div>
-            <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.9 }} className="absolute top-[25%] left-[20%]">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full border border-primary flex items-center justify-center"><div className="w-1 h-1 bg-primary animate-ping" /></div>
-                <div className="glass-panel px-3 py-2 rounded-lg border border-primary/20">
-                  <p className="text-[10px] font-bold text-primary font-headline">JEZERO CRATER</p>
-                  <p className="text-[8px] text-on-surface-variant whitespace-nowrap">{copy.jezeroHint}</p>
-                </div>
-              </div>
-            </motion.div>
-            <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 1.1 }} className="absolute bottom-[35%] right-[15%]">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full border border-secondary flex items-center justify-center"><div className="w-1 h-1 bg-secondary animate-pulse" /></div>
-                <div className="glass-panel px-3 py-2 rounded-lg border border-secondary/20">
-                  <p className="text-[10px] font-bold text-secondary font-headline">VALLES MARINERIS</p>
-                  <p className="text-[8px] text-on-surface-variant whitespace-nowrap">{copy.vallesHint}</p>
-                </div>
-              </div>
-            </motion.div>
+        <motion.section
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.7, delay: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
+          className="hidden md:flex flex-1 relative items-center justify-center min-h-[420px]"
+        >
+          <MarsDataGlobe
+            data={{
+              temperature: loc.temperature.value,
+              radiation: `${loc.radiation.value} ${loc.radiation.unit}`,
+              pressure: loc.pressure.value,
+              survival: loc.survival,
+              locationName: loc.label,
+              systemStatus: loc.system,
+            }}
+            className="w-[360px] h-[360px] md:w-[420px] md:h-[420px] xl:w-[500px] xl:h-[500px]"
+          />
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2">
+            <p className="text-[9px] font-headline tracking-widest uppercase bg-surface-container-high/80 px-4 py-1 rounded-full border border-outline-variant/20 text-on-surface-variant/70">
+              {loc.survivalOrganism} · {copy.survivalProbability}
+            </p>
           </div>
-          <motion.div key={`gauge-${locale}-${activeLocation}`} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.8 }} className="absolute bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center">
-            <div className="relative w-32 h-32 flex items-center justify-center glass-panel rounded-full border border-tertiary/20 glow-tertiary">
-              <svg className="absolute inset-0 w-full h-full transform -rotate-90">
-                <circle className="text-surface-container-lowest" cx="64" cy="64" fill="transparent" r="56" stroke="currentColor" strokeWidth="4" />
-                <motion.circle className="text-tertiary" cx="64" cy="64" fill="transparent" r="56" stroke="currentColor" strokeWidth="4" strokeDasharray="351" initial={{ strokeDashoffset: 351 }} animate={{ strokeDashoffset: 351 * (1 - loc.survival / 100) }} transition={{ duration: 1.5, delay: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }} />
-              </svg>
-              <div className="text-center">
-                <motion.span key={`${loc.survival}-${locale}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-3xl font-headline font-black text-tertiary block">{loc.survival}%</motion.span>
-                <p className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest mt-1">{copy.survival}</p>
-              </div>
-            </div>
-            <h3 className="text-[10px] font-bold text-on-surface mt-4 tracking-widest bg-surface-container-high px-4 py-1 rounded-full border border-outline-variant/20 uppercase">{loc.survivalOrganism} · {copy.survivalProbability}</h3>
-          </motion.div>
         </motion.section>
 
         <motion.section initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.3 }} className={`w-full lg:w-80 lg:h-full lg:pl-6 flex-col gap-4 overflow-hidden border-t lg:border-t-0 lg:border-l border-outline-variant/10 glass-panel pt-4 lg:pt-0 ${mobileTab === "geo" ? "flex" : "hidden"} lg:flex`}>

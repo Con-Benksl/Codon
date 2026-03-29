@@ -9,16 +9,13 @@ import {
   LayoutGrid,
   Zap,
   FlaskConical,
-  Microscope,
-  Rocket,
-  Terminal,
-  Settings,
   Bell,
   Globe,
   Network,
   Menu,
   X,
   FolderOpen,
+  Settings,
   LogOut,
   LogIn,
   ChevronDown,
@@ -72,38 +69,6 @@ function buildNavItems(t: (k: string) => string): NavConfig[] {
       labelShort: t("nav.synthesis"),
       icon: FlaskConical,
       group: "main",
-    },
-    {
-      key: "simulation",
-      path: "/simulation",
-      label: t("nav_label.simulation"),
-      labelShort: t("nav.simulation"),
-      icon: Microscope,
-      group: "main",
-    },
-    {
-      key: "output",
-      path: "/output",
-      label: t("nav_label.output"),
-      labelShort: t("nav.output"),
-      icon: Rocket,
-      group: "main",
-    },
-    {
-      key: "diagnostics",
-      path: "/diagnostics",
-      label: t("nav_label.diagnostics"),
-      labelShort: t("nav.diagnostics"),
-      icon: Terminal,
-      group: "util",
-    },
-    {
-      key: "settings",
-      path: "/settings",
-      label: t("nav_label.settings"),
-      labelShort: t("nav.settings"),
-      icon: Settings,
-      group: "util",
     },
   ];
 }
@@ -200,7 +165,7 @@ export default function Layout() {
       <Starfield />
       <AmbientGlow />
 
-      <header className="fixed top-0 w-full z-50 flex justify-between items-center px-4 md:px-6 safe-h-header safe-top bg-surface-container/60 backdrop-blur-xl border-b border-outline-variant/15 shadow-[0_20px_50px_rgba(78,168,217,0.08)]">
+      <header className="fixed top-0 w-full z-50 flex justify-between items-center px-4 md:px-6 safe-h-header safe-top bg-surface-container/60 backdrop-blur-xl border-b border-outline-variant/15 shadow-[0_20px_50px_rgba(78,168,217,0.08)] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[1px] after:bg-gradient-to-r after:from-primary/60 after:via-primary/20 after:to-transparent after:pointer-events-none relative">
         <div className="flex items-center gap-3">
           <button
             className="md:hidden p-2 rounded-lg hover:bg-surface-variant/50 active:bg-surface-variant transition-all"
@@ -210,7 +175,7 @@ export default function Layout() {
             <Menu size={20} className="text-on-surface-variant" />
           </button>
 
-          <span className="text-xl md:text-2xl font-black tracking-tighter text-primary italic font-headline">
+          <span className="text-lg md:text-xl font-black tracking-[0.1em] text-primary font-headline">
             MARTIAN BIOLAB AI
           </span>
           <div className="h-4 w-px bg-outline-variant/30 hidden md:block" />
@@ -364,7 +329,7 @@ export default function Layout() {
               aria-label="Primary navigation"
             >
               <div className="flex items-center justify-between px-4 safe-h-header safe-top border-b border-outline-variant/15 shrink-0">
-                <span className="text-base font-black tracking-tighter text-primary italic font-headline">
+                <span className="text-base font-black tracking-[0.08em] text-primary font-headline">
                   MARTIAN BIOLAB AI
                 </span>
                 <button
@@ -408,10 +373,6 @@ export default function Layout() {
             | "orchestrator"
             | "environment"
             | "synthesis"
-            | "simulation"
-            | "output"
-            | "diagnostics"
-            | "settings"
         }
         onNavigate={() => {
           const environmentItem = NAV_ITEMS.find((n) => n.key === "environment");

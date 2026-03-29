@@ -5,7 +5,7 @@ import FallbackImage from "./FallbackImage";
 import ProceduralMarsGlobe from "./ProceduralMarsGlobe";
 import { useLocale } from "../i18n/context";
 
-type NavKey = "projects" | "orchestrator" | "environment" | "synthesis" | "simulation" | "output" | "diagnostics" | "settings";
+type NavKey = "projects" | "orchestrator" | "environment" | "synthesis";
 
 interface MarsStatusGlobeProps {
   activeView: NavKey;
@@ -17,10 +17,6 @@ const viewTheme: Record<NavKey, { glow: string; border: string; ring: string; te
   orchestrator: { glow: "rgba(78,168,217,0.35)", border: "border-primary/30", ring: "border-primary/15", text: "text-primary", bg: "from-primary/20 to-primary/5" },
   environment: { glow: "rgba(100,221,153,0.35)", border: "border-tertiary/30", ring: "border-tertiary/15", text: "text-tertiary", bg: "from-tertiary/20 to-tertiary/5" },
   synthesis: { glow: "rgba(78,168,217,0.25)", border: "border-primary/20", ring: "border-primary/10", text: "text-primary", bg: "from-primary/15 to-primary/5" },
-  simulation: { glow: "rgba(255,180,161,0.25)", border: "border-secondary/20", ring: "border-secondary/10", text: "text-secondary", bg: "from-secondary/15 to-secondary/5" },
-  output: { glow: "rgba(100,221,153,0.25)", border: "border-tertiary/20", ring: "border-tertiary/10", text: "text-tertiary", bg: "from-tertiary/15 to-tertiary/5" },
-  diagnostics: { glow: "rgba(78,168,217,0.15)", border: "border-primary/15", ring: "border-primary/8", text: "text-primary", bg: "from-primary/10 to-primary/5" },
-  settings: { glow: "rgba(78,168,217,0.15)", border: "border-primary/15", ring: "border-primary/8", text: "text-primary", bg: "from-primary/10 to-primary/5" },
 };
 
 export default function MarsStatusGlobe({ activeView, onNavigate }: MarsStatusGlobeProps) {
