@@ -263,21 +263,16 @@ export default function MarsDataGlobe({ data, className = "" }: MarsDataGlobePro
         <path d="M 26 254 L 26 264 L 36 264" stroke="rgba(129,207,255,0.2)" strokeWidth="1" fill="none" />
         <path d="M 264 254 L 264 264 L 254 264" stroke="rgba(129,207,255,0.2)" strokeWidth="1" fill="none" />
       </svg>
-      <motion.div
-        className="relative rounded-full overflow-hidden border border-outline-variant/20"
+      <div
         style={{
-          width: "44%",
+          width: "62%",
           aspectRatio: "1",
-          boxShadow: `inset 0 0 60px rgba(78,168,217,0.15), 0 0 30px ${statusColor}18`,
-          background: "linear-gradient(135deg, #1c2024 0%, #0a0f13 100%)",
-          transition: "box-shadow 0.6s ease",
+          filter: `drop-shadow(0 0 24px ${statusColor}22)`,
+          transition: "filter 0.6s ease",
         }}
-        animate={{ scale: [1, 1.025, 1] }}
-        transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
       >
-        <ProceduralMarsGlobe className="w-full h-full opacity-90 mix-blend-screen" />
-        <div className="absolute inset-0 bg-gradient-to-tr from-secondary/8 via-transparent to-primary/8" />
-      </motion.div>
+        <ProceduralMarsGlobe className="w-full h-full" />
+      </div>
     </div>
   );
 }
