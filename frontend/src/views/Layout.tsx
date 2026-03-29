@@ -161,7 +161,7 @@ export default function Layout() {
   );
 
   return (
-    <div className="min-h-screen bg-background text-on-background font-body selection:bg-primary/30 selection:text-primary">
+    <div className="min-h-screen bg-transparent text-on-background font-body selection:bg-primary/30 selection:text-primary">
       <Starfield />
       <AmbientGlow />
 
@@ -325,7 +325,7 @@ export default function Layout() {
               onDragEnd={(_, info) => {
                 if (info.offset.x < -60 || info.velocity.x < -400) setDrawerOpen(false);
               }}
-              className="fixed left-0 top-0 h-full w-72 z-50 bg-background border-r border-outline-variant/20 flex flex-col md:hidden shadow-2xl"
+              className="fixed left-0 top-0 h-full w-72 z-50 bg-[#060810]/85 backdrop-blur-2xl border-r border-outline-variant/20 flex flex-col md:hidden shadow-2xl"
               aria-label="Primary navigation"
             >
               <div className="flex items-center justify-between px-4 safe-h-header safe-top border-b border-outline-variant/15 shrink-0">
@@ -356,7 +356,7 @@ export default function Layout() {
         )}
       </AnimatePresence>
 
-      <aside className="hidden md:flex fixed left-0 top-16 h-[calc(100vh-64px)] z-40 flex-col bg-background border-r border-outline-variant/15 w-20 hover:w-64 transition-all duration-300 group overflow-hidden">
+      <aside className="hidden md:flex fixed left-0 top-16 h-[calc(100vh-64px)] z-40 flex-col bg-[#060810]/80 backdrop-blur-2xl border-r border-outline-variant/15 w-20 hover:w-64 transition-all duration-300 group overflow-hidden">
         {renderSideNav(false)}
       </aside>
 

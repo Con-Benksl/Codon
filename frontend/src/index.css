@@ -56,31 +56,16 @@
 
 @layer base {
   body {
-    @apply bg-background text-on-background font-body;
+    @apply text-on-background font-body;
     scrollbar-width: none;
     overflow-x: hidden; /* 禁止移动端横向滚动 */
+    background-color: #060810;
     background-image:
-      repeating-linear-gradient(
-        0deg,
-        rgba(78, 168, 217, 0.03) 0px,
-        rgba(78, 168, 217, 0.03) 1px,
-        transparent 1px,
-        transparent 2px
-      ),
-      repeating-linear-gradient(
-        90deg,
-        rgba(255, 255, 255, 0.02) 0px,
-        rgba(255, 255, 255, 0.02) 1px,
-        transparent 1px,
-        transparent 40px
-      ),
-      repeating-linear-gradient(
-        0deg,
-        rgba(255, 255, 255, 0.02) 0px,
-        rgba(255, 255, 255, 0.02) 1px,
-        transparent 1px,
-        transparent 40px
-      );
+      url('/textures/8k_stars_milky_way.jpg');
+    background-size: cover;
+    background-position: center center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
   }
 
   *::-webkit-scrollbar {
