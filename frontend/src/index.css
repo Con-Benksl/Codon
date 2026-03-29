@@ -183,6 +183,11 @@
     transform-origin: center;
   }
 
+  .orbit-cw-fast {
+    animation: spin 6s linear infinite;
+    transform-origin: 150px 150px;
+  }
+
   @keyframes spinReverse {
     from { transform: rotate(360deg); }
     to { transform: rotate(0deg); }

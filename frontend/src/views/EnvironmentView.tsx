@@ -366,7 +366,7 @@ export default function EnvironmentView() {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.7, delay: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="hidden md:flex flex-1 relative items-center justify-center min-h-[420px]"
+          className="hidden md:flex flex-1 relative items-center justify-center min-h-[520px] lg:min-h-[640px]"
         >
           <MarsDataGlobe
             data={{
@@ -377,7 +377,7 @@ export default function EnvironmentView() {
               locationName: loc.label,
               systemStatus: loc.system,
             }}
-            className="w-[360px] h-[360px] md:w-[420px] md:h-[420px] xl:w-[500px] xl:h-[500px]"
+            className="w-[360px] h-[360px] md:w-[460px] md:h-[460px] lg:w-[540px] lg:h-[540px] xl:w-[620px] xl:h-[620px]"
           />
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2">
             <p className="text-[9px] font-headline tracking-widest uppercase bg-surface-container-high/80 px-4 py-1 rounded-full border border-outline-variant/20 text-on-surface-variant/70">
