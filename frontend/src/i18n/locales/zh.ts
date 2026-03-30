@@ -1,15 +1,17 @@
 const zh = {
   nav: {
     projects: "项目",
-    orchestrator: "协调者",
-    environment: "环境",
+    orchestrator: "枢纽",
+    command: "指令",
+    environment: "验证",
     synthesis: "合成",
   },
   nav_label: {
     projects: "项目 (Projects)",
-    orchestrator: "协调者 (Orchestrator)",
-    environment: "环境 (Environment)",
-    synthesis: "合成 (Synthesis)",
+    orchestrator: "枢纽总览 (Nexus)",
+    command: "指令矩阵 (Command)",
+    environment: "验证室 (Validation)",
+    synthesis: "合成管线 (Synthesis)",
   },
   header: {
     subtitle: "火星定植生物体 多智能体设计系统",

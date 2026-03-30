@@ -8,6 +8,7 @@ import Layout from "./views/Layout";
 import LoginView from "./views/LoginView";
 import ProjectsView from "./views/ProjectsView";
 import OrchestratorView from "./views/OrchestratorView";
+import CommandView from "./views/CommandView";
 import EnvironmentView from "./views/EnvironmentView";
 import SynthesisView from "./views/SynthesisView";
 import ErrorBoundary from "./ErrorBoundary";
@@ -22,6 +23,7 @@ export default function App() {
           <Route index element={<Navigate to="/orchestrator" replace />} />
           <Route path="projects" element={<ProjectsView />} />
           <Route path="orchestrator" element={<OrchestratorView />} />
+          <Route path="command" element={<CommandView />} />
           <Route path="environment" element={<EnvironmentView />} />
           <Route path="synthesis" element={<SynthesisView />} />
           <Route path="*" element={<Navigate to="/orchestrator" replace />} />

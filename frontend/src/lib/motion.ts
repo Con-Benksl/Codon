@@ -1,5 +1,8 @@
 import type { Variants, Transition } from "motion/react";
 
+// ── Standard easing ──
+const ease = [0.25, 0.46, 0.45, 0.94] as const;
+
 // ── Stagger Container ──
 export const stagger = (staggerMs = 60): Variants => ({
   hidden: {},
@@ -14,7 +17,7 @@ export const fadeSlideUp: Variants = {
   show: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] },
+    transition: { duration: 0.5, ease },
   },
 };
 
@@ -24,7 +27,7 @@ export const fadeScale: Variants = {
   show: {
     opacity: 1,
     scale: 1,
-    transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] },
+    transition: { duration: 0.5, ease },
   },
 };
 
@@ -34,7 +37,7 @@ export const fadeSlideLeft: Variants = {
   show: {
     opacity: 1,
     x: 0,
-    transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] },
+    transition: { duration: 0.4, ease },
   },
 };
 
@@ -44,18 +47,17 @@ export const fadeSlideRight: Variants = {
   show: {
     opacity: 1,
     x: 0,
-    transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] },
+    transition: { duration: 0.4, ease },
   },
 };
 
 // ── View transition (page level) ──
-// filter:blur 在移动端触发 layout repaint 极慢，已移除
 export const viewTransition: Variants = {
   initial: { opacity: 0, y: 12 },
   animate: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] },
+    transition: { duration: 0.35, ease },
   },
   exit: {
     opacity: 0,
@@ -64,10 +66,12 @@ export const viewTransition: Variants = {
   },
 };
 
-// ── Card hover preset ──
+// ── Card hover preset (Stitch: 10px lift + glow expand) ──
 export const cardHover = {
-  whileHover: { y: -4, transition: { duration: 0.2 } },
-  // scale 更大 + 更快，触控设备 tap 反馈更清晰
+  whileHover: {
+    y: -10,
+    transition: { duration: 0.3, ease },
+  },
   whileTap: { scale: 0.96, opacity: 0.88, transition: { duration: 0.08 } },
 };
 
@@ -79,10 +83,52 @@ export const buttonPress = {
 // ── Progress bar animation ──
 export const progressBar = (width: number): { style: { width: string }; transition: Transition } => ({
   style: { width: `${width}%` },
-  transition: { duration: 1.2, ease: [0.25, 0.46, 0.45, 0.94], delay: 0.3 },
+  transition: { duration: 1.2, ease, delay: 0.3 },
 });
 
 // ── whileInView defaults ──
 export const inViewport = {
   viewport: { once: true, amount: 0.3 as const },
+};
+
+// ── Orb entrance (scale from 0 with spring) ──
+export const orbEntrance: Variants = {
+  hidden: { opacity: 0, scale: 0 },
+  show: {
+    opacity: 1,
+    scale: 1,
+    transition: { type: "spring", stiffness: 80, damping: 20, duration: 1 },
+  },
+};
+
+// ── Card slide in with stagger support ──
+export const cardSlideIn: Variants = {
+  hidden: { opacity: 0, y: 40, scale: 0.95 },
+  show: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: 0.6, ease },
+  },
+};
+
+// ── Pulse ring entrance (SVG orbital ring) ──
+export const pulseRing: Variants = {
+  hidden: { opacity: 0, scale: 0.8, rotate: -30 },
+  show: {
+    opacity: 1,
+    scale: 1,
+    rotate: 0,
+    transition: { duration: 0.8, ease },
+  },
+};
+
+// ── Glass panel entrance (fade + subtle rise) ──
+export const glassEntrance: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease },
+  },
 };

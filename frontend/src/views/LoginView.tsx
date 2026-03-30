@@ -6,7 +6,7 @@ import { Starfield, AmbientGlow } from "../components";
 import { useLocale } from "../i18n/context";
 
 const INPUT_CLASS =
-  "w-full pl-12 pr-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-lg text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all";
+  "w-full pl-12 pr-4 py-3 bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.08)] rounded-xl text-on-surface placeholder:text-muted/40 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all font-body";
 
 type ApiDetailItem = {
   msg?: string;
@@ -107,12 +107,12 @@ export default function LoginView() {
       <Starfield />
       <AmbientGlow />
 
-      <div className="glass-panel rounded-2xl p-8 md:p-10 w-full max-w-md relative z-10 shadow-[0_20px_60px_rgba(78,168,217,0.15)]">
+      <div className="glass-panel p-8 md:p-10 w-full max-w-md relative z-10">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 border border-primary/30 mb-4 glow-primary">
             <Rocket size={32} className="text-primary" />
           </div>
-          <h1 className="text-3xl font-black tracking-tighter text-primary italic font-headline mb-2">
+          <h1 className="text-3xl font-bold tracking-[0.1em] text-primary font-headline mb-2 uppercase">
             MARTIAN BIOLAB AI
           </h1>
           <p className="text-sm text-on-surface-variant font-headline tracking-wider uppercase">
@@ -189,10 +189,10 @@ export default function LoginView() {
           <button
             type="submit"
             disabled={loading}
-            className={`w-full py-3 px-6 rounded-lg font-headline font-bold tracking-wide uppercase text-sm transition-all ${
+            className={`w-full py-3 px-6 rounded-full font-headline font-bold tracking-[0.1em] uppercase text-sm transition-all ${
               loading
-                ? "bg-surface-variant text-on-surface-variant/50 cursor-not-allowed"
-                : "bg-primary-container text-on-primary hover:bg-primary hover:shadow-lg hover:shadow-primary/30 active:scale-[0.98] glow-primary"
+                ? "bg-[rgba(255,255,255,0.05)] text-muted cursor-not-allowed"
+                : "bg-primary/15 border border-primary/30 text-primary hover:bg-primary/25 hover:shadow-[0_0_24px_rgba(0,229,255,0.3)] active:scale-[0.98]"
             }`}
           >
             {loading ? (isRegister ? text.registering : text.loggingIn) : (isRegister ? text.register : text.signIn)}

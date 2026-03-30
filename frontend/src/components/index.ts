@@ -13,3 +13,5 @@ export { default as ProceduralMarsGlobe } from "./ProceduralMarsGlobe";
 export { default as ProjectCard } from "./ProjectCard";
 export { default as AiChatWidget } from "./AiChatWidget";
 export { default as MarsDataGlobe } from "./MarsDataGlobe";
+export { default as Icon } from "./Icon";
+export { default as TelemetryTicker } from "./TelemetryTicker";

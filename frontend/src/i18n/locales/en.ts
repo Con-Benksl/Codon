@@ -1,15 +1,17 @@
 const en = {
   nav: {
     projects: "Projects",
-    orchestrator: "Orchestrator",
-    environment: "Environment",
+    orchestrator: "Nexus",
+    command: "Command",
+    environment: "Validation",
     synthesis: "Synthesis",
   },
   nav_label: {
     projects: "Projects",
-    orchestrator: "Orchestrator",
-    environment: "Environment",
-    synthesis: "Synthesis",
+    orchestrator: "Nexus Overview",
+    command: "Command Matrix",
+    environment: "Validation Chamber",
+    synthesis: "Synthesis Pipeline",
   },
   header: {
     subtitle: "Mars Colony Biota Multi-Agent Design System",

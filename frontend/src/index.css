@@ -1,71 +1,84 @@
 @import "tailwindcss";
 
 @theme {
-  --font-headline: "Orbitron", "Noto Sans SC", sans-serif;
-  --font-body: "Manrope", "Noto Sans SC", sans-serif;
-  --font-mono: "IBM Plex Mono", "Noto Sans SC", monospace;
+  /* ── Stitch Spatial Future 设计令牌 ── */
+  --font-headline: "Space Grotesk", "Noto Sans SC", sans-serif;
+  --font-body: "Outfit", "Noto Sans SC", sans-serif;
+  --font-mono: "JetBrains Mono", "Noto Sans SC", monospace;
 
-  --color-on-surface-variant: #bfc8d0;
-  --color-secondary: #ffb4a1;
-  --color-surface-container: #1c2024;
-  --color-on-tertiary-container: #003f23;
-  --color-inverse-surface: #e0e3e8;
-  --color-surface-bright: #353a3e;
-  --color-surface-container-high: #262a2f;
-  --color-on-secondary-container: #ffaf9a;
-  --color-on-primary: #00344b;
-  --color-on-primary-fixed-variant: #004c6b;
-  --color-tertiary-fixed: #81fab4;
-  --color-background: #101418;
-  --color-on-tertiary-fixed-variant: #00522f;
-  --color-tertiary: #64dd99;
-  --color-surface-container-highest: #31353a;
+  /* Core palette */
+  --color-primary: #00E5FF;
+  --color-background: #05050A;
+  --color-surface: #05050A;
+  --color-on-surface: #E0E0E5;
+  --color-on-background: #E0E0E5;
+  --color-muted: #8A8A93;
+  --color-accent-magenta: #FF0055;
+  --color-accent-violet: #7000FF;
+
+  /* Surface variants */
+  --color-surface-container: #0a0d12;
+  --color-surface-container-low: #080b10;
+  --color-surface-container-high: #10131a;
+  --color-surface-container-highest: #161a22;
+  --color-surface-container-lowest: #030406;
+  --color-surface-bright: #1a1e28;
+  --color-surface-dim: #05050A;
+  --color-surface-variant: #1a1e28;
+  --color-surface-tint: #00E5FF;
+  --color-on-surface-variant: #8A8A93;
+
+  /* Primary variants */
+  --color-on-primary: #001a24;
+  --color-primary-container: #00b8cc;
+  --color-on-primary-container: #001a24;
+  --color-primary-fixed: #80f2ff;
+  --color-primary-fixed-dim: #00E5FF;
+  --color-on-primary-fixed: #001a24;
+  --color-on-primary-fixed-variant: #006d7a;
+  --color-inverse-primary: #006d7a;
+
+  /* Secondary (magenta accent) */
+  --color-secondary: #FF0055;
+  --color-secondary-container: #4d0019;
+  --color-on-secondary: #ffffff;
+  --color-on-secondary-container: #ff80aa;
+  --color-secondary-fixed: #ffd9e5;
+  --color-secondary-fixed-dim: #ff80aa;
+  --color-on-secondary-fixed: #3c000f;
+  --color-on-secondary-fixed-variant: #890030;
+
+  /* Tertiary (violet accent) */
+  --color-tertiary: #7000FF;
+  --color-tertiary-container: #2a0066;
+  --color-on-tertiary: #ffffff;
+  --color-on-tertiary-container: #b580ff;
+  --color-tertiary-fixed: #e0ccff;
+  --color-tertiary-fixed-dim: #b580ff;
+  --color-on-tertiary-fixed: #1a0040;
+  --color-on-tertiary-fixed-variant: #4d00b3;
+
+  /* Utility */
   --color-error: #ffb4ab;
-  --color-surface-container-lowest: #0a0f13;
-  --color-surface-tint: #81cfff;
-  --color-secondary-fixed-dim: #ffb4a1;
-  --color-on-error-container: #ffdad6;
-  --color-on-primary-fixed: #001e2d;
-  --color-outline: #899299;
-  --color-surface: #101418;
-  --color-primary: #81cfff;
-  --color-primary-fixed: #c6e7ff;
-  --color-tertiary-fixed-dim: #64dd99;
   --color-error-container: #93000a;
-  --color-surface-variant: #31353a;
-  --color-inverse-primary: #00658c;
-  --color-surface-container-low: #181c20;
-  --color-on-secondary-fixed: #3c0800;
-  --color-on-surface: #e0e3e8;
-  --color-on-background: #e0e3e8;
-  --color-surface-dim: #101418;
-  --color-on-secondary: #611300;
-  --color-secondary-container: #992300;
-  --color-on-tertiary-fixed: #002110;
-  --color-on-secondary-fixed-variant: #891e00;
-  --color-outline-variant: #3f484e;
-  --color-tertiary-container: #35b475;
-  --color-on-primary-container: #003a53;
-  --color-inverse-on-surface: #2d3135;
   --color-on-error: #690005;
-  --color-on-tertiary: #00391f;
-  --color-primary-fixed-dim: #81cfff;
-  --color-primary-container: #4ea8d9;
-  --color-secondary-fixed: #ffdbd2;
+  --color-on-error-container: #ffdad6;
+  --color-outline: #3a3a44;
+  --color-outline-variant: #2a2a33;
+  --color-inverse-surface: #E0E0E5;
+  --color-inverse-on-surface: #1a1a22;
+
+  /* Glass border tokens (as solid approximations for Tailwind) */
+  --color-glass-border: #1f1f2a;
+  --color-glass-border-top: #2a2a38;
 }
 
 @layer base {
   body {
     @apply text-on-background font-body;
     scrollbar-width: none;
-    overflow-x: hidden; /* 禁止移动端横向滚动 */
-    background-color: #060810;
-    background-image:
-      url('/textures/8k_stars_milky_way.jpg');
-    background-size: cover;
-    background-position: center center;
-    background-attachment: fixed;
-    background-repeat: no-repeat;
+    overflow-x: hidden;
+    background-color: #05050A;
   }
 
   *::-webkit-scrollbar {
@@ -74,10 +87,8 @@
 }
 
 @layer utilities {
-  /* ── Safe Area Insets (iPhone 刘海 / 灵动岛 / Home 条) ─────────────────── */
-  /* 仅在 viewport-fit=cover 时生效 */
+  /* ── Safe Area Insets ─────────────────── */
   .safe-h-header {
-    /* Header 高度 = 4rem + 顶部安全区 */
     height: calc(4rem + env(safe-area-inset-top, 0px));
   }
   .safe-top {
@@ -86,71 +97,195 @@
   .safe-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
-  /* 主内容区顶部偏移 = header 高度 + 安全区；md+ 恢复固定值 */
   .safe-pt-main {
     padding-top: calc(4rem + env(safe-area-inset-top, 0px));
   }
   @media (min-width: 768px) {
     .safe-pt-main {
-      padding-top: 5rem; /* 等同 md:pt-20，桌面无刘海 */
+      padding-top: 5rem;
     }
   }
-  /* 底部内边距 = 2rem + 底部安全区（Home 条） */
   .safe-pb-main {
     padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
   }
 
+  /* ── Glass Panels (Stitch Spatial) ─────────────────── */
   .glass-panel {
-    background: rgba(28, 32, 36, 0.6);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(63, 72, 78, 0.15);
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(40px) saturate(150%);
+    -webkit-backdrop-filter: blur(40px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow:
+      inset 1px 1px 0 rgba(255, 255, 255, 0.08),
+      0 24px 48px rgba(0, 0, 0, 0.6);
+    border-radius: 32px;
   }
 
-  /* 移动端降低模糊半径，减轻 GPU 压力 */
-  @media (max-width: 767px) {
-    .glass-panel {
-      backdrop-filter: blur(6px);
-      background: rgba(28, 32, 36, 0.75);
-    }
+  .glass-panel-sm {
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(40px) saturate(150%);
+    -webkit-backdrop-filter: blur(40px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow:
+      inset 1px 1px 0 rgba(255, 255, 255, 0.06),
+      0 16px 32px rgba(0, 0, 0, 0.5);
+    border-radius: 20px;
+  }
+
+  .glass-panel-ai {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(48px) saturate(180%);
+    -webkit-backdrop-filter: blur(48px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-left: 2px solid rgba(0, 229, 255, 0.4);
+    box-shadow:
+      inset 1px 1px 0 rgba(255, 255, 255, 0.1),
+      0 24px 48px rgba(0, 0, 0, 0.6),
+      -4px 0 24px rgba(0, 229, 255, 0.1);
+    border-radius: 24px;
+  }
+
+  /* ── Glow Effects ─────────────────── */
+  .glow-primary {
+    box-shadow: 0 0 24px rgba(0, 229, 255, 0.4);
+    animation: pulseGlow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .glow-magenta {
+    box-shadow: 0 0 24px rgba(255, 0, 85, 0.4);
+    animation: pulseGlowMagenta 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .glow-violet {
+    box-shadow: 0 0 24px rgba(112, 0, 255, 0.3);
+    animation: pulseGlowViolet 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 
   .hazard-glow {
-    box-shadow: 0 0 15px rgba(255, 180, 161, 0.2);
+    box-shadow: 0 0 15px rgba(255, 0, 85, 0.3);
     animation: hazardBreathe 2.5s ease-in-out infinite;
   }
 
+  /* ── Keyframe Animations ─────────────────── */
+
+  /* Orb float — volumetric background */
+  @keyframes orbFloat {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(30px, -50px) scale(1.1); }
+    66% { transform: translate(-20px, 20px) scale(0.9); }
+  }
+
+  /* Breathing — organic pulse */
+  @keyframes breathing {
+    0%, 100% { opacity: 0.5; transform: scale(0.98); }
+    50% { opacity: 0.9; transform: scale(1.02); }
+  }
+
+  /* Pulse glow — cyan */
+  @keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 0 24px rgba(0, 229, 255, 0.4); filter: drop-shadow(0 0 12px rgba(0, 229, 255, 0.6)); }
+    50% { box-shadow: 0 0 8px rgba(0, 229, 255, 0.15); filter: drop-shadow(0 0 4px rgba(0, 229, 255, 0.2)); }
+  }
+
+  @keyframes pulseGlowMagenta {
+    0%, 100% { box-shadow: 0 0 24px rgba(255, 0, 85, 0.4); }
+    50% { box-shadow: 0 0 8px rgba(255, 0, 85, 0.15); }
+  }
+
+  @keyframes pulseGlowViolet {
+    0%, 100% { box-shadow: 0 0 24px rgba(112, 0, 255, 0.3); }
+    50% { box-shadow: 0 0 8px rgba(112, 0, 255, 0.1); }
+  }
+
   @keyframes hazardBreathe {
-    0%, 100% { box-shadow: 0 0 15px rgba(255, 180, 161, 0.15); }
-    50% { box-shadow: 0 0 25px rgba(255, 180, 161, 0.35); }
+    0%, 100% { box-shadow: 0 0 15px rgba(255, 0, 85, 0.2); }
+    50% { box-shadow: 0 0 30px rgba(255, 0, 85, 0.5); }
   }
 
-  .glow-primary {
-    box-shadow: 0 0 20px rgba(129, 207, 255, 0.15);
-    animation: primaryBreathe 3s ease-in-out infinite;
+  /* Marquee — horizontal scroll */
+  @keyframes marquee {
+    0% { transform: translateX(100%); }
+    100% { transform: translateX(-100%); }
   }
 
-  @keyframes primaryBreathe {
-    0%, 100% { box-shadow: 0 0 20px rgba(129, 207, 255, 0.12); }
-    50% { box-shadow: 0 0 30px rgba(129, 207, 255, 0.25); }
+  /* Wave — audio visualizer bars */
+  @keyframes wave {
+    0%, 100% { transform: scaleY(0.2); }
+    50% { transform: scaleY(1); }
   }
 
-  .glow-tertiary {
-    box-shadow: 0 0 20px rgba(100, 221, 153, 0.15);
-    animation: tertiaryBreathe 3s ease-in-out infinite;
+  /* Spin variants */
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
   }
 
-  @keyframes tertiaryBreathe {
-    0%, 100% { box-shadow: 0 0 20px rgba(100, 221, 153, 0.12); }
-    50% { box-shadow: 0 0 30px rgba(100, 221, 153, 0.25); }
+  @keyframes spinReverse {
+    from { transform: rotate(360deg); }
+    to { transform: rotate(0deg); }
+  }
+
+  /* SVG flow — conduit/pipeline */
+  @keyframes dashFlow {
+    from { stroke-dashoffset: 48; }
+    to { stroke-dashoffset: 0; }
+  }
+
+  /* Breathing border — gradient sweep for input */
+  @keyframes borderSweep {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+  }
+
+  /* Agent status arc spin */
+  @keyframes arcSpin {
+    from { stroke-dashoffset: 60; }
+    to { stroke-dashoffset: -60; }
+  }
+
+  /* Status dot pulse */
+  @keyframes dotPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.5); }
+  }
+
+  /* ── Animation Utility Classes ─────────────────── */
+  .animate-orb-float {
+    animation: orbFloat 25s ease-in-out infinite;
+  }
+
+  .animate-orb-float-slow {
+    animation: orbFloat 30s ease-in-out infinite reverse;
+  }
+
+  .animate-orb-float-alt {
+    animation: orbFloat 20s ease-in-out infinite;
+  }
+
+  .animate-breathing {
+    animation: breathing 4s ease-in-out infinite;
+  }
+
+  .animate-pulse-glow {
+    animation: pulseGlow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .animate-marquee {
+    animation: marquee 25s linear infinite;
+  }
+
+  .animate-wave {
+    animation: wave 1.2s ease-in-out infinite;
+  }
+
+  .animate-dot-pulse {
+    animation: dotPulse 2s ease-in-out infinite;
   }
 
   .mars-orbit {
     animation: spin 120s linear infinite;
-  }
-
-  @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
   }
 
   .orbit-cw {
@@ -170,24 +305,26 @@
 
   .orbit-cw-fast {
     animation: spin 6s linear infinite;
-    transform-origin: 150px 150px;
+    transform-origin: center;
   }
 
-  @keyframes spinReverse {
-    from { transform: rotate(360deg); }
-    to { transform: rotate(0deg); }
+  .spin-fast {
+    animation: spin 4s linear infinite;
   }
 
-  @keyframes dashFlow {
-    from { stroke-dashoffset: 100; }
-    to { stroke-dashoffset: 0; }
+  .spin-slow {
+    animation: spin 20s linear infinite;
   }
 
   .pipeline-flow {
     animation: dashFlow 2s linear infinite;
   }
 
-  /* 精密仪器卡片角标装饰 */
+  .agent-processing {
+    animation: arcSpin 1.2s linear infinite;
+  }
+
+  /* ── Panel Corner Decorations ─────────────────── */
   .panel-corner {
     position: relative;
   }
@@ -204,49 +341,36 @@
   .panel-corner::before {
     top: -1px;
     left: -1px;
-    border-top: 2px solid rgba(129, 207, 255, 0.7);
-    border-left: 2px solid rgba(129, 207, 255, 0.7);
+    border-top: 2px solid rgba(0, 229, 255, 0.7);
+    border-left: 2px solid rgba(0, 229, 255, 0.7);
   }
 
   .panel-corner::after {
     bottom: -1px;
     right: -1px;
-    border-bottom: 2px solid rgba(129, 207, 255, 0.3);
-    border-right: 2px solid rgba(129, 207, 255, 0.3);
+    border-bottom: 2px solid rgba(0, 229, 255, 0.3);
+    border-right: 2px solid rgba(0, 229, 255, 0.3);
   }
 
   /* Mono 数字字体 */
   .font-data {
     font-family: var(--font-mono);
   }
-
-  /* Agent 状态动画 */
-  @keyframes arcSpin {
-    from { stroke-dashoffset: 60; }
-    to { stroke-dashoffset: -60; }
-  }
-
-  .agent-processing {
-    animation: arcSpin 1.2s linear infinite;
-  }
-
-  /* 打字机动画 */
-  @keyframes typeIn {
-    from { width: 0; opacity: 0; }
-    to { width: 100%; opacity: 1; }
-  }
 }
 
-/* 移动端 Glow 动画降频：减少 box-shadow repaint 频率 */
+/* 移动端 Glow 动画降频 */
 @media (max-width: 767px) {
-  .glow-primary  { animation-duration: 5s; }
-  .glow-tertiary { animation-duration: 5s; }
-  .hazard-glow   { animation-duration: 4s; }
+  .glow-primary   { animation-duration: 5s; }
+  .glow-magenta   { animation-duration: 5s; }
+  .glow-violet    { animation-duration: 5s; }
+  .hazard-glow    { animation-duration: 4s; }
 }
 
-/* 纯触控设备（手机/平板）禁用 Framer Motion whileHover 的 CSS transform 残留 */
+/* 纯触控设备禁用 hover transform 残留 */
 @media (hover: none) {
   .glass-panel:hover,
+  .glass-panel-sm:hover,
+  .glass-panel-ai:hover,
   [class*="glass-panel"]:hover {
     transform: none !important;
   }
