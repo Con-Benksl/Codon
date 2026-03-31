@@ -11,7 +11,7 @@ interface LocaleContextValue {
 }
 
 const MESSAGES: Record<Locale, Record<string, unknown>> = { zh, en };
-const STORAGE_KEY = 'mars_locale';
+const STORAGE_KEY = 'codon_locale';
 
 function getNestedValue(obj: Record<string, unknown>, path: string): string {
   const keys = path.split('.');
