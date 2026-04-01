@@ -43,7 +43,7 @@ export default function Sidebar() {
         {!collapsed && (
           <Link to="/" className="flex items-center gap-2">
             <span className="text-primary text-lg">◇</span>
-            <span className="font-headline font-semibold text-[15px] tracking-wide text-text">
+            <span className="font-headline font-bold text-[14px] tracking-[0.25em] text-text">
               CODON
             </span>
           </Link>

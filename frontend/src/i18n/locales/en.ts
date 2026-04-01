@@ -8,7 +8,7 @@ const en = {
   },
   home: {
     title: "Design Life,",
-    titleAccent: "Sequence by Sequence",
+    titleAccent: "Sequence It",
     subtitle: "AI-powered multi-agent platform for synthetic biology — gene circuit design, sequence optimization, and experimental validation.",
     cta: "Start Designing",
     demo: "View Demo",

@@ -1,9 +1,9 @@
 @import "tailwindcss";
 
 @theme {
-  --font-headline: "Instrument Sans", "Noto Sans SC", sans-serif;
-  --font-body: "Inter", "Noto Sans SC", sans-serif;
-  --font-mono: "JetBrains Mono", "Noto Sans SC", monospace;
+  --font-headline: "Syne", "Noto Sans SC", sans-serif;
+  --font-body: "Outfit", "Noto Sans SC", sans-serif;
+  --font-mono: "IBM Plex Mono", "Noto Sans SC", monospace;
 
   --color-bg: #0F1523;
   --color-surface: #0a0e1a;
@@ -49,4 +49,15 @@ body {
 ::selection {
   background: rgba(56, 189, 248, 0.3);
   color: #fff;
+}
+
+/* Headline font feature settings for Syne */
+.font-headline {
+  font-feature-settings: "ss01" on, "ss02" on;
+  text-rendering: geometricPrecision;
+}
+
+/* Mono font for data display */
+.font-mono {
+  font-feature-settings: "tnum" on, "zero" on;
 }

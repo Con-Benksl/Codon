@@ -2,7 +2,6 @@ import { useState, type FormEvent } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Mail, Lock, User } from "lucide-react";
 import { login, register } from "../api/auth";
-import { DnaParticles } from "../components";
 import { useLocale } from "../i18n/context";
 
 const INPUT_CLASS =
@@ -65,8 +64,6 @@ export default function LoginView() {
 
   return (
     <div className="min-h-screen bg-bg flex items-center justify-center px-4 relative overflow-hidden">
-      <DnaParticles opacity={0.08} particleCount={1000} />
-
       <div className="relative z-10 w-full max-w-sm">
         <div className="text-center mb-8">
           <div className="text-primary text-3xl mb-3">◇</div>

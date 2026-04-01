@@ -18,7 +18,7 @@ export default function TopNav() {
     <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 h-14 bg-bg/80 backdrop-blur-sm border-b border-border">
       <Link to="/" className="flex items-center gap-2">
         <span className="text-primary text-lg">◇</span>
-        <span className="font-headline font-semibold text-[15px] tracking-wide text-text">
+        <span className="font-headline font-bold text-[14px] tracking-[0.25em] text-text">
           CODON
         </span>
       </Link>
@@ -33,10 +33,10 @@ export default function TopNav() {
             <Link
               key={item.path}
               to={item.path}
-              className={`text-[13px] transition-colors relative py-1 ${
+              className={`text-[13px] tracking-wide transition-colors relative py-1 ${
                 isActive
-                  ? "text-text"
-                  : "text-text-muted hover:text-text"
+                  ? "text-text font-medium"
+                  : "text-text-muted hover:text-text font-light"
               }`}
             >
               {t(item.key)}
