@@ -20,29 +20,28 @@ export default function DnaParticles({
     const container = containerRef.current;
     if (!container) return;
 
+    // Wait for container to have dimensions
+    const w = container.clientWidth || window.innerWidth;
+    const h = container.clientHeight || window.innerHeight;
+
     // Scene setup
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(
-      60,
-      container.clientWidth / container.clientHeight,
-      0.1,
-      1000
-    );
-    camera.position.z = 30;
+    const camera = new THREE.PerspectiveCamera(60, w / h, 0.1, 1000);
+    camera.position.z = 18;
 
     const renderer = new THREE.WebGLRenderer({
       alpha: true,
       antialias: false,
     });
-    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setSize(w, h);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
     // DNA helix parameters
-    const radius = 4;
-    const pitch = 0.6;
-    const turns = 8;
+    const radius = 3;
+    const pitch = 0.4;
+    const turns = 6;
     const pointsPerStrand = Math.floor(particleCount / 2);
     const totalAngle = turns * Math.PI * 2;
 
@@ -73,7 +72,7 @@ export default function DnaParticles({
       colors[idxA + 1] = colorA.g;
       colors[idxA + 2] = colorA.b;
 
-      sizes[i] = 1.5 + Math.random() * 2.0;
+      sizes[i] = 2.0 + Math.random() * 2.5;
 
       // Strand B (phase offset π)
       const idxB = (pointsPerStrand + i) * 3;
@@ -86,7 +85,7 @@ export default function DnaParticles({
       colors[idxB + 1] = colorB.g;
       colors[idxB + 2] = colorB.b;
 
-      sizes[pointsPerStrand + i] = 1.5 + Math.random() * 2.0;
+      sizes[pointsPerStrand + i] = 2.0 + Math.random() * 2.5;
     }
 
     // Points geometry
@@ -115,7 +114,7 @@ export default function DnaParticles({
           vec3 pos = position;
 
           // Breathing: subtle radius oscillation
-          float breathe = sin(uTime * 0.5 + pos.y * 0.3) * 0.15;
+          float breathe = sin(uTime * 0.5 + pos.y * 0.3) * 0.05;
           pos.x *= 1.0 + breathe;
           pos.z *= 1.0 + breathe;
 
@@ -123,9 +122,9 @@ export default function DnaParticles({
           gl_PointSize = size * uPixelRatio * (8.0 / -mvPosition.z);
           gl_Position = projectionMatrix * mvPosition;
 
-          // Distance-based alpha
+          // Distance-based alpha — keep particles visible across the helix
           float dist = length(pos.xz);
-          vAlpha = smoothstep(8.0, 2.0, dist);
+          vAlpha = smoothstep(12.0, 1.0, dist);
         }
       `,
       fragmentShader: `
@@ -152,7 +151,7 @@ export default function DnaParticles({
     // Base-pair rungs (LineSegments connecting strands)
     const rungCount = Math.floor(turns * 10);
     const rungPositions = new Float32Array(rungCount * 6);
-    const rungColor = new THREE.Color("#1a2d45");
+    const rungColor = new THREE.Color("#2a5a8a");
 
     for (let i = 0; i < rungCount; i++) {
       const t = i / rungCount;
@@ -226,11 +225,11 @@ export default function DnaParticles({
     // Resize handler
     const handleResize = () => {
       if (!container) return;
-      const w = container.clientWidth;
-      const h = container.clientHeight;
-      camera.aspect = w / h;
+      const rw = container.clientWidth || window.innerWidth;
+      const rh = container.clientHeight || window.innerHeight;
+      camera.aspect = rw / rh;
       camera.updateProjectionMatrix();
-      renderer.setSize(w, h);
+      renderer.setSize(rw, rh);
     };
     window.addEventListener("resize", handleResize);
 
