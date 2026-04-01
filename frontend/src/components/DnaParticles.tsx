@@ -43,8 +43,8 @@ export default function DnaParticles({
     const helixRadius = 3.2;
     const helixHeight = 28;
     const turns = 4.5;
-    const strandPoints = Math.floor(particleCount * 0.35); // 35% per strand
-    const pairPoints = Math.floor(particleCount * 0.18);   // 18% for base-pair bridges
+    const strandPoints = Math.floor(particleCount * 0.30); // 30% per strand
+    const pairPoints = Math.floor(particleCount * 0.30);   // 30% for base-pair bridges
     const dustPoints = particleCount - strandPoints * 2 - pairPoints; // rest as ambient dust
     const totalCount = strandPoints * 2 + pairPoints + dustPoints;
     const totalAngle = turns * Math.PI * 2;
@@ -88,8 +88,8 @@ export default function DnaParticles({
       }
     }
 
-    // ── Base-pair bridge particles: small dots connecting the two strands ──
-    const pairCount = Math.floor(turns * 12);
+    // ── Base-pair bridge particles: dense dots connecting the two strands ──
+    const pairCount = Math.floor(turns * 16);
     const particlesPerPair = Math.floor(pairPoints / pairCount);
     for (let i = 0; i < pairCount; i++) {
       const t = i / pairCount;
@@ -102,18 +102,21 @@ export default function DnaParticles({
       const bz = helixRadius * Math.sin(angle + Math.PI);
 
       for (let j = 0; j < particlesPerPair && idx < strandPoints * 2 + pairPoints; j++) {
-        const lerp = (j + Math.random() * 0.6) / particlesPerPair;
+        const lerp = (j + Math.random() * 0.3) / particlesPerPair;
         const pi = idx * 3;
-        positions[pi] = ax + (bx - ax) * lerp + (Math.random() - 0.5) * 0.15;
-        positions[pi + 1] = y + (Math.random() - 0.5) * 0.15;
-        positions[pi + 2] = az + (bz - az) * lerp + (Math.random() - 0.5) * 0.15;
+        // Tight spread — particles stay close to the bridge line
+        positions[pi] = ax + (bx - ax) * lerp + (Math.random() - 0.5) * 0.08;
+        positions[pi + 1] = y + (Math.random() - 0.5) * 0.08;
+        positions[pi + 2] = az + (bz - az) * lerp + (Math.random() - 0.5) * 0.08;
 
         const c = pick(PAIR_COLORS);
         colors[pi] = c.r;
         colors[pi + 1] = c.g;
         colors[pi + 2] = c.b;
 
-        sizes[idx] = 2.0 + Math.random() * 2.5;
+        // Larger particles with bright midpoint accent
+        const midDist = Math.abs(lerp - 0.5);
+        sizes[idx] = 3.0 + (1.0 - midDist * 2) * 2.5 + Math.random() * 1.5;
         randoms[idx] = Math.random() * 6.28;
         idx++;
       }
