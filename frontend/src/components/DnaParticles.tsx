@@ -81,8 +81,8 @@ export default function DnaParticles({
         colors[pi + 1] = c.g;
         colors[pi + 2] = c.b;
 
-        // Smaller, denser particles for clear strand shape
-        sizes[idx] = 1.8 + Math.random() * 2.2;
+        // Strand particles — visible and solid
+        sizes[idx] = 3.5 + Math.random() * 3.5;
         randoms[idx] = Math.random() * 6.28;
         idx++;
       }
@@ -113,7 +113,7 @@ export default function DnaParticles({
         colors[pi + 1] = c.g;
         colors[pi + 2] = c.b;
 
-        sizes[idx] = 1.0 + Math.random() * 1.2;
+        sizes[idx] = 2.0 + Math.random() * 2.5;
         randoms[idx] = Math.random() * 6.28;
         idx++;
       }
@@ -133,7 +133,7 @@ export default function DnaParticles({
       colors[pi + 1] = c.g;
       colors[pi + 2] = c.b;
 
-      sizes[idx] = 0.5 + Math.random() * 1.5;
+      sizes[idx] = 1.5 + Math.random() * 2.5;
       randoms[idx] = Math.random() * 6.28;
       idx++;
     }
@@ -175,9 +175,9 @@ export default function DnaParticles({
           float shift = sin(uTime * 0.25 + aRandom * 6.28 + pos.y * 0.15) * 0.5 + 0.5;
           vColor = mix(color, color.gbr, shift * 0.3);
 
-          // Depth-based alpha fade for distant particles
+          // Minimal depth fade — keep everything bright
           float depth = -mvPosition.z;
-          vAlpha = smoothstep(45.0, 8.0, depth);
+          vAlpha = smoothstep(60.0, 5.0, depth);
         }
       `,
       fragmentShader: `
@@ -189,10 +189,10 @@ export default function DnaParticles({
           float d = length(gl_PointCoord - vec2(0.5));
           if (d > 0.5) discard;
 
-          // Bright core, soft edge — glow effect
-          float core = 1.0 - smoothstep(0.0, 0.2, d);
+          // Strong glow — bright core, visible edge
+          float core = 1.0 - smoothstep(0.0, 0.15, d);
           float glow = 1.0 - smoothstep(0.0, 0.5, d);
-          float alpha = (core * 0.7 + glow * 0.3) * vAlpha * uOpacity;
+          float alpha = (core * 0.6 + glow * 0.4) * vAlpha * uOpacity;
 
           gl_FragColor = vec4(vColor, alpha);
         }
