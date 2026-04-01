@@ -37,8 +37,8 @@ export default function DnaParticles({
 
     // Scene
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(60, w / h, 0.1, 1000);
-    camera.position.z = 18;
+    const camera = new THREE.PerspectiveCamera(50, w / h, 0.1, 1000);
+    camera.position.z = 12;
 
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: false });
     renderer.setSize(w, h);
@@ -46,10 +46,10 @@ export default function DnaParticles({
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // Helix geometry
-    const radius = 3;
-    const pitch = 0.4;
-    const turns = 6;
+    // Helix geometry — larger, fills viewport
+    const radius = 5;
+    const pitch = 0.35;
+    const turns = 5;
     const pointsPerStrand = Math.floor(particleCount / 2);
     const totalAngle = turns * Math.PI * 2;
 
@@ -66,7 +66,7 @@ export default function DnaParticles({
       const t = i / pointsPerStrand;
       const angle = t * totalAngle;
       const y = (t - 0.5) * turns * pitch * 10;
-      const noiseR = radius + (Math.random() - 0.5) * 0.8;
+      const noiseR = radius + (Math.random() - 0.5) * 1.2;
 
       // Strand A
       const idxA = i * 3;
@@ -77,7 +77,7 @@ export default function DnaParticles({
       colors[idxA] = cA.r;
       colors[idxA + 1] = cA.g;
       colors[idxA + 2] = cA.b;
-      sizes[i] = 3.0 + Math.random() * 3.0;
+      sizes[i] = 5.0 + Math.random() * 5.0;
       randoms[i] = Math.random() * 6.28;
 
       // Strand B (phase offset π)
@@ -126,7 +126,7 @@ export default function DnaParticles({
           pos.z *= 1.0 + breathe;
 
           vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
-          gl_PointSize = size * uPixelRatio * (8.0 / -mvPosition.z);
+          gl_PointSize = size * uPixelRatio * (12.0 / -mvPosition.z);
           gl_Position = projectionMatrix * mvPosition;
 
           // Dynamic color: hue-shift the base color over time, unique per particle
