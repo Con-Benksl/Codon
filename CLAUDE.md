@@ -21,21 +21,32 @@ docker-compose up --build  # 启动 PostgreSQL 15 + Redis 7
 
 ## Architecture Overview
 
-全栈 AI 生物设计系统（火星定植生物体多智能体设计），前后端分离部署。
+**Codon** — 合成生物学 AI 多智能体协作平台，前后端分离部署。
 
 ### 前端（`frontend/src/`）
 
-**路由层**（`App.tsx`）：React Router 7 SPA，8 个视图页面。未登录时重定向至 `/login`。
+**路由层**（`App.tsx`）：React Router 7 SPA，双布局架构：
+- `HomeLayout`（顶部导航 + 全屏沉浸式）→ `/`
+- `AppLayout`（侧边栏 + 主内容区）→ `/projects`、`/designer`、`/chat`、`/analysis`
+- `LoginView` 独立页面 → `/login`
+- 其他路由重定向至 `/`
 
-**视图层**（`views/`）：每个 `.tsx` 必须用 `motion.div` + `viewTransition` 包裹，并在 `views/Layout.tsx` 注册导航。
+**视图层**（`views/`）：每个 `.tsx` 必须用 `motion.div` + `viewTransition` 包裹。新增视图需在对应 Layout 中注册路由，并同步 `TopNav.tsx` 或 `Sidebar.tsx` 中的导航项。
+
+**组件层**（`components/`）：
+- `DnaParticles.tsx` — Three.js DNA 双螺旋粒子背景（全局共享，通过 opacity/particleCount 控制不同页面表现）
+- `TopNav.tsx` — 首页顶部横向导航栏
+- `Sidebar.tsx` — 工作区可折叠侧边栏
+- `Badge.tsx`、`Avatar.tsx`、`ProjectCard.tsx`、`ChatMessage.tsx` — 通用 UI 组件
+- `index.ts` — Barrel exports，组件从此导入
 
 **API 层**（`api/`）：所有请求统一走 `api/client.ts`（Axios，自动注入 JWT Token，401 时清除 `localStorage('access_token')` 并跳转登录）。禁止在组件中裸用 axios。
 
 **动画**（`lib/motion.ts`）：仅使用预定义的 `fadeSlideUp`、`stagger`、`viewTransition`、`cardHover` 预设。禁止内联 variants 和 `filter:blur` 动画。
 
-**国际化**（`i18n/`）：`useLocale()` hook + 内联 `t(zh, en)` 函数。新增 i18n key 时必须同步 `locales/zh.ts` 和 `locales/en.ts`。
+**国际化**（`i18n/`）：`useLocale()` hook，通过 `t("key.path")` 获取翻译。新增 i18n key 时必须同步 `locales/zh.ts` 和 `locales/en.ts`。
 
-**运行时 Schema**（`runtime-schema/`）：`ViewRenderer.tsx` 动态渲染后端下发的 JSON schema 视图，`bindingResolver.ts` 处理数据绑定，`schemaValidator.ts` 做 schema 校验。
+**设计系统**（`index.css`）：Tailwind CSS 4 + CSS 变量。深蓝黑底（Maze 风格），主色 `--color-primary: #38bdf8`（青蓝），字体 Instrument Sans / Inter / JetBrains Mono / Noto Sans SC。
 
 ### 后端（`backend/app/`）
 
@@ -57,10 +68,10 @@ docker-compose up --build  # 启动 PostgreSQL 15 + Redis 7
 | 修改 | 必须同步 |
 |------|---------|
 | `backend/app/agents/*.py` | `services/agent_orchestrator.py` |
-| `backend/app/api/v1/agents.py` | `frontend/src/api/agents.ts` + `OrchestratorView.tsx` |
 | `backend/app/services/auth_service.py` | `api/v1/auth.py` + `frontend/src/api/auth.ts` |
-| 新增 `*View.tsx` | `Layout.tsx` + `en.ts` + `zh.ts` |
+| 新增 `*View.tsx` | `App.tsx` 路由 + `TopNav.tsx` 或 `Sidebar.tsx` 导航 + `en.ts` + `zh.ts` |
 | `i18n/locales/zh.ts` | `i18n/locales/en.ts`（必须同步） |
+| `components/*.tsx` | `components/index.ts` barrel exports |
 
 ## Deployment
 
