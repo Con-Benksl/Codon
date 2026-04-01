@@ -1,19 +1,22 @@
 import type { ReactNode } from "react";
 
 interface BadgeProps {
+  variant?: "active" | "progress" | "draft" | "default";
   children: ReactNode;
-  color?: "primary" | "secondary" | "tertiary";
 }
 
-const colorMap = {
-  primary: "bg-primary/10 border-primary/20 text-primary",
-  secondary: "bg-secondary/10 border-secondary/20 text-secondary",
-  tertiary: "bg-tertiary/10 border-tertiary/20 text-tertiary",
-} as const;
+const variantStyles: Record<string, string> = {
+  active: "bg-success/10 text-success border-success/20",
+  progress: "bg-primary/10 text-primary border-primary/20",
+  draft: "bg-text-dim/10 text-text-muted border-border",
+  default: "bg-card text-text-muted border-border",
+};
 
-export default function Badge({ children, color = "primary" }: BadgeProps) {
+export default function Badge({ variant = "default", children }: BadgeProps) {
   return (
-    <span className={`px-3 py-1 border text-[10px] font-headline tracking-tighter uppercase rounded-sm ${colorMap[color]}`}>
+    <span
+      className={`inline-flex items-center px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider rounded border ${variantStyles[variant]}`}
+    >
       {children}
     </span>
   );

@@ -1,16 +1,14 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Rocket, Mail, Lock, User } from "lucide-react";
+import { Mail, Lock, User } from "lucide-react";
 import { login, register } from "../api/auth";
-import { Starfield, AmbientGlow } from "../components";
+import { DnaParticles } from "../components";
 import { useLocale } from "../i18n/context";
 
 const INPUT_CLASS =
-  "w-full pl-12 pr-4 py-3 bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.08)] rounded-xl text-on-surface placeholder:text-muted/40 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all font-body";
+  "w-full pl-12 pr-4 py-3 bg-card border border-border rounded-lg text-text placeholder:text-text-dim focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all text-sm";
 
-type ApiDetailItem = {
-  msg?: string;
-};
+type ApiDetailItem = { msg?: string };
 
 const getErrorMessage = (detail: unknown, fallback: string) => {
   if (Array.isArray(detail)) {
@@ -34,42 +32,7 @@ export default function LoginView() {
   const navigate = useNavigate();
   const location = useLocation();
   const redirectTo = new URLSearchParams(location.search).get("redirect") || "/projects";
-  const { locale } = useLocale();
-  const isZh = locale === "zh";
-
-  const text = isZh
-    ? {
-      createAccount: "创建账户",
-      signIn: "登录",
-      username: "用户名",
-      email: "邮箱",
-      password: "密码",
-      registering: "注册中...",
-      loggingIn: "登录中...",
-      register: "注册",
-      hasAccount: "已有账户？去登录",
-      noAccount: "没有账户？去注册",
-      registerSuccess: "注册成功，正在自动登录...",
-      registerSuccessManual: "注册成功，请手动登录。",
-      registerFailed: "注册失败",
-      loginFailed: "登录失败",
-    }
-    : {
-      createAccount: "Create Account",
-      signIn: "Sign In",
-      username: "Username",
-      email: "Email",
-      password: "Password",
-      registering: "Registering...",
-      loggingIn: "Signing in...",
-      register: "Register",
-      hasAccount: "Already have an account? Sign in",
-      noAccount: "No account? Register",
-      registerSuccess: "Registration succeeded. Signing in...",
-      registerSuccessManual: "Registration succeeded. Please sign in manually.",
-      registerFailed: "Registration failed",
-      loginFailed: "Sign in failed",
-    };
+  const { t } = useLocale();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -80,54 +43,49 @@ export default function LoginView() {
     try {
       if (isRegister) {
         await register({ email, username, password });
-        setSuccess(text.registerSuccess);
+        setSuccess(t("login.registerSuccess"));
         await new Promise((resolve) => setTimeout(resolve, 1000));
-
         try {
           await login(email, password);
         } catch (loginError: any) {
-          setError(getErrorMessage(loginError.response?.data?.detail, text.registerSuccessManual));
+          setError(getErrorMessage(loginError.response?.data?.detail, t("login.registerSuccessManual")));
           setIsRegister(false);
           return;
         }
       } else {
         await login(email, password);
       }
-
       navigate(redirectTo);
     } catch (err: any) {
-      setError(getErrorMessage(err.response?.data?.detail, isRegister ? text.registerFailed : text.loginFailed));
+      setError(getErrorMessage(err.response?.data?.detail, isRegister ? t("login.registerFailed") : t("login.loginFailed")));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-background text-on-background flex items-center justify-center px-4 relative overflow-hidden">
-      <Starfield />
-      <AmbientGlow />
+    <div className="min-h-screen bg-bg flex items-center justify-center px-4 relative overflow-hidden">
+      <DnaParticles opacity={0.08} particleCount={1000} />
 
-      <div className="glass-panel p-8 md:p-10 w-full max-w-md relative z-10">
+      <div className="relative z-10 w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 border border-primary/30 mb-4 glow-primary">
-            <Rocket size={32} className="text-primary" />
-          </div>
-          <h1 className="text-3xl font-bold tracking-[0.1em] text-primary font-headline mb-2 uppercase">
-            MARTIAN BIOLAB AI
+          <div className="text-primary text-3xl mb-3">◇</div>
+          <h1 className="text-2xl font-headline font-semibold tracking-wide text-text">
+            CODON
           </h1>
-          <p className="text-sm text-on-surface-variant font-headline tracking-wider uppercase">
-            {isRegister ? text.createAccount : text.signIn}
+          <p className="text-sm text-text-muted mt-2">
+            {isRegister ? t("login.createAccount") : t("login.signIn")}
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {isRegister && (
             <div>
-              <label className="block text-sm font-medium text-on-surface-variant mb-2 font-headline tracking-wide">
-                {text.username}
+              <label className="block text-xs font-medium text-text-muted mb-1.5">
+                {t("login.username")}
               </label>
               <div className="relative">
-                <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/50" />
+                <User size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-dim" />
                 <input
                   type="text"
                   placeholder="username"
@@ -141,11 +99,11 @@ export default function LoginView() {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-on-surface-variant mb-2 font-headline tracking-wide">
-              {text.email}
+            <label className="block text-xs font-medium text-text-muted mb-1.5">
+              {t("login.email")}
             </label>
             <div className="relative">
-              <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/50" />
+              <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-dim" />
               <input
                 type="email"
                 placeholder="your@email.com"
@@ -158,14 +116,14 @@ export default function LoginView() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-on-surface-variant mb-2 font-headline tracking-wide">
-              {text.password}
+            <label className="block text-xs font-medium text-text-muted mb-1.5">
+              {t("login.password")}
             </label>
             <div className="relative">
-              <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/50" />
+              <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-dim" />
               <input
                 type="password"
-                placeholder="********"
+                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -175,40 +133,38 @@ export default function LoginView() {
           </div>
 
           {error && (
-            <div className="p-4 bg-error-container/20 border border-error/30 rounded-lg">
-              <p className="text-error text-sm font-medium">{error}</p>
+            <div className="p-3 bg-danger/10 border border-danger/20 rounded-lg">
+              <p className="text-danger text-xs">{error}</p>
             </div>
           )}
 
           {success && (
-            <div className="p-4 bg-green-500/15 border border-green-400/40 rounded-lg">
-              <p className="text-green-300 text-sm font-medium">{success}</p>
+            <div className="p-3 bg-success/10 border border-success/20 rounded-lg">
+              <p className="text-success text-xs">{success}</p>
             </div>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className={`w-full py-3 px-6 rounded-full font-headline font-bold tracking-[0.1em] uppercase text-sm transition-all ${
+            className={`w-full py-3 rounded-lg font-medium text-sm transition-colors ${
               loading
-                ? "bg-[rgba(255,255,255,0.05)] text-muted cursor-not-allowed"
-                : "bg-primary/15 border border-primary/30 text-primary hover:bg-primary/25 hover:shadow-[0_0_24px_rgba(0,229,255,0.3)] active:scale-[0.98]"
+                ? "bg-card text-text-muted cursor-not-allowed"
+                : "bg-primary text-bg hover:bg-primary/90"
             }`}
           >
-            {loading ? (isRegister ? text.registering : text.loggingIn) : (isRegister ? text.register : text.signIn)}
+            {loading
+              ? isRegister ? t("login.registering") : t("login.loggingIn")
+              : isRegister ? t("login.register") : t("login.signIn")}
           </button>
 
           <div className="text-center">
             <button
               type="button"
-              onClick={() => {
-                setIsRegister(!isRegister);
-                setError("");
-                setSuccess("");
-              }}
-              className="text-sm text-on-surface-variant hover:text-primary transition-colors"
+              onClick={() => { setIsRegister(!isRegister); setError(""); setSuccess(""); }}
+              className="text-xs text-text-muted hover:text-primary transition-colors"
             >
-              {isRegister ? text.hasAccount : text.noAccount}
+              {isRegister ? t("login.hasAccount") : t("login.noAccount")}
             </button>
           </div>
         </form>
