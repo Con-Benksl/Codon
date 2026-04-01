@@ -51,7 +51,7 @@ export default function DnaParticles({
     const sizes = new Float32Array(particleCount);
 
     const primaryColor = new THREE.Color("#38bdf8");
-    const secondaryColor = new THREE.Color("#1e3a5f");
+    const secondaryColor = new THREE.Color("#60a5fa");
 
     for (let i = 0; i < pointsPerStrand; i++) {
       const t = i / pointsPerStrand;
@@ -72,7 +72,7 @@ export default function DnaParticles({
       colors[idxA + 1] = colorA.g;
       colors[idxA + 2] = colorA.b;
 
-      sizes[i] = 2.0 + Math.random() * 2.5;
+      sizes[i] = 3.0 + Math.random() * 3.0;
 
       // Strand B (phase offset π)
       const idxB = (pointsPerStrand + i) * 3;
@@ -133,10 +133,11 @@ export default function DnaParticles({
         uniform float uOpacity;
 
         void main() {
-          // Soft circle
+          // Soft circle with strong core
           float d = length(gl_PointCoord - vec2(0.5));
           if (d > 0.5) discard;
-          float alpha = smoothstep(0.5, 0.1, d) * vAlpha * uOpacity;
+          float circle = 1.0 - smoothstep(0.0, 0.5, d);
+          float alpha = circle * vAlpha * uOpacity;
           gl_FragColor = vec4(vColor, alpha);
         }
       `,
@@ -149,7 +150,7 @@ export default function DnaParticles({
     scene.add(points);
 
     // Base-pair rungs (LineSegments connecting strands)
-    const rungCount = Math.floor(turns * 10);
+    const rungCount = Math.floor(turns * 20);
     const rungPositions = new Float32Array(rungCount * 6);
     const rungColor = new THREE.Color("#2a5a8a");
 
@@ -174,7 +175,7 @@ export default function DnaParticles({
     const rungMaterial = new THREE.LineBasicMaterial({
       color: rungColor,
       transparent: true,
-      opacity: opacity * 0.4,
+      opacity: opacity * 0.8,
       blending: THREE.AdditiveBlending,
     });
     const rungs = new THREE.LineSegments(rungGeometry, rungMaterial);
