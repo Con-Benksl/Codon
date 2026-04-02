@@ -1,3 +1,4 @@
+export { default as AnimatedOutlet } from "./AnimatedOutlet";
 export { default as DnaParticles } from "./DnaParticles";
 export { default as Badge } from "./Badge";
 export { default as Avatar } from "./Avatar";
