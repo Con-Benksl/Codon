@@ -17,6 +17,29 @@ const zh = {
       sequences: "已设计序列",
       validation: "验证通过率",
     },
+    features: {
+      title: "为什么选择 Codon",
+      subtitle: "从序列设计到实验验证，端到端的 AI 协作平台",
+      agents: {
+        title: "多智能体协作",
+        desc: "5 个专业 AI Agent 并行工作 — 环境解析、极端微生物、基因功能、电路设计、代谢兼容",
+      },
+      circuits: {
+        title: "基因回路设计",
+        desc: "可视化拖拽构建基因回路，AI 自动优化调控元件组合与表达强度",
+      },
+      validation: {
+        title: "序列验证引擎",
+        desc: "基于物理约束的序列验证，94.2% 首次合成成功率，减少实验迭代成本",
+      },
+    },
+    workflow: {
+      title: "工作流程",
+      subtitle: "三步完成从概念到序列",
+      step1: { title: "定义目标", desc: "描述你的生物工程目标，AI 自动解析环境约束与功能需求" },
+      step2: { title: "协作设计", desc: "多 Agent 并行设计，实时预览基因回路拓扑与序列方案" },
+      step3: { title: "验证优化", desc: "物理约束验证、密码子优化、表达量预测，一键导出实验方案" },
+    },
   },
   projects: {
     title: "项目",

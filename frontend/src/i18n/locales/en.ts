@@ -17,6 +17,29 @@ const en = {
       sequences: "Sequences Designed",
       validation: "Validation Rate",
     },
+    features: {
+      title: "Why Codon",
+      subtitle: "End-to-end AI collaboration from sequence design to experimental validation",
+      agents: {
+        title: "Multi-Agent Collaboration",
+        desc: "5 specialized AI Agents working in parallel — environment analysis, extremophiles, gene function, circuit design, metabolic compatibility",
+      },
+      circuits: {
+        title: "Gene Circuit Design",
+        desc: "Visual drag-and-drop circuit builder with AI-optimized regulatory element combinations and expression tuning",
+      },
+      validation: {
+        title: "Sequence Validation Engine",
+        desc: "Physics-constrained sequence validation with 94.2% first-synthesis success rate, reducing experimental iteration costs",
+      },
+    },
+    workflow: {
+      title: "Workflow",
+      subtitle: "Three steps from concept to sequence",
+      step1: { title: "Define Goals", desc: "Describe your bioengineering objectives — AI automatically parses environmental constraints and functional requirements" },
+      step2: { title: "Collaborative Design", desc: "Multi-agent parallel design with real-time gene circuit topology and sequence preview" },
+      step3: { title: "Validate & Optimize", desc: "Physics-constrained validation, codon optimization, expression prediction — export experiment plans in one click" },
+    },
   },
   projects: {
     title: "Projects",
