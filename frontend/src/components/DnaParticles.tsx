@@ -9,7 +9,7 @@ export interface DnaSceneParams {
   speed: number;
   scrollMorphEnabled: boolean;
   maxScatterAmplitude: number;
-  morphTarget: 'none' | 'sphere';
+  morphTarget: 'none' | 'sphere' | 'logo';
 }
 
 interface DnaParticlesProps {
@@ -30,7 +30,12 @@ const DEFAULT_PARAMS: DnaSceneParams = {
   speed: 0.06,
   scrollMorphEnabled: true,
   maxScatterAmplitude: 8.0,
-  morphTarget: 'sphere',
+  morphTarget: 'logo',
+};
+
+const jsSmoothstep = (x: number, edge0: number, edge1: number) => {
+  const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
+  return t * t * (3 - 2 * t);
 };
 
 export default function DnaParticles({
@@ -84,6 +89,7 @@ export default function DnaParticles({
     const colors = new Float32Array(totalCount * 3);
     const sizes = new Float32Array(totalCount);
     const randoms = new Float32Array(totalCount);
+    const particleTypes = new Float32Array(totalCount);
 
     const toColor = (hex: string) => new THREE.Color(hex);
     const pick = (arr: string[]) => toColor(arr[Math.floor(Math.random() * arr.length)]);
@@ -109,6 +115,7 @@ export default function DnaParticles({
         colors[pi + 2] = c.b;
         sizes[idx] = 5.0 + Math.random() * 4.0;
         randoms[idx] = Math.random() * 6.28;
+        particleTypes[idx] = 0;
         idx++;
       }
     }
@@ -137,6 +144,7 @@ export default function DnaParticles({
         const midDist = Math.abs(lerp - 0.5);
         sizes[idx] = 4.5 + (1.0 - midDist * 2) * 3.5 + Math.random() * 2.0;
         randoms[idx] = Math.random() * 6.28;
+        particleTypes[idx] = 1;
         idx++;
       }
     }
@@ -155,6 +163,7 @@ export default function DnaParticles({
       colors[pi + 2] = c.b;
       sizes[idx] = 2.5 + Math.random() * 3.0;
       randoms[idx] = Math.random() * 6.28;
+      particleTypes[idx] = 2;
       idx++;
     }
 
@@ -171,12 +180,64 @@ export default function DnaParticles({
       morphPositions[mi + 2] = sphereRadius * Math.sin(phi) * Math.sin(theta);
     }
 
+    // ── Logo sphere morph target ──
+    const logoSpherePositions = new Float32Array(totalCount * 3);
+    const logoSphereRadius = 5.5;
+
+    // 1. Canvas 采样 "CODON" 文字
+    const canvas = document.createElement('canvas');
+    const texW = 512, texH = 256;
+    canvas.width = texW;
+    canvas.height = texH;
+    const ctx = canvas.getContext('2d')!;
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, texW, texH);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 120px "Instrument Sans", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('CODON', texW / 2, texH / 2);
+    const imgData = ctx.getImageData(0, 0, texW, texH).data;
+
+    // 2. 收集文字像素 UV
+    const textUVs: [number, number][] = [];
+    for (let y = 0; y < texH; y += 2) {
+      for (let x = 0; x < texW; x += 2) {
+        if (imgData[(y * texW + x) * 4] > 128) {
+          textUVs.push([x / texW, y / texH]);
+        }
+      }
+    }
+
+    // 3. UV → 球面坐标
+    for (let i = 0; i < totalCount; i++) {
+      const li = i * 3;
+      if (textUVs.length > 0 && i < totalCount * 0.75) {
+        const uv = textUVs[i % textUVs.length];
+        const theta = uv[0] * Math.PI * 2;
+        const phi = uv[1] * Math.PI;
+        const r = logoSphereRadius + (Math.random() - 0.5) * 0.1;
+        logoSpherePositions[li] = r * Math.sin(phi) * Math.cos(theta);
+        logoSpherePositions[li + 1] = r * Math.cos(phi);
+        logoSpherePositions[li + 2] = r * Math.sin(phi) * Math.sin(theta);
+      } else {
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(2 * Math.random() - 1);
+        const r = logoSphereRadius + (Math.random() - 0.5) * 0.15;
+        logoSpherePositions[li] = r * Math.sin(phi) * Math.cos(theta);
+        logoSpherePositions[li + 1] = r * Math.cos(phi);
+        logoSpherePositions[li + 2] = r * Math.sin(phi) * Math.sin(theta);
+      }
+    }
+
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
     geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
     geometry.setAttribute("size", new THREE.BufferAttribute(sizes, 1));
     geometry.setAttribute("aRandom", new THREE.BufferAttribute(randoms, 1));
     geometry.setAttribute("aMorphTarget1", new THREE.BufferAttribute(morphPositions, 3));
+    geometry.setAttribute("aMorphTarget2", new THREE.BufferAttribute(logoSpherePositions, 3));
+    geometry.setAttribute("aParticleType", new THREE.BufferAttribute(particleTypes, 1));
 
     const material = new THREE.ShaderMaterial({
       uniforms: {
@@ -192,6 +253,8 @@ export default function DnaParticles({
         attribute vec3 color;
         attribute float aRandom;
         attribute vec3 aMorphTarget1;
+        attribute vec3 aMorphTarget2;
+        attribute float aParticleType;
         varying vec3 vColor;
         varying float vAlpha;
         uniform float uTime;
@@ -248,23 +311,70 @@ export default function DnaParticles({
 
         void main() {
           vec3 pos = position;
-
-          // Breathe effect
-          float breathe = sin(uTime * 0.4 + pos.y * 0.25) * 0.04;
-          pos.x *= 1.0 + breathe;
-          pos.z *= 1.0 + breathe;
-
-          // Scroll-driven scatter
           float progress = smoothstep(0.0, 1.0, uScrollProgress);
-          vec3 noiseInput = position * 0.15 + vec3(aRandom * 6.28, uTime * 0.08, 0.0);
-          float nx = snoise(noiseInput);
-          float ny = snoise(noiseInput + vec3(31.7, 0.0, 0.0));
-          float nz = snoise(noiseInput + vec3(0.0, 47.3, 0.0));
-          vec3 scatter = vec3(nx, ny, nz) * uScatterAmplitude * progress;
 
-          // Optional sphere morph (kicks in at 30% scroll)
-          float morphBlend = smoothstep(0.3, 0.9, progress) * step(0.5, uMorphTarget);
-          pos = mix(pos, aMorphTarget1, morphBlend * 0.5) + scatter;
+          if (uMorphTarget > 1.5) {
+            // ═══ Logo-Sphere 五幕模式 ═══
+
+            // ① (0-10%) DNA 正常 + 呼吸
+            float breathe = sin(uTime * 0.4 + pos.y * 0.25) * 0.04;
+            pos.x *= 1.0 + breathe;
+            pos.z *= 1.0 + breathe;
+
+            // ② (10-30%) 骤然松解
+            float dissolve = smoothstep(0.08, 0.28, progress);
+            vec3 noiseInput = position * 0.2 + vec3(aRandom * 6.28, uTime * 0.1, 0.0);
+            float nx = snoise(noiseInput);
+            float ny = snoise(noiseInput + vec3(31.7, 0.0, 0.0));
+            float nz = snoise(noiseInput + vec3(0.0, 47.3, 0.0));
+            vec3 chaos = vec3(nx, ny, nz) * 3.0 * dissolve;
+            float typeDelay = aParticleType * 0.08;
+            chaos *= smoothstep(0.08 - typeDelay, 0.25 - typeDelay, progress);
+            pos += chaos;
+
+            // ③ (30-50%) 腰间收束
+            float cinch = smoothstep(0.25, 0.48, progress);
+            float yNorm = position.y / 16.0;
+            float waist = exp(-yNorm * yNorm * 3.0);
+            float spread = (1.0 - waist);
+            float cinchRadius = mix(1.0, 0.3, cinch * waist);
+            pos.x *= cinchRadius;
+            pos.z *= cinchRadius;
+            pos.x += spread * cinch * nx * 2.5;
+            pos.y += spread * cinch * sign(pos.y) * 1.5;
+            pos.z += spread * cinch * nz * 2.5;
+
+            // ④ (50-70%) 下拽侧扯
+            float wrap = smoothstep(0.45, 0.72, progress);
+            vec3 sphereCenter = vec3(0.0, -2.0, 0.0);
+            vec3 toCenter = normalize(sphereCenter - pos) * wrap * 6.0;
+            pos += toCenter;
+
+            // ⑤ (70-100%) 缠球成锦
+            float settle = smoothstep(0.65, 0.95, progress);
+            pos = mix(pos, aMorphTarget2, settle);
+            float surfaceBreath = sin(uTime * 0.6 + aRandom * 6.28) * 0.06 * settle;
+            vec3 surfaceNormal = normalize(pos);
+            pos += surfaceNormal * surfaceBreath;
+
+          } else if (uMorphTarget > 0.5) {
+            // ═══ Sphere 模式（其他路由不变）═══
+            float breathe = sin(uTime * 0.4 + pos.y * 0.25) * 0.04;
+            pos.x *= 1.0 + breathe;
+            pos.z *= 1.0 + breathe;
+            vec3 noiseInput = position * 0.15 + vec3(aRandom * 6.28, uTime * 0.08, 0.0);
+            float nx = snoise(noiseInput);
+            float ny = snoise(noiseInput + vec3(31.7, 0.0, 0.0));
+            float nz = snoise(noiseInput + vec3(0.0, 47.3, 0.0));
+            vec3 scatter = vec3(nx, ny, nz) * uScatterAmplitude * progress;
+            float morphBlend = smoothstep(0.3, 0.9, progress) * step(0.5, uMorphTarget);
+            pos = mix(pos, aMorphTarget1, morphBlend * 0.5) + scatter;
+          } else {
+            // ═══ None 模式 ═══
+            float breathe = sin(uTime * 0.4 + pos.y * 0.25) * 0.04;
+            pos.x *= 1.0 + breathe;
+            pos.z *= 1.0 + breathe;
+          }
 
           vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
           gl_PointSize = size * uPixelRatio * (18.0 / -mvPosition.z);
@@ -275,6 +385,12 @@ export default function DnaParticles({
 
           float depth = -mvPosition.z;
           vAlpha = smoothstep(100.0, 1.0, depth);
+
+          // Logo 模式：散乱阶段降低透明度保护文字
+          if (uMorphTarget > 1.5) {
+            float midFade = 1.0 - smoothstep(0.1, 0.3, progress) * (1.0 - smoothstep(0.6, 0.9, progress)) * 0.4;
+            vAlpha *= midFade;
+          }
         }
       `,
       fragmentShader: `
@@ -298,7 +414,7 @@ export default function DnaParticles({
           alpha = min(alpha, 1.0);
 
           // Scatter fade — slightly dimmer when scattered
-          float scatterFade = 1.0 - uScrollProgress * 0.15;
+          float scatterFade = 1.0 - uScrollProgress * 0.25;
           alpha *= scatterFade;
 
           // Saturate color — boost chroma in the mid/glow zone
@@ -361,16 +477,31 @@ export default function DnaParticles({
       currentScrollProgress += (scrollTarget - currentScrollProgress) * 0.08;
       material.uniforms.uScrollProgress.value = currentScrollProgress;
       material.uniforms.uScatterAmplitude.value = cur.maxScatterAmplitude ?? 0;
-      material.uniforms.uMorphTarget.value = cur.morphTarget === 'sphere' ? 1.0 : 0.0;
+      material.uniforms.uMorphTarget.value =
+        cur.morphTarget === 'logo' ? 2.0 :
+        cur.morphTarget === 'sphere' ? 1.0 : 0.0;
 
-      points.rotation.y = elapsed * cur.speed;
+      if (tgt.morphTarget === 'logo') {
+        const slowdown = 1.0 - jsSmoothstep(currentScrollProgress, 0.6, 0.9);
+        points.rotation.y = elapsed * cur.speed * slowdown;
+      } else {
+        points.rotation.y = elapsed * cur.speed;
+      }
       points.rotation.x = 0.15 + scrollY * 0.00015;
       points.rotation.z = cur.rotZ;
       points.position.x = cur.posX;
 
-      // Mouse parallax
+      // Mouse parallax + logo camera
       camera.position.x += (mouseX * 2.0 - camera.position.x) * 0.015;
-      camera.position.y += (-mouseY * 1.5 - camera.position.y) * 0.015;
+      if (tgt.morphTarget === 'logo') {
+        const logoP = jsSmoothstep(currentScrollProgress, 0.5, 1.0);
+        const targetY = -mouseY * 1.5 - logoP * 2;
+        const targetZ = 18 + logoP * 3;
+        camera.position.y += (targetY - camera.position.y) * 0.015;
+        camera.position.z += (targetZ - camera.position.z) * 0.015;
+      } else {
+        camera.position.y += (-mouseY * 1.5 - camera.position.y) * 0.015;
+      }
       camera.lookAt(0, 0, 0);
 
       renderer.render(scene, camera);

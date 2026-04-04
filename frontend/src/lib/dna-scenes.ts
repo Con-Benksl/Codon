@@ -1,5 +1,10 @@
 import type { DnaSceneParams } from "../components/DnaParticles";
 
+// morphTarget values:
+// 'none'   — no morph, DNA helix stays as-is
+// 'sphere' — scroll-driven scatter + sphere morph (other routes)
+// 'logo'   — five-act narrative: dissolve → cinch → wrap → logo sphere
+
 /**
  * DNA particle scene presets per route.
  * DnaParticles interpolates smoothly between these on navigation.
@@ -9,13 +14,13 @@ import type { DnaSceneParams } from "../components/DnaParticles";
  */
 export const dnaScenes: Record<string, DnaSceneParams> = {
   home: {
-    opacity: 1.0,
+    opacity: 0.85,
     posX: 6,
     rotZ: 0.35,
     speed: 0.06,
     scrollMorphEnabled: true,
-    maxScatterAmplitude: 8.0,
-    morphTarget: 'sphere',
+    maxScatterAmplitude: 3.0,
+    morphTarget: 'logo',
   },
   projects: {
     opacity: 0.55,

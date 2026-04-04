@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { useLocale } from "../i18n/context";
 import { viewTransition, fadeSlideUp, stagger } from "../lib/motion";
-import { Cpu, GitBranch, ShieldCheck, Target, Users, Zap } from "lucide-react";
+import { Cpu, GitBranch, ShieldCheck, Target, Users, Zap, Globe, Bug, Dna, Activity, Atom, FileText, ArrowRight, Check } from "lucide-react";
 
 export default function HomeView() {
   const { t, locale } = useLocale();
@@ -174,6 +174,334 @@ export default function HomeView() {
           ))}
         </div>
       </section>
+
+      {/* Agent Pipeline */}
+      <section className="py-32 px-8 border-t border-white/[0.04]">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-20"
+        >
+          <span className="text-[10px] font-mono text-primary/60 tracking-[0.3em] uppercase">
+            {t("home.pipeline.label")}
+          </span>
+          <h2 className="font-headline text-3xl md:text-4xl font-bold text-text tracking-tight mt-3">
+            {t("home.pipeline.title")}
+          </h2>
+          <p className="mt-4 text-text-muted text-sm max-w-lg mx-auto">
+            {t("home.pipeline.subtitle")}
+          </p>
+        </motion.div>
+
+        <motion.div
+          variants={stagger(120)}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: "-60px" }}
+          className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6"
+        >
+          {([
+            { icon: Globe, key: "env" },
+            { icon: Bug, key: "extremo" },
+            { icon: Dna, key: "gene" },
+            { icon: GitBranch, key: "circuit" },
+            { icon: Activity, key: "metab" },
+            { icon: Atom, key: "struct" },
+          ] as const).map((agent, i) => (
+            <motion.div
+              key={agent.key}
+              variants={fadeSlideUp}
+              className="text-center group relative"
+            >
+              <div className="w-12 h-12 mx-auto rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
+                <agent.icon className="w-5 h-5 text-primary" />
+              </div>
+              <p className="mt-3 text-xs font-semibold text-text">
+                {t(`home.pipeline.agents.${agent.key}.name`)}
+              </p>
+              <p className="mt-1 text-[10px] text-text-dim leading-relaxed">
+                {t(`home.pipeline.agents.${agent.key}.desc`)}
+              </p>
+              {i < 5 && (
+                <div className="hidden lg:block absolute -right-3 top-6 text-primary/30">
+                  <ArrowRight className="w-3 h-3" />
+                </div>
+              )}
+            </motion.div>
+          ))}
+        </motion.div>
+      </section>
+
+      {/* Tech Advantages */}
+      <section className="py-32 px-8 border-t border-white/[0.04]">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-20"
+        >
+          <span className="text-[10px] font-mono text-primary/60 tracking-[0.3em] uppercase">
+            {t("home.tech.label")}
+          </span>
+          <h2 className="font-headline text-3xl md:text-4xl font-bold text-text tracking-tight mt-3">
+            {t("home.tech.title")}
+          </h2>
+          <p className="mt-4 text-text-muted text-sm max-w-lg mx-auto">
+            {t("home.tech.subtitle")}
+          </p>
+        </motion.div>
+
+        <div className="max-w-5xl mx-auto space-y-20">
+          {([
+            { key: "physics", num: "01", panel: (
+              <div className="space-y-2">
+                <div className="flex justify-between"><span className="text-text-dim">Temperature</span><span className="text-primary">-73°C ~ -3°C</span></div>
+                <div className="flex justify-between"><span className="text-text-dim">Perchlorate</span><span className="text-primary">0.5 wt%</span></div>
+                <div className="flex justify-between"><span className="text-text-dim">UV Flux</span><span className="text-primary">50 W/m²</span></div>
+                <div className="mt-4 h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+                  <div className="h-full w-[87%] rounded-full bg-gradient-to-r from-primary to-[#34d399]" />
+                </div>
+                <div className="flex justify-between text-[10px]"><span className="text-text-dim">Fitness Score</span><span className="text-primary">0.87</span></div>
+              </div>
+            )},
+            { key: "dag", num: "02", panel: (
+              <div className="space-y-3">
+                {["EnvParse", "Extremophile", "GeneFunc", "CircuitDesign"].map((name, i) => (
+                  <div key={name} className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                    <span className="text-text-dim">{name}</span>
+                    {i < 3 && <span className="text-text-dim/40 ml-auto">&rarr;</span>}
+                  </div>
+                ))}
+                <div className="mt-2 text-[10px] text-primary/50">context auto-propagated</div>
+              </div>
+            )},
+            { key: "data", num: "03", panel: (
+              <div className="space-y-1 text-text-dim">
+                <div><span className="text-primary/60">from</span> Bio.Entrez <span className="text-primary/60">import</span> efetch</div>
+                <div><span className="text-primary/60">from</span> cobra <span className="text-primary/60">import</span> Model</div>
+                <div className="mt-2 text-[10px] text-primary/50"># NCBI Gene · UniProt · COBRApy</div>
+              </div>
+            )},
+            { key: "safety", num: "04", panel: (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2"><div className="w-6 h-6 rounded border border-danger/30 flex items-center justify-center text-[8px] text-danger">KS</div><span className="text-text-dim">Kill Switch</span><span className="ml-auto text-success text-[10px]">0.94</span></div>
+                <div className="flex items-center gap-2"><div className="w-6 h-6 rounded border border-primary/30 flex items-center justify-center text-[8px] text-primary">OG</div><span className="text-text-dim">Orthogonality</span><span className="ml-auto text-success text-[10px]">0.91</span></div>
+              </div>
+            )},
+            { key: "realtime", num: "05", panel: (
+              <div className="space-y-1 text-text-dim">
+                <div><span className="text-success">&check;</span> Parsing environment...</div>
+                <div><span className="text-success">&check;</span> Screening organisms...</div>
+                <div><span className="text-warning">&#x27F3;</span> Running FBA simulation...</div>
+                <div className="text-[10px] text-primary/50 mt-2">SSE stream · real-time</div>
+              </div>
+            )},
+          ] as const).map((item, i) => (
+            <motion.div
+              key={item.key}
+              initial={{ opacity: 0, x: i % 2 === 0 ? -40 : 40 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-60px" }}
+              transition={{ duration: 0.5 }}
+              className={`flex flex-col md:flex-row items-center gap-10 ${i % 2 !== 0 ? "md:flex-row-reverse" : ""}`}
+            >
+              <div className="flex-1">
+                <span className="text-[10px] font-mono text-primary/50 tracking-widest">{item.num}</span>
+                <h3 className="text-lg font-semibold text-text mt-1">{t(`home.tech.${item.key}.title`)}</h3>
+                <p className="text-sm text-text-muted leading-relaxed mt-2">{t(`home.tech.${item.key}.desc`)}</p>
+              </div>
+              <div className="flex-1 w-full">
+                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-6 font-mono text-xs">
+                  {item.panel}
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* Scenario Case */}
+      <section className="py-32 px-8">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-16"
+        >
+          <h2 className="font-headline text-3xl md:text-4xl font-bold text-text tracking-tight">
+            {t("home.scenario.title")}
+          </h2>
+          <p className="mt-4 text-text-muted text-sm max-w-lg mx-auto">
+            {t("home.scenario.subtitle")}
+          </p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ duration: 0.7 }}
+          className="max-w-5xl mx-auto rounded-2xl border border-white/[0.06] bg-surface overflow-hidden"
+        >
+          <div className="grid grid-cols-1 md:grid-cols-3">
+            {/* Input */}
+            <div className="p-8 md:border-r border-white/[0.04]">
+              <span className="text-[10px] font-mono text-primary/60 tracking-[0.3em]">
+                {t("home.scenario.input.label")}
+              </span>
+              <div className="mt-4">
+                <p className="text-base font-semibold text-text">{t("home.scenario.input.site")}</p>
+                <p className="text-[10px] text-text-dim font-mono mt-1">{t("home.scenario.input.coords")}</p>
+              </div>
+              <div className="mt-6 space-y-2 font-mono text-[11px] text-text-muted">
+                {(["temp", "perchlorate", "uv", "co2", "ph"] as const).map((p) => (
+                  <div key={p}>{t(`home.scenario.input.params.${p}`)}</div>
+                ))}
+              </div>
+            </div>
+
+            {/* Processing */}
+            <div className="p-8 md:border-r border-white/[0.04] border-t md:border-t-0">
+              <span className="text-[10px] font-mono text-primary/60 tracking-[0.3em]">
+                {t("home.scenario.processing.label")}
+              </span>
+              <div className="mt-4 space-y-3">
+                {(["env", "extremo", "gene", "circuit", "metab", "struct"] as const).map((a) => (
+                  <div key={a} className="flex items-center gap-2 text-xs">
+                    <Check className="w-3 h-3 text-success flex-shrink-0" />
+                    <span className="text-text-muted">{t(`home.scenario.processing.agents.${a}.name`)}</span>
+                    <span className="ml-auto text-text-dim font-mono text-[10px]">{t(`home.scenario.processing.agents.${a}.time`)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Output */}
+            <div className="p-8 border-t md:border-t-0">
+              <span className="text-[10px] font-mono text-primary/60 tracking-[0.3em]">
+                {t("home.scenario.output.label")}
+              </span>
+              <div className="mt-4">
+                <p className="text-4xl font-bold text-text font-mono tabular-nums">{t("home.scenario.output.score")}</p>
+                <p className="text-[10px] text-text-dim mt-1">{t("home.scenario.output.scoreLabel")}</p>
+              </div>
+              <div className="mt-4">
+                <p className="text-xs text-text-muted">Chassis: <span className="text-text italic">{t("home.scenario.output.chassis")}</span></p>
+              </div>
+              <div className="mt-4 flex gap-2">
+                {t("home.scenario.output.formats").split(" · ").map((f: string) => (
+                  <span key={f} className="text-[10px] px-2 py-0.5 rounded border border-white/[0.08] text-text-dim">{f}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </section>
+
+      {/* Safety & Standards */}
+      <section className="py-32 px-8 border-t border-white/[0.04]">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-16"
+        >
+          <h2 className="font-headline text-3xl md:text-4xl font-bold text-text tracking-tight">
+            {t("home.trust.title")}
+          </h2>
+          <p className="mt-4 text-text-muted text-sm max-w-lg mx-auto">
+            {t("home.trust.subtitle")}
+          </p>
+        </motion.div>
+
+        <motion.div
+          variants={stagger(150)}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: "-60px" }}
+          className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-10"
+        >
+          <motion.div variants={fadeSlideUp} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-8">
+            <ShieldCheck className="w-8 h-8 text-danger mb-5 opacity-80" />
+            <h3 className="text-lg font-semibold text-text mb-4">{t("home.trust.safety.title")}</h3>
+            <div className="space-y-3">
+              {([0, 1, 2] as const).map((i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <div className="w-1 h-1 rounded-full bg-danger mt-2 flex-shrink-0" />
+                  <p className="text-sm text-text-muted leading-relaxed">{t(`home.trust.safety.items.${i}`)}</p>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+
+          <motion.div variants={fadeSlideUp} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-8">
+            <FileText className="w-8 h-8 text-success mb-5 opacity-80" />
+            <h3 className="text-lg font-semibold text-text mb-4">{t("home.trust.standards.title")}</h3>
+            <div className="space-y-3">
+              {([0, 1, 2] as const).map((i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <div className="w-1 h-1 rounded-full bg-success mt-2 flex-shrink-0" />
+                  <p className="text-sm text-text-muted leading-relaxed">{t(`home.trust.standards.items.${i}`)}</p>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        </motion.div>
+      </section>
+
+      {/* Final CTA */}
+      <section className="min-h-[70vh] flex items-center justify-center px-8">
+        <motion.div
+          initial={{ opacity: 0, y: 40, scale: 0.95 }}
+          whileInView={{ opacity: 1, y: 0, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
+          className="text-center relative z-10"
+        >
+          <h2 className="font-headline text-4xl md:text-6xl font-black text-text tracking-tight">
+            {t("home.finalCta.title")}
+          </h2>
+          <p className="mt-6 text-text-muted text-base md:text-lg max-w-md mx-auto">
+            {t("home.finalCta.subtitle")}
+          </p>
+          <div className="mt-10 flex justify-center gap-4">
+            <Link
+              to="/projects"
+              className="px-10 py-4 bg-primary text-bg rounded-lg font-semibold text-sm tracking-wider hover:shadow-[0_0_32px_rgba(56,189,248,0.4)] transition-all duration-300"
+            >
+              {t("home.finalCta.start")}
+            </Link>
+            <Link
+              to="/login"
+              className="px-10 py-4 border border-white/10 text-text-muted rounded-lg text-sm tracking-wider hover:border-white/25 hover:text-text transition-all duration-300"
+            >
+              {t("home.finalCta.login")}
+            </Link>
+          </div>
+        </motion.div>
+      </section>
+
+      {/* Footer */}
+      <footer className="py-12 px-8 border-t border-white/[0.04]">
+        <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-2">
+            <span className="text-primary text-lg">&loz;</span>
+            <span className="font-headline font-bold text-xs tracking-[0.25em] text-text">CODON</span>
+          </div>
+          <p className="text-[11px] text-text-dim">{t("home.footer.copyright")}</p>
+          <div className="flex gap-6">
+            <a href="#" className="text-[11px] text-text-dim hover:text-text-muted transition-colors">{t("home.footer.github")}</a>
+            <a href="#" className="text-[11px] text-text-dim hover:text-text-muted transition-colors">{t("home.footer.docs")}</a>
+            <a href="#" className="text-[11px] text-text-dim hover:text-text-muted transition-colors">{t("home.footer.contact")}</a>
+          </div>
+        </div>
+      </footer>
     </motion.div>
   );
 }
