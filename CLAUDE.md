@@ -1,6 +1,13 @@
 # Codon — 合成生物学 AI 多智能体协作平台
 
-V3.2 | 前后端分离 | Vercel + Railway
+V3.2 | 前后端分离 | Vercel + Railway | TypeScript（前端）+ Python（后端）
+
+## 验证规则
+
+- 前端变更后运行 `cd frontend && npm run lint` 确认无类型错误
+- 视觉/布局变更后运行 `cd frontend && npm run build` 确认构建通过
+- 后端变更后运行 `cd backend && python -c "from app.main import app"` 确认导入正常
+- **不要在未验证的情况下报告完成**
 
 ## 启动
 
