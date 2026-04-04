@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Mail, Lock, User } from "lucide-react";
-import { login, register } from "../api/auth";
+import { register } from "../api/auth";
+import { useAuth } from "../auth/context";
 import { useLocale } from "../i18n/context";
 
 const INPUT_CLASS =
@@ -30,7 +31,12 @@ export default function LoginView() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const redirectTo = new URLSearchParams(location.search).get("redirect") || "/projects";
+  const { signIn } = useAuth();
+  const redirectFromQuery = new URLSearchParams(location.search).get("redirect");
+  const redirectTo =
+    redirectFromQuery && redirectFromQuery.startsWith("/") && !redirectFromQuery.startsWith("//")
+      ? redirectFromQuery
+      : "/projects";
   const { t } = useLocale();
 
   const handleSubmit = async (e: FormEvent) => {
@@ -45,16 +51,16 @@ export default function LoginView() {
         setSuccess(t("login.registerSuccess"));
         await new Promise((resolve) => setTimeout(resolve, 1000));
         try {
-          await login(email, password);
+          await signIn(email, password);
         } catch (loginError: any) {
           setError(getErrorMessage(loginError.response?.data?.detail, t("login.registerSuccessManual")));
           setIsRegister(false);
           return;
         }
       } else {
-        await login(email, password);
+        await signIn(email, password);
       }
-      navigate(redirectTo);
+      navigate(redirectTo, { replace: true });
     } catch (err: any) {
       setError(getErrorMessage(err.response?.data?.detail, isRegister ? t("login.registerFailed") : t("login.loginFailed")));
     } finally {

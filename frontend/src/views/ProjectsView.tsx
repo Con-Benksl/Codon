@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import { Plus, X } from "lucide-react";
 import { useLocale } from "../i18n/context";
@@ -6,39 +7,63 @@ import { getProjects, createProject, deleteProject, type Project } from "../api/
 import { ProjectCard } from "../components";
 import { viewTransition, stagger, fadeSlideUp } from "../lib/motion";
 
+type ApiDetailItem = { msg?: string };
+
+const getErrorMessage = (detail: unknown, fallback: string) => {
+  if (Array.isArray(detail)) {
+    const messages = detail
+      .map((item) => (typeof item === "object" && item ? (item as ApiDetailItem).msg : ""))
+      .filter(Boolean);
+    if (messages.length > 0) return messages.join("; ");
+  }
+  if (typeof detail === "string" && detail.trim()) return detail;
+  return fallback;
+};
+
+const getRequestErrorMessage = (error: unknown, fallback: string) => {
+  const detail = (error as any)?.response?.data?.detail;
+  return getErrorMessage(detail, fallback);
+};
+
 export default function ProjectsView() {
   const { t } = useLocale();
+  const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [creating, setCreating] = useState(false);
+  const [error, setError] = useState("");
 
   const fetchProjects = useCallback(async () => {
     try {
+      setError("");
       const data = await getProjects();
       setProjects(data);
-    } catch {
-      // API not available — show empty state
+    } catch (err) {
+      setError(getRequestErrorMessage(err, t("projects.loadFailed")));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
-  useEffect(() => { fetchProjects(); }, [fetchProjects]);
+  useEffect(() => {
+    void fetchProjects();
+  }, [fetchProjects]);
 
   const handleCreate = async () => {
     if (!name.trim()) return;
     setCreating(true);
+    setError("");
     try {
       await createProject({ name: name.trim(), description: description.trim() || undefined });
       setName("");
       setDescription("");
       setShowCreate(false);
       await fetchProjects();
-    } catch {
-      // handle error
+    } catch (err) {
+      setError(getRequestErrorMessage(err, t("projects.createFailed")));
     } finally {
       setCreating(false);
     }
@@ -46,17 +71,18 @@ export default function ProjectsView() {
 
   const handleDelete = async (id: number) => {
     if (!confirm(t("projects.confirmDelete"))) return;
+    setError("");
     try {
       await deleteProject(id);
       setProjects((prev) => prev.filter((p) => p.id !== id));
-    } catch {
-      // handle error
+    } catch (err) {
+      setError(getRequestErrorMessage(err, t("projects.deleteFailed")));
     }
   };
 
   const handleOpen = (id: number) => {
     localStorage.setItem("active_project_id", String(id));
-    window.location.href = "/designer";
+    navigate("/designer");
   };
 
   return (
@@ -67,7 +93,7 @@ export default function ProjectsView() {
       exit="exit"
       className="p-6 md:p-8 max-w-5xl"
     >
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-8 gap-4">
         <div>
           <h1 className="text-xl font-headline font-medium text-text tracking-tight">
             {t("projects.title")}
@@ -83,7 +109,12 @@ export default function ProjectsView() {
         </button>
       </div>
 
-      {/* Create modal */}
+      {error && (
+        <div className="mb-5 p-3 bg-danger/10 border border-danger/20 rounded-lg">
+          <p className="text-danger text-xs">{error}</p>
+        </div>
+      )}
+
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="bg-surface border border-border rounded-xl p-6 w-full max-w-md mx-4">
@@ -134,7 +165,6 @@ export default function ProjectsView() {
         </div>
       )}
 
-      {/* Project grid */}
       {loading ? (
         <div className="text-center py-20 text-text-muted text-sm">{t("common.loading")}</div>
       ) : projects.length === 0 ? (
@@ -170,3 +200,4 @@ export default function ProjectsView() {
     </motion.div>
   );
 }
+

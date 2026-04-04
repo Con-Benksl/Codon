@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Home,
   FolderOpen,
@@ -11,8 +11,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useLocale } from "../i18n/context";
-import { logout } from "../api/auth";
-import Avatar from "./Avatar";
+import { useAuth } from "../auth/context";
 
 const NAV_ITEMS = [
   { path: "/", icon: Home, key: "nav.home" },
@@ -24,12 +23,14 @@ const NAV_ITEMS = [
 
 export default function Sidebar() {
   const { t, locale, setLocale } = useLocale();
+  const { signOut } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
 
   const handleLogout = () => {
-    logout();
-    window.location.href = "/login";
+    signOut();
+    navigate("/login", { replace: true });
   };
 
   return (
@@ -38,11 +39,10 @@ export default function Sidebar() {
         collapsed ? "w-16" : "w-56"
       }`}
     >
-      {/* Logo */}
       <div className="flex items-center justify-between px-4 h-14 border-b border-border">
         {!collapsed && (
           <Link to="/" className="flex items-center gap-2">
-            <span className="text-primary text-lg">◇</span>
+            <span className="text-primary text-lg">●</span>
             <span className="font-headline font-bold text-[14px] tracking-[0.25em] text-text">
               CODON
             </span>
@@ -50,7 +50,7 @@ export default function Sidebar() {
         )}
         {collapsed && (
           <Link to="/" className="mx-auto text-primary text-lg">
-            ◇
+            ●
           </Link>
         )}
         <button
@@ -66,11 +66,10 @@ export default function Sidebar() {
         </button>
       </div>
 
-      {/* Navigation */}
       <nav className="flex-1 py-3 px-2 space-y-0.5">
         {!collapsed && (
           <div className="px-3 py-2 text-[10px] uppercase tracking-widest text-text-dim">
-            {t("nav.home") === "首页" ? "导航" : "Navigation"}
+            {locale === "zh" ? "导航" : "Navigation"}
           </div>
         )}
         {NAV_ITEMS.map((item) => {
@@ -97,7 +96,6 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* Bottom section */}
       <div className="border-t border-border p-3 space-y-1">
         <button
           onClick={() => setLocale(locale === "zh" ? "en" : "zh")}
@@ -121,3 +119,4 @@ export default function Sidebar() {
     </aside>
   );
 }
+

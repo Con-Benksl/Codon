@@ -19,12 +19,32 @@ export default function ChatView() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    setMessages((prev) => {
+      if (prev.length === 0) {
+        return [{ id: "welcome", role: "assistant", content: t("chat.welcome") }];
+      }
+      return prev.map((msg) =>
+        msg.id === "welcome" ? { ...msg, content: t("chat.welcome") } : msg,
+      );
+    });
+  }, [t]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSend = async () => {
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleSend = () => {
     const text = input.trim();
     if (!text || loading) return;
 
@@ -33,8 +53,11 @@ export default function ChatView() {
     setInput("");
     setLoading(true);
 
-    // Simulated response (backend not connected yet)
-    setTimeout(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    timeoutRef.current = setTimeout(() => {
       const assistantMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
@@ -42,6 +65,7 @@ export default function ChatView() {
       };
       setMessages((prev) => [...prev, assistantMsg]);
       setLoading(false);
+      timeoutRef.current = null;
     }, 1000);
   };
 
@@ -53,7 +77,6 @@ export default function ChatView() {
       exit="exit"
       className="flex flex-col h-screen"
     >
-      {/* Header */}
       <div className="px-6 py-4 border-b border-border">
         <h1 className="text-lg font-headline font-medium text-text tracking-tight">
           {t("chat.title")}
@@ -61,7 +84,6 @@ export default function ChatView() {
         <p className="text-xs text-text-muted mt-0.5">{t("chat.subtitle")}</p>
       </div>
 
-      {/* Messages */}
       <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
         {messages.map((msg) => (
           <div key={msg.id}>
@@ -71,7 +93,7 @@ export default function ChatView() {
         {loading && (
           <div className="flex gap-3">
             <div className="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
-              <span className="text-primary text-xs">◇</span>
+              <span className="text-primary text-xs">●</span>
             </div>
             <div className="bg-card border border-border rounded-xl px-4 py-3">
               <div className="flex gap-1">
@@ -85,7 +107,6 @@ export default function ChatView() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
       <div className="px-6 py-4 border-t border-border">
         <div className="flex gap-2 max-w-3xl">
           <textarea
@@ -113,3 +134,4 @@ export default function ChatView() {
     </motion.div>
   );
 }
+

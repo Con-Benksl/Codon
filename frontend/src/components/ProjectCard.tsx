@@ -21,6 +21,9 @@ const statusVariant = (status: string) => {
 };
 
 export default function ProjectCard({ project, onOpen, onDelete, t }: ProjectCardProps) {
+  const statusKey = ["active", "in_progress", "completed", "draft"].includes(project.status)
+    ? project.status
+    : "draft";
   const timeAgo = project.updated_at
     ? new Date(project.updated_at).toLocaleDateString()
     : new Date(project.created_at).toLocaleDateString();
@@ -36,7 +39,7 @@ export default function ProjectCard({ project, onOpen, onDelete, t }: ProjectCar
           {project.name}
         </h3>
         <Badge variant={statusVariant(project.status)}>
-          {t(`projects.status.${project.status === "in_progress" ? "active" : project.status || "draft"}`)}
+          {t(`projects.status.${statusKey}`)}
         </Badge>
       </div>
 

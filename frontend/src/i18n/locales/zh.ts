@@ -143,7 +143,11 @@ const zh = {
     open: "打开",
     confirmDelete: "确认删除此项目？",
     empty: "还没有项目，创建一个开始吧",
+    loadFailed: "加载失败",
+    createFailed: "创建失败",
+    deleteFailed: "删除失败",
     status: {
+      in_progress: "进行中",
       active: "活跃",
       draft: "草稿",
       completed: "已完成",

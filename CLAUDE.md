@@ -1,87 +1,64 @@
-# CLAUDE.md
+# Codon — 合成生物学 AI 多智能体协作平台
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+V3.2 | 前后端分离 | Vercel + Railway
 
-## Commands
+## 启动
 
 ```bash
-# 前端
-cd frontend && npm run dev        # 启动开发服务器 http://localhost:3000
-cd frontend && npm run build      # 生产构建 → frontend/dist/
-cd frontend && npm run lint       # TypeScript 检查（tsc --noEmit）
-
-# 后端
-cd backend && pip install -r requirements.txt
-cd backend && python -m uvicorn app.main:app --reload  # http://127.0.0.1:8000
-# API 文档：http://127.0.0.1:8000/api/docs
-
-# 本地全栈（需要 Docker）
-docker-compose up --build  # 启动 PostgreSQL 15 + Redis 7
+cd frontend && npm run dev          # http://localhost:3000
+cd frontend && npm run build        # 生产构建
+cd frontend && npm run lint         # tsc --noEmit
+cd backend && python -m uvicorn app.main:app --reload  # http://127.0.0.1:8000/api/docs
+docker-compose up --build           # PostgreSQL 15 + Redis 7
 ```
 
-## Architecture Overview
+## 前端（`frontend/src/`）
 
-**Codon** — 合成生物学 AI 多智能体协作平台，前后端分离部署。
+React 19 + TypeScript 5.8 + Vite 6 + Tailwind CSS 4 + motion 12 + Three.js 0.183 + React Router 7 + Axios
 
-### 前端（`frontend/src/`）
+**双布局路由**（`App.tsx`）：
+- `HomeLayout`（TopNav + 全屏沉浸）→ `/`
+- `AppLayout`（Sidebar + 主内容区）→ `/projects`、`/designer`、`/chat`、`/analysis`
+- `LoginView` → `/login`
 
-**路由层**（`App.tsx`）：React Router 7 SPA，双布局架构：
-- `HomeLayout`（顶部导航 + 全屏沉浸式）→ `/`
-- `AppLayout`（侧边栏 + 主内容区）→ `/projects`、`/designer`、`/chat`、`/analysis`
-- `LoginView` 独立页面 → `/login`
-- 其他路由重定向至 `/`
+**核心组件**：DnaParticles（Three.js DNA 粒子背景）、TopNav、Sidebar、Badge、Avatar、ProjectCard、ChatMessage
 
-**视图层**（`views/`）：每个 `.tsx` 必须用 `motion.div` + `viewTransition` 包裹。新增视图需在对应 Layout 中注册路由，并同步 `TopNav.tsx` 或 `Sidebar.tsx` 中的导航项。
+**设计系统**：深蓝黑底，主色 `--color-primary: #38bdf8`，字体 Instrument Sans / Inter / JetBrains Mono / Noto Sans SC
 
-**组件层**（`components/`）：
-- `DnaParticles.tsx` — Three.js DNA 双螺旋粒子背景（全局共享，通过 opacity/particleCount 控制不同页面表现）
-- `TopNav.tsx` — 首页顶部横向导航栏
-- `Sidebar.tsx` — 工作区可折叠侧边栏
-- `Badge.tsx`、`Avatar.tsx`、`ProjectCard.tsx`、`ChatMessage.tsx` — 通用 UI 组件
-- `index.ts` — Barrel exports，组件从此导入
+**新增 View 必须**：
+1. `motion.div` + `viewTransition` 包裹
+2. `App.tsx` 注册路由 + TopNav 或 Sidebar 注册导航
+3. `zh.ts` + `en.ts` 同步 i18n key
+4. `components/index.ts` 更新 barrel exports
 
-**API 层**（`api/`）：所有请求统一走 `api/client.ts`（Axios，自动注入 JWT Token，401 时清除 `localStorage('access_token')` 并跳转登录）。禁止在组件中裸用 axios。
+## 后端（`backend/app/`）
 
-**动画**（`lib/motion.ts`）：仅使用预定义的 `fadeSlideUp`、`stagger`、`viewTransition`、`cardHover` 预设。禁止内联 variants 和 `filter:blur` 动画。
+Python 3 + FastAPI 0.109 + SQLAlchemy 2.0 + Alembic + Pydantic 2.x + Celery + Redis + python-jose
 
-**国际化**（`i18n/`）：`useLocale()` hook，通过 `t("key.path")` 获取翻译。新增 i18n key 时必须同步 `locales/zh.ts` 和 `locales/en.ts`。
+**6 Agent**（`agents/`）：env_parse、extremophile、gene_func、circuit_design、metab_compat、struct_predict，均继承 `BaseAgent`，实现 `build_user_prompt()`。
 
-**设计系统**（`index.css`）：Tailwind CSS 4 + CSS 变量。深蓝黑底（Maze 风格），主色 `--color-primary: #38bdf8`（青蓝），字体 Instrument Sans / Inter / JetBrains Mono / Noto Sans SC。
+**编排**：`services/agent_orchestrator.py` → `tasks/agent_tasks.py`（Celery）
 
-### 后端（`backend/app/`）
+**数据库**：开发 SQLite（`mars_design.db`），生产 PostgreSQL（`DATABASE_URL`）
 
-**Agent 框架**（`agents/`）：6 个专业 Agent（环境解析、极端微生物、基因功能、电路设计、代谢兼容、结构预测），均继承 `base_agent.py` 的 `BaseAgent`，必须实现 `build_user_prompt()` 方法。修改任意 agent 时需同步更新 `services/agent_orchestrator.py`。
+**认证**：受保护路由用 `get_current_active_user`，查询带 `owner_id == current_user.id`，返回 404 防枚举。
 
-**编排层**（`services/agent_orchestrator.py`）：协调多 Agent 串/并行执行，对接 `tasks/agent_tasks.py` 的 Celery 异步任务。
-
-**项目运行时**（`services/project_runtime_service.py` + `api/v1/project_runtime.py`）：管理项目生命周期、视图快照和工件存储。
-
-**数据库**：
-- 开发：SQLite（`backend/mars_design.db`，本地状态，勿提交）
-- 生产：PostgreSQL（通过 `DATABASE_URL` 环境变量切换）
-- 迁移：Alembic
-
-**认证**：所有受保护路由必须使用 `get_current_active_user` 依赖（`dependencies.py`）。查询资源时必须带 `owner_id == current_user.id` 过滤条件，不存在或无权限一律返回 404（防止资源枚举）。
-
-### 关键文件联动规则
+## 文件联动
 
 | 修改 | 必须同步 |
 |------|---------|
-| `backend/app/agents/*.py` | `services/agent_orchestrator.py` |
-| `backend/app/services/auth_service.py` | `api/v1/auth.py` + `frontend/src/api/auth.ts` |
-| 新增 `*View.tsx` | `App.tsx` 路由 + `TopNav.tsx` 或 `Sidebar.tsx` 导航 + `en.ts` + `zh.ts` |
-| `i18n/locales/zh.ts` | `i18n/locales/en.ts`（必须同步） |
-| `components/*.tsx` | `components/index.ts` barrel exports |
+| `agents/*.py` | `services/agent_orchestrator.py` |
+| `services/auth_service.py` | `api/v1/auth.py` + `frontend/src/api/auth.ts` |
+| 新增 `*View.tsx` | `App.tsx` + 导航组件 + `zh.ts` + `en.ts` |
+| `i18n/locales/zh.ts` | `en.ts` |
+| `components/*.tsx` | `components/index.ts` |
 
-## Deployment
+## 部署
 
-- **前端**：Vercel，环境变量 `VITE_API_URL` 控制 API 基础地址。
-- **后端**：Railway，配置见 `railway.toml` 和 `railway-start.sh`；改动影响启动、端口、迁移或环境变量时需同步 Railway 配置。
-- **CORS**：跨域变更需同时更新 `backend/app/config.py` 中的 `CORS_ORIGINS` 和 Vercel 前端配置。
+- **前端**：Vercel，`VITE_API_URL` 控制 API 地址
+- **后端**：Railway，`railway.toml` + `railway-start.sh`
+- **CORS**：变更需同步 `backend/app/config.py` 的 `CORS_ORIGINS` 和 Vercel 配置
 
-## Testing
+## 详细规范
 
-目前无自动化测试套件，依赖手动验证：
-- 提交前运行 `npm run lint`
-- 后端端点通过 `http://127.0.0.1:8000/api/docs` 验证
-- 新增测试：后端放 `backend/tests/test_*.py`，前端放 `*.test.ts(x)`
+`rules/` 目录：AGENTS.md、API_TEST_GUIDE.md、BACKEND_WORKFLOW_SUMMARY.md、DEPLOYMENT.md、FRONTEND_BACKEND_CONNECTION.md、PROJECT_STRUCTURE.md

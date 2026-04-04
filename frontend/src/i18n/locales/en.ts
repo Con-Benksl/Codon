@@ -142,9 +142,13 @@ const en = {
     delete: "Delete",
     open: "Open",
     confirmDelete: "Are you sure you want to delete this project?",
+    loadFailed: "Failed to load projects",
+    createFailed: "Failed to create project",
+    deleteFailed: "Failed to delete project",
     empty: "No projects yet. Create one to get started.",
     status: {
       active: "Active",
+      in_progress: "In Progress",
       draft: "Draft",
       completed: "Completed",
     },

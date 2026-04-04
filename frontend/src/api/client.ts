@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { dispatchAuthUnauthorizedEvent } from '../auth/events';
 
 const ENV_API_BASE_URL = import.meta.env.VITE_API_URL?.trim();
 const API_BASE_URL =
@@ -27,6 +28,7 @@ apiClient.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('access_token');
+      dispatchAuthUnauthorizedEvent();
     }
     return Promise.reject(error);
   }
