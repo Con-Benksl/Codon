@@ -327,7 +327,8 @@ export default function DnaParticles({
             float nx = snoise(noiseInput);
             float ny = snoise(noiseInput + vec3(31.7, 0.0, 0.0));
             float nz = snoise(noiseInput + vec3(0.0, 47.3, 0.0));
-            vec3 chaos = vec3(nx, ny, nz) * 3.0 * dissolve;
+            float chaosFadeOut = 1.0 - smoothstep(0.55, 0.85, progress);
+            vec3 chaos = vec3(nx, ny, nz) * 3.0 * dissolve * chaosFadeOut;
             float typeDelay = aParticleType * 0.08;
             chaos *= smoothstep(0.08 - typeDelay, 0.25 - typeDelay, progress);
             pos += chaos;
@@ -340,14 +341,16 @@ export default function DnaParticles({
             float cinchRadius = mix(1.0, 0.3, cinch * waist);
             pos.x *= cinchRadius;
             pos.z *= cinchRadius;
-            pos.x += spread * cinch * nx * 2.5;
-            pos.y += spread * cinch * sign(pos.y) * 1.5;
-            pos.z += spread * cinch * nz * 2.5;
+            pos.x += spread * cinch * nx * 2.5 * chaosFadeOut;
+            pos.y += spread * cinch * sign(pos.y) * 1.5 * chaosFadeOut;
+            pos.z += spread * cinch * nz * 2.5 * chaosFadeOut;
 
             // ④ (50-70%) 下拽侧扯
             float wrap = smoothstep(0.45, 0.72, progress);
             vec3 sphereCenter = vec3(0.0, -2.0, 0.0);
-            vec3 toCenter = normalize(sphereCenter - pos) * wrap * 6.0;
+            vec3 diff = sphereCenter - pos;
+            float dist = length(diff);
+            vec3 toCenter = diff / max(dist, 0.01) * wrap * 6.0;
             pos += toCenter;
 
             // ⑤ (70-100%) 缠球成锦
@@ -477,9 +480,11 @@ export default function DnaParticles({
       currentScrollProgress += (scrollTarget - currentScrollProgress) * 0.08;
       material.uniforms.uScrollProgress.value = currentScrollProgress;
       material.uniforms.uScatterAmplitude.value = cur.maxScatterAmplitude ?? 0;
-      material.uniforms.uMorphTarget.value =
-        cur.morphTarget === 'logo' ? 2.0 :
-        cur.morphTarget === 'sphere' ? 1.0 : 0.0;
+      const morphTargetValue =
+        tgt.morphTarget === 'logo' ? 2.0 :
+        tgt.morphTarget === 'sphere' ? 1.0 : 0.0;
+      material.uniforms.uMorphTarget.value +=
+        (morphTargetValue - material.uniforms.uMorphTarget.value) * lerpFactor;
 
       if (tgt.morphTarget === 'logo') {
         const slowdown = 1.0 - jsSmoothstep(currentScrollProgress, 0.6, 0.9);
