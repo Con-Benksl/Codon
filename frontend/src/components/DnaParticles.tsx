@@ -251,6 +251,7 @@ export default function DnaParticles({
         uScatterAmplitude: { value: 0 },
         uMorphTarget: { value: 0 },
         uDriftRight: { value: 0 },
+        uReverseBurst: { value: 0 },
       },
       vertexShader: `
         attribute float size;
@@ -267,6 +268,7 @@ export default function DnaParticles({
         uniform float uScatterAmplitude;
         uniform float uMorphTarget;
         uniform float uDriftRight;
+        uniform float uReverseBurst;
 
         // Simplex 3D Noise (Ashima/Stefan Gustavson)
         vec4 permute(vec4 x){return mod(((x*34.0)+1.0)*x,289.0);}
@@ -384,6 +386,18 @@ export default function DnaParticles({
             pos.z *= 1.0 + breathe;
           }
 
+          // ═══ Reverse burst: 回滚时粒子先从当前位置炸散再收回 DNA ═══
+          if (uReverseBurst > 0.01) {
+            vec3 rbNoise = position * 0.2 + vec3(aRandom * 6.28, uTime * 0.15, 0.0);
+            float rn1 = snoise(rbNoise);
+            float rn2 = snoise(rbNoise + vec3(17.3, 0.0, 0.0));
+            float rn3 = snoise(rbNoise + vec3(0.0, 29.7, 0.0));
+            vec3 burstDir = normalize(vec3(rn1, rn2, rn3));
+            // 先炸散（0→0.5），再收回（0.5→1.0）
+            float burstOut = smoothstep(0.0, 0.4, uReverseBurst) * (1.0 - smoothstep(0.5, 1.0, uReverseBurst));
+            pos += burstDir * burstOut * 6.0;
+          }
+
           // ═══ Data-flow: scroll-driven scatter → coalesce into streams ═══
           if (uDriftRight > 0.01) {
             // Phase 1 (0→0.5): scatter — particles burst outward from DNA
@@ -490,6 +504,9 @@ export default function DnaParticles({
     const lerpFactor = 0.035; // Smooth ~1s transition
 
     let currentScrollProgress = 0;
+    let prevScrollProgress = 0;
+    let reverseBurst = 0;       // 0→1→0 回滚爆散周期
+    let reverseTriggered = false;
 
     const animate = () => {
       frameRef.current = requestAnimationFrame(animate);
@@ -507,9 +524,27 @@ export default function DnaParticles({
       material.uniforms.uTime.value = elapsed;
       material.uniforms.uOpacity.value = cur.opacity;
 
-      // Scroll morph
-      const scrollTarget = tgt.scrollMorphEnabled ? getScrollProgress() : 0;
-      currentScrollProgress += (scrollTarget - currentScrollProgress) * 0.08;
+      // Scroll morph — getScrollProgress() 已内置阻尼平滑，直接使用
+      currentScrollProgress = tgt.scrollMorphEnabled ? getScrollProgress() : 0;
+
+      // 检测回滚：从高 progress 大幅回退时触发爆散
+      const scrollDelta = currentScrollProgress - prevScrollProgress;
+      if (scrollDelta < -0.003 && prevScrollProgress > 0.3 && !reverseTriggered) {
+        reverseTriggered = true;
+        reverseBurst = 0.001;
+      }
+      prevScrollProgress = currentScrollProgress;
+
+      // 驱动爆散周期 0→1（约 2.5 秒走完）
+      if (reverseTriggered) {
+        reverseBurst += 0.008;
+        if (reverseBurst >= 1.0) {
+          reverseBurst = 0;
+          reverseTriggered = false;
+        }
+      }
+      material.uniforms.uReverseBurst.value = reverseBurst;
+
       material.uniforms.uScrollProgress.value = currentScrollProgress;
       material.uniforms.uScatterAmplitude.value = cur.maxScatterAmplitude ?? 0;
       const morphTargetValue =
@@ -518,12 +553,8 @@ export default function DnaParticles({
       material.uniforms.uMorphTarget.value +=
         (morphTargetValue - material.uniforms.uMorphTarget.value) * lerpFactor;
 
-      // Drift-right mode (data-flow streams)
-      // Asymmetric lerp: rise faster (entering), fall slower (leaving → scatter → DNA)
-      const driftTarget = getDriftRight();
-      const driftCurrent = material.uniforms.uDriftRight.value;
-      const driftLerp = driftTarget > driftCurrent ? 0.05 : 0.015;
-      material.uniforms.uDriftRight.value += (driftTarget - driftCurrent) * driftLerp;
+      // Drift-right mode — getDriftRight() 已内置阻尼平滑
+      material.uniforms.uDriftRight.value = getDriftRight();
 
       if (tgt.morphTarget === 'logo') {
         const slowdown = Math.max(0.6, 1.0 - jsSmoothstep(currentScrollProgress, 0.6, 0.9));
