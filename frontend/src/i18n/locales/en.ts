@@ -63,6 +63,29 @@ const en = {
       safety: { title: "Built-in Kill Switch", desc: "Every design auto-includes a biosafety switch. Circuit orthogonality and ecological escape risks are quantified" },
       realtime: { title: "Real-time Streaming", desc: "SSE pushes agent execution progress — every step from parsing to validation is visible in real time" },
     },
+    agentShowcase: {
+      label: "AGENT COLLABORATION",
+      title: "Six AI Agents Working in Concert",
+      subtitle: "End-to-end automated synthetic biology design, from environment parsing to structure prediction",
+      agents: {
+        env: { label: "INPUT", title: "Mars Soil Analysis", status: "-73°C ~ -3°C" },
+        extremo: { label: "SCREENING", title: "Organism Selection", status: "12 candidates" },
+        gene: { label: "ANALYSIS", title: "Gene Annotation", status: "847 genes mapped" },
+        circuit: { label: "DESIGN", title: "Circuit Assembly", status: "3 modules" },
+        metab: { label: "VALIDATION", title: "FBA Simulation", status: "Fitness 0.94" },
+        struct: { label: "OUTPUT", title: "Protein Folding", status: "pLDDT 87.3" },
+      },
+      metrics: {
+        fitness: { label: "FITNESS SCORE", value: "94%" },
+        safety: { label: "SAFETY INDEX", value: "0.91" },
+        time: { label: "TOTAL TIME", value: "4.2s" },
+      },
+      agentTitles: {
+        env: "EnvParse Agent",
+        gene: "GeneFunc Agent",
+        circuit: "CircuitDesign Agent",
+      },
+    },
     scenario: {
       title: "From Landing Site to Blueprint of Life",
       subtitle: "See how Codon generates a complete design — using Jezero Crater",

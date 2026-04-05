@@ -15,8 +15,8 @@
   --color-success: #4ade80;
   --color-warning: #fbbf24;
   --color-text: #ffffff;
-  --color-text-muted: rgba(255, 255, 255, 0.45);
-  --color-text-dim: rgba(255, 255, 255, 0.25);
+  --color-text-muted: rgba(255, 255, 255, 0.6);
+  --color-text-dim: rgba(255, 255, 255, 0.35);
 }
 
 html {
@@ -30,6 +30,11 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
+}
+
+/* 粒子背景上的低对比度文字可读性增强 */
+.text-glow {
+  text-shadow: 0 0 12px rgba(0, 0, 0, 0.7), 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 ::-webkit-scrollbar {

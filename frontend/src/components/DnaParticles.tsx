@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { getScrollProgress } from "../lib/scroll-progress";
+import { getScrollProgress, getDriftRight } from "../lib/scroll-progress";
 
 export interface DnaSceneParams {
   opacity: number;
@@ -90,6 +90,7 @@ export default function DnaParticles({
     const sizes = new Float32Array(totalCount);
     const randoms = new Float32Array(totalCount);
     const particleTypes = new Float32Array(totalCount);
+    const isTextArr = new Float32Array(totalCount); // 1.0 = text particle on logo sphere
 
     const toColor = (hex: string) => new THREE.Color(hex);
     const pick = (arr: string[]) => toColor(arr[Math.floor(Math.random() * arr.length)]);
@@ -209,7 +210,7 @@ export default function DnaParticles({
       }
     }
 
-    // 3. UV → 球面坐标
+    // 3. UV → 球面坐标（原始 360° 环带映射）
     for (let i = 0; i < totalCount; i++) {
       const li = i * 3;
       if (textUVs.length > 0 && i < totalCount * 0.75) {
@@ -220,6 +221,7 @@ export default function DnaParticles({
         logoSpherePositions[li] = r * Math.sin(phi) * Math.cos(theta);
         logoSpherePositions[li + 1] = r * Math.cos(phi);
         logoSpherePositions[li + 2] = r * Math.sin(phi) * Math.sin(theta);
+        isTextArr[i] = 1.0;
       } else {
         const theta = Math.random() * Math.PI * 2;
         const phi = Math.acos(2 * Math.random() - 1);
@@ -238,6 +240,7 @@ export default function DnaParticles({
     geometry.setAttribute("aMorphTarget1", new THREE.BufferAttribute(morphPositions, 3));
     geometry.setAttribute("aMorphTarget2", new THREE.BufferAttribute(logoSpherePositions, 3));
     geometry.setAttribute("aParticleType", new THREE.BufferAttribute(particleTypes, 1));
+    geometry.setAttribute("aIsText", new THREE.BufferAttribute(isTextArr, 1));
 
     const material = new THREE.ShaderMaterial({
       uniforms: {
@@ -247,6 +250,7 @@ export default function DnaParticles({
         uScrollProgress: { value: 0 },
         uScatterAmplitude: { value: 0 },
         uMorphTarget: { value: 0 },
+        uDriftRight: { value: 0 },
       },
       vertexShader: `
         attribute float size;
@@ -262,6 +266,7 @@ export default function DnaParticles({
         uniform float uScrollProgress;
         uniform float uScatterAmplitude;
         uniform float uMorphTarget;
+        uniform float uDriftRight;
 
         // Simplex 3D Noise (Ashima/Stefan Gustavson)
         vec4 permute(vec4 x){return mod(((x*34.0)+1.0)*x,289.0);}
@@ -353,8 +358,8 @@ export default function DnaParticles({
             vec3 toCenter = diff / max(dist, 0.01) * wrap * 6.0;
             pos += toCenter;
 
-            // ⑤ (70-100%) 缠球成锦
-            float settle = smoothstep(0.65, 0.95, progress);
+            // ⑤ (60-90%) 缠球成锦
+            float settle = smoothstep(0.55, 0.85, progress);
             pos = mix(pos, aMorphTarget2, settle);
             float surfaceBreath = sin(uTime * 0.6 + aRandom * 6.28) * 0.06 * settle;
             vec3 surfaceNormal = normalize(pos);
@@ -377,6 +382,33 @@ export default function DnaParticles({
             float breathe = sin(uTime * 0.4 + pos.y * 0.25) * 0.04;
             pos.x *= 1.0 + breathe;
             pos.z *= 1.0 + breathe;
+          }
+
+          // ═══ Data-flow: scroll-driven scatter → coalesce into streams ═══
+          if (uDriftRight > 0.01) {
+            // Phase 1 (0→0.5): scatter — particles burst outward from DNA
+            float scatterAmt = smoothstep(0.0, 0.45, uDriftRight) * (1.0 - smoothstep(0.4, 0.85, uDriftRight));
+            // Phase 2 (0.4→1.0): coalesce into rightward-flowing streams
+            float streamAmt = smoothstep(0.35, 0.8, uDriftRight);
+
+            // ── Scatter: each particle flies out in a unique direction ──
+            float h1 = fract(sin(aRandom * 12.9898) * 43758.5453);
+            float h2 = fract(sin(aRandom * 78.233 + 1.0) * 43758.5453);
+            float h3 = fract(sin(aRandom * 45.164 + 2.0) * 43758.5453);
+            vec3 burstDir = normalize(vec3(h1 - 0.5, h2 - 0.5, h3 - 0.5));
+            vec3 scatterPos = pos + burstDir * (5.0 + h1 * 8.0) * scatterAmt;
+
+            // ── Stream: rightward-flowing data river ──
+            float driftPhase = aRandom * 6.28;
+            float scatterY = sin(driftPhase + uTime * 0.2) * 8.0;
+            float scatterZ = cos(driftPhase * 1.3 + uTime * 0.15) * 4.0;
+            float flowX = mod(aRandom * 40.0 + uTime * 0.4, 50.0) - 25.0;
+            float bobY = sin(uTime * 0.3 + driftPhase) * 1.5;
+            vec3 streamPos = vec3(flowX, scatterY + bobY, scatterZ);
+
+            // Blend: DNA → scatter → stream
+            vec3 scattered = mix(pos, scatterPos, scatterAmt);
+            pos = mix(scattered, streamPos, streamAmt);
           }
 
           vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
@@ -486,9 +518,20 @@ export default function DnaParticles({
       material.uniforms.uMorphTarget.value +=
         (morphTargetValue - material.uniforms.uMorphTarget.value) * lerpFactor;
 
+      // Drift-right mode (data-flow streams)
+      // Asymmetric lerp: rise faster (entering), fall slower (leaving → scatter → DNA)
+      const driftTarget = getDriftRight();
+      const driftCurrent = material.uniforms.uDriftRight.value;
+      const driftLerp = driftTarget > driftCurrent ? 0.05 : 0.015;
+      material.uniforms.uDriftRight.value += (driftTarget - driftCurrent) * driftLerp;
+
       if (tgt.morphTarget === 'logo') {
-        const slowdown = 1.0 - jsSmoothstep(currentScrollProgress, 0.6, 0.9);
-        points.rotation.y = elapsed * cur.speed * slowdown;
+        const slowdown = Math.max(0.6, 1.0 - jsSmoothstep(currentScrollProgress, 0.6, 0.9));
+        // 凝聚阶段（settle）自动转一整圈展示 CODON
+        const settleProgress = jsSmoothstep(currentScrollProgress, 0.5, 0.95);
+        const revealSpin = settleProgress * Math.PI * 2;
+        const logoYOffset = -Math.PI * 1.3;
+        points.rotation.y = logoYOffset + revealSpin + elapsed * cur.speed * slowdown;
       } else {
         points.rotation.y = elapsed * cur.speed;
       }

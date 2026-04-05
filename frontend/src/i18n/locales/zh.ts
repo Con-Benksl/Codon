@@ -63,6 +63,29 @@ const zh = {
       safety: { title: "内置 Kill Switch", desc: "每个设计方案自动包含生物安全开关，评估回路正交性和生态逃逸风险" },
       realtime: { title: "实时流式反馈", desc: "SSE 推送 Agent 执行进度，从解析到验证的每一步都实时可见" },
     },
+    agentShowcase: {
+      label: "智能体协作",
+      title: "六大 AI Agent 协同工作",
+      subtitle: "从环境解析到结构预测，端到端自动化合成生物学设计流程",
+      agents: {
+        env: { label: "输入", title: "火星土壤分析", status: "-73°C ~ -3°C" },
+        extremo: { label: "筛选", title: "极端微生物筛选", status: "12 个候选" },
+        gene: { label: "分析", title: "基因功能注释", status: "847 基因已映射" },
+        circuit: { label: "设计", title: "基因回路组装", status: "3 个模块" },
+        metab: { label: "验证", title: "FBA 代谢模拟", status: "适应度 0.94" },
+        struct: { label: "输出", title: "蛋白质折叠预测", status: "pLDDT 87.3" },
+      },
+      metrics: {
+        fitness: { label: "适应度评分", value: "94%" },
+        safety: { label: "安全指数", value: "0.91" },
+        time: { label: "总耗时", value: "4.2s" },
+      },
+      agentTitles: {
+        env: "EnvParse Agent",
+        gene: "GeneFunc Agent",
+        circuit: "CircuitDesign Agent",
+      },
+    },
     scenario: {
       title: "从着陆点到生命蓝图",
       subtitle: "以耶泽罗陨石坑为例，看 Codon 如何生成完整设计方案",

@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { useLocale } from "../i18n/context";
 import { viewTransition, fadeSlideUp, stagger } from "../lib/motion";
+import { AgentShowcase } from "../components";
 import { Cpu, GitBranch, ShieldCheck, Target, Users, Zap, Globe, Bug, Dna, Activity, Atom, FileText, ArrowRight, Check } from "lucide-react";
 
 export default function HomeView() {
@@ -42,7 +43,7 @@ export default function HomeView() {
             initial="hidden"
             animate="show"
             transition={{ delay: 0.2 }}
-            className="mt-8 text-text-muted text-base md:text-lg leading-relaxed max-w-lg mx-auto font-light tracking-wide"
+            className="mt-8 text-text-muted text-lg md:text-xl leading-relaxed max-w-xl mx-auto tracking-wide text-glow"
           >
             {t("home.subtitle")}
           </motion.p>
@@ -60,7 +61,7 @@ export default function HomeView() {
             >
               {t("home.cta")}
             </Link>
-            <button className="px-8 py-3.5 border border-white/10 text-text-muted rounded-lg text-sm tracking-wider hover:border-white/25 hover:text-text transition-all duration-300 backdrop-blur-sm">
+            <button className="px-8 py-3.5 border border-white/20 text-white/70 rounded-lg text-sm tracking-wider hover:border-white/40 hover:text-text transition-all duration-300 backdrop-blur-sm text-glow">
               {t("home.demo")}
             </button>
           </motion.div>
@@ -102,7 +103,7 @@ export default function HomeView() {
           <h2 className="font-headline text-3xl md:text-4xl font-bold text-text tracking-tight">
             {t("home.features.title")}
           </h2>
-          <p className="mt-4 text-text-muted text-sm md:text-base max-w-md mx-auto">
+          <p className="mt-4 text-text-muted text-base md:text-lg max-w-lg mx-auto text-glow">
             {t("home.features.subtitle")}
           </p>
         </motion.div>
@@ -141,7 +142,7 @@ export default function HomeView() {
           <h2 className="font-headline text-3xl md:text-4xl font-bold text-text tracking-tight">
             {t("home.workflow.title")}
           </h2>
-          <p className="mt-4 text-text-muted text-sm md:text-base max-w-md mx-auto">
+          <p className="mt-4 text-text-muted text-base md:text-lg max-w-lg mx-auto text-glow">
             {t("home.workflow.subtitle")}
           </p>
         </motion.div>
@@ -165,15 +166,18 @@ export default function HomeView() {
               </div>
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <span className="text-[10px] font-mono text-primary/60 tracking-widest">{step.num}</span>
+                  <span className="text-[10px] font-mono text-primary/60 tracking-widest text-glow">{step.num}</span>
                   <h3 className="text-lg font-semibold text-text">{step.title}</h3>
                 </div>
-                <p className="text-sm text-text-muted leading-relaxed">{step.desc}</p>
+                <p className="text-base text-text-muted leading-relaxed text-glow">{step.desc}</p>
               </div>
             </motion.div>
           ))}
         </div>
       </section>
+
+      {/* Agent Collaboration Showcase */}
+      <AgentShowcase />
 
       {/* Agent Pipeline */}
       <section className="py-32 px-8 border-t border-white/[0.04]">
@@ -184,13 +188,13 @@ export default function HomeView() {
           transition={{ duration: 0.6 }}
           className="text-center mb-20"
         >
-          <span className="text-[10px] font-mono text-primary/60 tracking-[0.3em] uppercase">
+          <span className="text-[10px] font-mono text-primary/60 tracking-[0.3em] uppercase text-glow">
             {t("home.pipeline.label")}
           </span>
           <h2 className="font-headline text-3xl md:text-4xl font-bold text-text tracking-tight mt-3">
             {t("home.pipeline.title")}
           </h2>
-          <p className="mt-4 text-text-muted text-sm max-w-lg mx-auto">
+          <p className="mt-4 text-text-muted text-base md:text-lg max-w-lg mx-auto text-glow">
             {t("home.pipeline.subtitle")}
           </p>
         </motion.div>
@@ -243,13 +247,13 @@ export default function HomeView() {
           transition={{ duration: 0.6 }}
           className="text-center mb-20"
         >
-          <span className="text-[10px] font-mono text-primary/60 tracking-[0.3em] uppercase">
+          <span className="text-[10px] font-mono text-primary/60 tracking-[0.3em] uppercase text-glow">
             {t("home.tech.label")}
           </span>
           <h2 className="font-headline text-3xl md:text-4xl font-bold text-text tracking-tight mt-3">
             {t("home.tech.title")}
           </h2>
-          <p className="mt-4 text-text-muted text-sm max-w-lg mx-auto">
+          <p className="mt-4 text-text-muted text-base md:text-lg max-w-lg mx-auto text-glow">
             {t("home.tech.subtitle")}
           </p>
         </motion.div>
@@ -310,9 +314,9 @@ export default function HomeView() {
               className={`flex flex-col md:flex-row items-center gap-10 ${i % 2 !== 0 ? "md:flex-row-reverse" : ""}`}
             >
               <div className="flex-1">
-                <span className="text-[10px] font-mono text-primary/50 tracking-widest">{item.num}</span>
+                <span className="text-[10px] font-mono text-primary/50 tracking-widest text-glow">{item.num}</span>
                 <h3 className="text-lg font-semibold text-text mt-1">{t(`home.tech.${item.key}.title`)}</h3>
-                <p className="text-sm text-text-muted leading-relaxed mt-2">{t(`home.tech.${item.key}.desc`)}</p>
+                <p className="text-base text-text-muted leading-relaxed mt-2 text-glow">{t(`home.tech.${item.key}.desc`)}</p>
               </div>
               <div className="flex-1 w-full">
                 <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-6 font-mono text-xs">
@@ -336,7 +340,7 @@ export default function HomeView() {
           <h2 className="font-headline text-3xl md:text-4xl font-bold text-text tracking-tight">
             {t("home.scenario.title")}
           </h2>
-          <p className="mt-4 text-text-muted text-sm max-w-lg mx-auto">
+          <p className="mt-4 text-text-muted text-base md:text-lg max-w-lg mx-auto text-glow">
             {t("home.scenario.subtitle")}
           </p>
         </motion.div>
@@ -415,7 +419,7 @@ export default function HomeView() {
           <h2 className="font-headline text-3xl md:text-4xl font-bold text-text tracking-tight">
             {t("home.trust.title")}
           </h2>
-          <p className="mt-4 text-text-muted text-sm max-w-lg mx-auto">
+          <p className="mt-4 text-text-muted text-base md:text-lg max-w-lg mx-auto text-glow">
             {t("home.trust.subtitle")}
           </p>
         </motion.div>
@@ -467,7 +471,7 @@ export default function HomeView() {
           <h2 className="font-headline text-4xl md:text-6xl font-black text-text tracking-tight">
             {t("home.finalCta.title")}
           </h2>
-          <p className="mt-6 text-text-muted text-base md:text-lg max-w-md mx-auto">
+          <p className="mt-6 text-text-muted text-lg md:text-xl max-w-lg mx-auto text-glow">
             {t("home.finalCta.subtitle")}
           </p>
           <div className="mt-10 flex justify-center gap-4">
@@ -479,7 +483,7 @@ export default function HomeView() {
             </Link>
             <Link
               to="/login"
-              className="px-10 py-4 border border-white/10 text-text-muted rounded-lg text-sm tracking-wider hover:border-white/25 hover:text-text transition-all duration-300"
+              className="px-10 py-4 border border-white/20 text-white/70 rounded-lg text-sm tracking-wider hover:border-white/40 hover:text-text transition-all duration-300 text-glow"
             >
               {t("home.finalCta.login")}
             </Link>
