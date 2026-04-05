@@ -120,7 +120,7 @@ export default function HomeView() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-60px" }}
               transition={{ duration: 0.5, delay: i * 0.12 }}
-              className="group p-6 rounded-xl border border-white/20 bg-[rgba(30,41,66,0.7)] hover:border-primary/20 hover:bg-primary/[0.03] transition-all duration-300"
+              className="group p-6 rounded-xl border border-white/20 bg-card-translucent hover:border-primary/20 hover:bg-primary/[0.03] transition-all duration-300"
             >
               <feature.icon className="w-8 h-8 text-primary mb-4 opacity-80 group-hover:opacity-100 transition-opacity" />
               <h3 className="text-lg font-semibold text-text mb-2">{feature.title}</h3>
@@ -319,7 +319,7 @@ export default function HomeView() {
                 <p className="text-base text-text-muted leading-relaxed mt-2 text-glow">{t(`home.tech.${item.key}.desc`)}</p>
               </div>
               <div className="flex-1 w-full">
-                <div className="rounded-xl border border-white/20 bg-[rgba(30,41,66,0.7)] p-6 font-mono text-sm leading-relaxed">
+                <div className="rounded-xl border border-white/20 bg-card-translucent p-6 font-mono text-sm leading-relaxed">
                   {item.panel}
                 </div>
               </div>
@@ -431,7 +431,7 @@ export default function HomeView() {
           viewport={{ once: true, margin: "-60px" }}
           className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-10"
         >
-          <motion.div variants={fadeSlideUp} className="rounded-xl border border-white/20 bg-[rgba(30,41,66,0.7)] p-8">
+          <motion.div variants={fadeSlideUp} className="rounded-xl border border-white/20 bg-card-translucent p-8">
             <ShieldCheck className="w-8 h-8 text-danger mb-5 opacity-80" />
             <h3 className="text-lg font-semibold text-text mb-4">{t("home.trust.safety.title")}</h3>
             <div className="space-y-3">
@@ -444,7 +444,7 @@ export default function HomeView() {
             </div>
           </motion.div>
 
-          <motion.div variants={fadeSlideUp} className="rounded-xl border border-white/20 bg-[rgba(30,41,66,0.7)] p-8">
+          <motion.div variants={fadeSlideUp} className="rounded-xl border border-white/20 bg-card-translucent p-8">
             <FileText className="w-8 h-8 text-success mb-5 opacity-80" />
             <h3 className="text-lg font-semibold text-text mb-4">{t("home.trust.standards.title")}</h3>
             <div className="space-y-3">

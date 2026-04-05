@@ -8,6 +8,7 @@
   --color-bg: #0F1523;
   --color-surface: #0a0e1a;
   --color-card: rgba(30, 41, 66, 0.85);
+  --color-card-translucent: rgba(30, 41, 66, 0.70);
   --color-border: rgba(255, 255, 255, 0.18);
   --color-border-hover: rgba(255, 255, 255, 0.30);
   --color-primary: #38bdf8;
