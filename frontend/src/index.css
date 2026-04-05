@@ -7,16 +7,16 @@
 
   --color-bg: #0F1523;
   --color-surface: #0a0e1a;
-  --color-card: rgba(242, 244, 245, 0.04);
-  --color-border: rgba(255, 255, 255, 0.06);
-  --color-border-hover: rgba(255, 255, 255, 0.12);
+  --color-card: rgba(30, 41, 66, 0.85);
+  --color-border: rgba(255, 255, 255, 0.18);
+  --color-border-hover: rgba(255, 255, 255, 0.30);
   --color-primary: #38bdf8;
   --color-danger: #f43f5e;
   --color-success: #4ade80;
   --color-warning: #fbbf24;
   --color-text: #ffffff;
-  --color-text-muted: rgba(255, 255, 255, 0.6);
-  --color-text-dim: rgba(255, 255, 255, 0.35);
+  --color-text-muted: rgba(255, 255, 255, 0.75);
+  --color-text-dim: rgba(255, 255, 255, 0.50);
 }
 
 html {
