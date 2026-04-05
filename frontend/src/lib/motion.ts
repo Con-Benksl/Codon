@@ -44,8 +44,11 @@ export const fadeIn: Variants = {
 
 export const cardHover = {
   whileHover: {
-    y: -2,
-    transition: { duration: 0.2, ease },
+    y: -4,
+    scale: 1.01,
+    boxShadow: "0 10px 30px -10px rgba(56, 189, 248, 0.15)",
+    borderColor: "rgba(56, 189, 248, 0.4)",
+    transition: { duration: 0.25, ease },
   },
 };
 

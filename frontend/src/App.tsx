@@ -1,17 +1,35 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
-import { useMemo } from "react";
+import { useMemo, Suspense, lazy } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import ErrorBoundary from "./ErrorBoundary";
 import { DnaParticles } from "./components";
 import { getSceneForPath } from "./lib/dna-scenes";
 import { useAuth } from "./auth/context";
 import HomeLayout from "./views/HomeLayout";
 import AppLayout from "./views/AppLayout";
-import HomeView from "./views/HomeView";
-import LoginView from "./views/LoginView";
-import ProjectsView from "./views/ProjectsView";
-import DesignerView from "./views/DesignerView";
-import ChatView from "./views/ChatView";
-import AnalysisView from "./views/AnalysisView";
+
+// Lazy loaded views for code splitting
+const HomeView = lazy(() => import("./views/HomeView"));
+const LoginView = lazy(() => import("./views/LoginView"));
+const ProjectsView = lazy(() => import("./views/ProjectsView"));
+const DesignerView = lazy(() => import("./views/DesignerView"));
+const ChatView = lazy(() => import("./views/ChatView"));
+const AnalysisView = lazy(() => import("./views/AnalysisView"));
+
+function RouteLoadingFallback() {
+  return (
+    <div className="fixed inset-0 flex items-center justify-center z-[100] bg-bg/50 backdrop-blur-sm">
+      <motion.div
+        animate={{ opacity: [0.5, 1, 0.5] }}
+        transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+        className="flex flex-col items-center gap-3"
+      >
+        <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+        <div className="text-primary text-xs font-medium tracking-widest opacity-80 uppercase">Loading Data...</div>
+      </motion.div>
+    </div>
+  );
+}
 
 const LOGIN_PATH = "/login";
 
@@ -55,26 +73,52 @@ function AnimatedRoutes() {
     <>
       <DnaParticles params={dnaParams} particleCount={5000} />
 
-      <Routes location={location}>
-        <Route element={<PublicOnlyRoute />}>
-          <Route path="/login" element={<LoginView />} />
-        </Route>
-
-        <Route element={<HomeLayout />}>
-          <Route index element={<HomeView />} />
-        </Route>
-
-        <Route element={<RequireAuth />}>
-          <Route element={<AppLayout />}>
-            <Route path="projects" element={<ProjectsView />} />
-            <Route path="designer" element={<DesignerView />} />
-            <Route path="chat" element={<ChatView />} />
-            <Route path="analysis" element={<AnalysisView />} />
+      <AnimatePresence mode="wait">
+        <Routes location={location} {...{ key: location.pathname } as any}>
+          <Route element={<PublicOnlyRoute />}>
+            <Route path="/login" element={
+              <Suspense fallback={<RouteLoadingFallback />}>
+                <LoginView />
+              </Suspense>
+            } />
           </Route>
-        </Route>
 
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+          <Route element={<HomeLayout />}>
+            <Route index element={
+              <Suspense fallback={<RouteLoadingFallback />}>
+                <HomeView />
+              </Suspense>
+            } />
+          </Route>
+
+          <Route element={<RequireAuth />}>
+            <Route element={<AppLayout />}>
+              <Route path="projects" element={
+                <Suspense fallback={<RouteLoadingFallback />}>
+                  <ProjectsView />
+                </Suspense>
+              } />
+              <Route path="designer" element={
+                <Suspense fallback={<RouteLoadingFallback />}>
+                  <DesignerView />
+                </Suspense>
+              } />
+              <Route path="chat" element={
+                <Suspense fallback={<RouteLoadingFallback />}>
+                  <ChatView />
+                </Suspense>
+              } />
+              <Route path="analysis" element={
+                <Suspense fallback={<RouteLoadingFallback />}>
+                  <AnalysisView />
+                </Suspense>
+              } />
+            </Route>
+          </Route>
+
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AnimatePresence>
     </>
   );
 }

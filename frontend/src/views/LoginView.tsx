@@ -4,6 +4,8 @@ import { Mail, Lock, User } from "lucide-react";
 import { register } from "../api/auth";
 import { useAuth } from "../auth/context";
 import { useLocale } from "../i18n/context";
+import { motion } from "motion/react";
+import { viewTransition } from "../lib/motion";
 
 const INPUT_CLASS =
   "w-full pl-12 pr-4 py-3 bg-card border border-border rounded-lg text-text placeholder:text-text-dim focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all text-sm";
@@ -69,7 +71,13 @@ export default function LoginView() {
   };
 
   return (
-    <div className="min-h-screen bg-bg flex items-center justify-center px-4 relative overflow-hidden">
+    <motion.div
+      variants={viewTransition}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      className="min-h-screen bg-bg flex items-center justify-center px-4 relative overflow-hidden"
+    >
       <div className="relative z-10 w-full max-w-sm">
         <div className="text-center mb-8">
           <div className="text-primary text-3xl mb-3">◇</div>
@@ -172,6 +180,6 @@ export default function LoginView() {
           </div>
         </form>
       </div>
-    </div>
+    </motion.div>
   );
 }

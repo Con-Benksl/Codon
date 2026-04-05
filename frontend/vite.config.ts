@@ -29,6 +29,7 @@ export default defineConfig(() => {
           manualChunks: {
             'vendor-react': ['react', 'react-dom', 'react-router-dom'],
             'vendor-motion': ['motion'],
+            'vendor-three': ['three'],
             'vendor-utils': ['axios', 'lucide-react'],
           },
         },
