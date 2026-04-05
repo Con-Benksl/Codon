@@ -531,7 +531,7 @@ export default function DnaParticles({
         const settleProgress = jsSmoothstep(currentScrollProgress, 0.5, 0.95);
         const revealSpin = settleProgress * Math.PI * 2;
         const logoYOffset = -Math.PI * 1.3;
-        points.rotation.y = logoYOffset + revealSpin + elapsed * cur.speed * slowdown;
+        points.rotation.y = logoYOffset + revealSpin + elapsed * cur.speed * 2.5 * slowdown;
         // Logo 球模式：最终保留 15° 倾斜增加立体感，确保 CODON 仍可读
         const lockH = jsSmoothstep(currentScrollProgress, 0.7, 0.95);
         const tiltX = 0.26; // ~15° 前倾
