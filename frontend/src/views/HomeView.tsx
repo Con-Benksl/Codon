@@ -61,7 +61,7 @@ export default function HomeView() {
             >
               {t("home.cta")}
             </Link>
-            <button className="px-8 py-3.5 border border-white/20 text-white/70 rounded-lg text-sm tracking-wider hover:border-white/40 hover:text-text transition-all duration-300 backdrop-blur-sm text-glow">
+            <button className="px-8 py-3.5 border border-white/40 bg-white/10 text-white/90 rounded-lg text-sm tracking-wider hover:border-white/60 hover:bg-white/15 hover:text-text transition-all duration-300 backdrop-blur-sm text-glow">
               {t("home.demo")}
             </button>
           </motion.div>
@@ -483,7 +483,7 @@ export default function HomeView() {
             </Link>
             <Link
               to="/login"
-              className="px-10 py-4 border border-white/20 text-white/70 rounded-lg text-sm tracking-wider hover:border-white/40 hover:text-text transition-all duration-300 text-glow"
+              className="px-10 py-4 border border-white/40 bg-white/10 text-white/90 rounded-lg text-sm tracking-wider hover:border-white/60 hover:bg-white/15 hover:text-text transition-all duration-300 backdrop-blur-sm text-glow"
             >
               {t("home.finalCta.login")}
             </Link>

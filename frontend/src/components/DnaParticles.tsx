@@ -532,11 +532,17 @@ export default function DnaParticles({
         const revealSpin = settleProgress * Math.PI * 2;
         const logoYOffset = -Math.PI * 1.3;
         points.rotation.y = logoYOffset + revealSpin + elapsed * cur.speed * slowdown;
+        // Logo 球模式：最终保留 15° 倾斜增加立体感，确保 CODON 仍可读
+        const lockH = jsSmoothstep(currentScrollProgress, 0.7, 0.95);
+        const tiltX = 0.26; // ~15° 前倾
+        const tiltZ = 0.10; // ~6° 侧倾
+        points.rotation.x = (0.15 + scrollY * 0.0008) * (1.0 - lockH) + tiltX * lockH;
+        points.rotation.z = (cur.rotZ + scrollY * 0.0003) * (1.0 - lockH) + tiltZ * lockH;
       } else {
         points.rotation.y = elapsed * cur.speed;
+        points.rotation.x = 0.15 + scrollY * 0.0008;
+        points.rotation.z = cur.rotZ + scrollY * 0.0003;
       }
-      points.rotation.x = 0.15 + scrollY * 0.00015;
-      points.rotation.z = cur.rotZ;
       points.position.x = cur.posX;
 
       // Mouse parallax + logo camera
