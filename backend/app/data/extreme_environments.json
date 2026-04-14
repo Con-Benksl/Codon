@@ -1,0 +1,211 @@
+[
+  {
+    "id": "env_mars_surface",
+    "name_zh": "火星表面",
+    "name_en": "Mars Surface",
+    "location_type": "planetary_surface",
+    "environment_vector": {
+      "temperature": -63.0,
+      "ionizing_radiation": 230.0,
+      "uv_flux": 110.0,
+      "pressure": 0.6,
+      "ph": 8.3,
+      "salinity": 1.5,
+      "water_activity": 0.05,
+      "oxygen": 0.0013,
+      "temp_diurnal_range": 100.0
+    },
+    "description": "火星表面平均温度极低，大气稀薄（约 0.6 kPa，主要为 CO2），表面接收强烈的电离辐射与 UV，土壤含高氯酸盐，pH 弱碱性。",
+    "real_reference": "Mars (NASA Curiosity REMS / RAD)"
+  },
+  {
+    "id": "env_europa_subice_ocean",
+    "name_zh": "木卫二冰下海洋",
+    "name_en": "Europa Sub-ice Ocean",
+    "location_type": "icy_moon_ocean",
+    "environment_vector": {
+      "temperature": -2.0,
+      "ionizing_radiation": 5400.0,
+      "uv_flux": 0.0,
+      "pressure": 130000.0,
+      "ph": 8.0,
+      "salinity": 5.0,
+      "water_activity": 0.96,
+      "oxygen": 0.5,
+      "temp_diurnal_range": 0.5
+    },
+    "description": "木卫二冰壳之下推测存在液态咸水海洋，深度 100 km 量级，承受巨大流体静压，盐度高，地表受木星辐射带强烈轰击但海洋本身被冰壳屏蔽。",
+    "real_reference": "Europa (NASA Galileo / Europa Clipper)"
+  },
+  {
+    "id": "env_venus_cloud_50km",
+    "name_zh": "金星 50km 云层",
+    "name_en": "Venus Cloud Layer 50km",
+    "location_type": "atmospheric_aerosol",
+    "environment_vector": {
+      "temperature": 60.0,
+      "ionizing_radiation": 1.5,
+      "uv_flux": 280.0,
+      "pressure": 100.0,
+      "ph": 0.5,
+      "salinity": 0.0,
+      "water_activity": 0.1,
+      "oxygen": 0.0,
+      "temp_diurnal_range": 5.0
+    },
+    "description": "金星大气 50 km 高度温度与气压接近地表条件，但云层主要由浓硫酸液滴组成，pH 极低，水活度低，UV 通量高。",
+    "real_reference": "Venus middle cloud layer (Venera / Pioneer Venus)"
+  },
+  {
+    "id": "env_deep_sea_hydrothermal_vent",
+    "name_zh": "深海热泉黑烟囱",
+    "name_en": "Deep-sea Hydrothermal Vent",
+    "location_type": "ocean_floor",
+    "environment_vector": {
+      "temperature": 90.0,
+      "ionizing_radiation": 0.5,
+      "uv_flux": 0.0,
+      "pressure": 25000.0,
+      "ph": 4.5,
+      "salinity": 3.5,
+      "water_activity": 0.97,
+      "oxygen": 0.0,
+      "temp_diurnal_range": 5.0
+    },
+    "description": "大洋中脊黑烟囱热液喷口流体温度可达 350°C，喷口周围梯度区温度 20–110°C，富含 H2S/Fe/Mn，无氧厌氧环境，2–3 km 水深。",
+    "real_reference": "East Pacific Rise / TAG Hydrothermal Field"
+  },
+  {
+    "id": "env_mcmurdo_dry_valleys",
+    "name_zh": "南极麦克默多干谷",
+    "name_en": "McMurdo Dry Valleys",
+    "location_type": "polar_desert",
+    "environment_vector": {
+      "temperature": -20.0,
+      "ionizing_radiation": 0.8,
+      "uv_flux": 35.0,
+      "pressure": 100.0,
+      "ph": 7.5,
+      "salinity": 0.5,
+      "water_activity": 0.6,
+      "oxygen": 21.0,
+      "temp_diurnal_range": 25.0
+    },
+    "description": "地球上最像火星的地方之一：长期低温干燥、低降水、强 UV、岩内（endolithic）微生物群落是主要生命形式。",
+    "real_reference": "McMurdo Dry Valleys, Antarctica"
+  },
+  {
+    "id": "env_atacama_desert",
+    "name_zh": "阿塔卡马沙漠核心区",
+    "name_en": "Atacama Desert Core",
+    "location_type": "hyperarid_desert",
+    "environment_vector": {
+      "temperature": 18.0,
+      "ionizing_radiation": 0.6,
+      "uv_flux": 90.0,
+      "pressure": 80.0,
+      "ph": 8.0,
+      "salinity": 4.0,
+      "water_activity": 0.15,
+      "oxygen": 18.0,
+      "temp_diurnal_range": 30.0
+    },
+    "description": "全球最干旱的非极地沙漠，年降水低于 1 mm，土壤含高氯酸盐，UV 辐射极强，常被用作火星类比实验场。",
+    "real_reference": "Yungay region, Atacama Desert, Chile"
+  },
+  {
+    "id": "env_chernobyl_reactor4",
+    "name_zh": "切尔诺贝利 4 号反应堆石棺",
+    "name_en": "Chernobyl Reactor 4 Sarcophagus",
+    "location_type": "radioactive_zone",
+    "environment_vector": {
+      "temperature": 15.0,
+      "ionizing_radiation": 80000.0,
+      "uv_flux": 5.0,
+      "pressure": 101.3,
+      "ph": 6.5,
+      "salinity": 0.1,
+      "water_activity": 0.85,
+      "oxygen": 21.0,
+      "temp_diurnal_range": 10.0
+    },
+    "description": "切尔诺贝利核事故 4 号机组反应堆石棺内部辐射剂量极高，已发现 Cladosporium sphaerospermum 等真菌进行辐射趋向性生长（radiotropism）。",
+    "real_reference": "Chernobyl Nuclear Power Plant Unit 4"
+  },
+  {
+    "id": "env_great_barrier_reef_acidified",
+    "name_zh": "大堡礁酸化区",
+    "name_en": "Great Barrier Reef Acidified Zone",
+    "location_type": "coastal_ocean",
+    "environment_vector": {
+      "temperature": 28.0,
+      "ionizing_radiation": 0.3,
+      "uv_flux": 50.0,
+      "pressure": 200.0,
+      "ph": 7.7,
+      "salinity": 3.6,
+      "water_activity": 0.98,
+      "oxygen": 6.5,
+      "temp_diurnal_range": 4.0
+    },
+    "description": "海洋酸化与热应激双重压力下的珊瑚礁带，pH 已从工业革命前 8.2 下降至约 7.7，珊瑚共生藻白化频发。",
+    "real_reference": "Great Barrier Reef, Australia"
+  },
+  {
+    "id": "env_dead_sea",
+    "name_zh": "死海",
+    "name_en": "Dead Sea",
+    "location_type": "hypersaline_lake",
+    "environment_vector": {
+      "temperature": 25.0,
+      "ionizing_radiation": 0.5,
+      "uv_flux": 60.0,
+      "pressure": 106.0,
+      "ph": 6.0,
+      "salinity": 34.0,
+      "water_activity": 0.67,
+      "oxygen": 8.0,
+      "temp_diurnal_range": 15.0
+    },
+    "description": "全球盐度最高的水体之一（约 340 g/L），富含 MgCl2 与 CaCl2，水活度低至 0.67，仅极端嗜盐古菌可生长。",
+    "real_reference": "Dead Sea, Israel/Jordan"
+  },
+  {
+    "id": "env_yellowstone_hotspring",
+    "name_zh": "黄石公园酸性温泉",
+    "name_en": "Yellowstone Acidic Hot Spring",
+    "location_type": "geothermal_spring",
+    "environment_vector": {
+      "temperature": 80.0,
+      "ionizing_radiation": 0.3,
+      "uv_flux": 40.0,
+      "pressure": 90.0,
+      "ph": 2.5,
+      "salinity": 0.3,
+      "water_activity": 0.99,
+      "oxygen": 6.0,
+      "temp_diurnal_range": 5.0
+    },
+    "description": "黄石公园诺里斯间歇泉盆地酸性温泉群，温度 70–95°C、pH 1.5–3，是 Sulfolobus、Thermus 等嗜热嗜酸微生物模式生境。",
+    "real_reference": "Norris Geyser Basin, Yellowstone NP, USA"
+  },
+  {
+    "id": "env_lake_vostok",
+    "name_zh": "东方湖（南极冰下湖）",
+    "name_en": "Lake Vostok Subglacial",
+    "location_type": "subglacial_lake",
+    "environment_vector": {
+      "temperature": -3.0,
+      "ionizing_radiation": 0.2,
+      "uv_flux": 0.0,
+      "pressure": 35000.0,
+      "ph": 6.5,
+      "salinity": 0.05,
+      "water_activity": 0.95,
+      "oxygen": 50.0,
+      "temp_diurnal_range": 0.0
+    },
+    "description": "封存于 4 km 厚冰盖之下数百万年的液态淡水湖，氧气因冰笼水合物分解而异常富集，全黑无光，被视为木卫二类比环境。",
+    "real_reference": "Lake Vostok, Antarctica"
+  }
+]
