@@ -91,71 +91,71 @@ export default function ProjectsView() {
       initial="initial"
       animate="animate"
       exit="exit"
-      className="p-6 md:p-8 max-w-5xl"
+      className="p-8 md:p-12 max-w-7xl"
     >
-      <div className="flex items-center justify-between mb-8 gap-4">
+      <div className="flex items-center justify-between mb-12 gap-6">
         <div>
-          <h1 className="text-xl font-headline font-medium text-text tracking-tight">
+          <h1 className="text-4xl font-headline font-semibold text-text tracking-tight">
             {t("projects.title")}
           </h1>
-          <p className="text-sm text-text-muted mt-1">{t("projects.subtitle")}</p>
+          <p className="text-lg text-text-muted mt-2">{t("projects.subtitle")}</p>
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-bg rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+          className="flex items-center gap-2.5 px-6 py-3.5 bg-primary text-bg rounded-xl text-lg font-semibold hover:bg-primary/90 transition-colors"
         >
-          <Plus size={16} />
+          <Plus size={22} />
           {t("projects.newProject")}
         </button>
       </div>
 
       {error && (
-        <div className="mb-5 p-3 bg-danger/10 border border-danger/20 rounded-lg">
-          <p className="text-danger text-xs">{error}</p>
+        <div className="mb-8 p-4 bg-danger/10 border border-danger/20 rounded-xl">
+          <p className="text-danger text-base">{error}</p>
         </div>
       )}
 
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-surface border border-border rounded-xl p-6 w-full max-w-md mx-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-headline font-medium text-text">
+          <div className="bg-surface border border-white/15 rounded-2xl p-8 w-full max-w-lg mx-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-headline font-semibold text-text">
                 {t("projects.createProject")}
               </h2>
               <button onClick={() => setShowCreate(false)} className="text-text-dim hover:text-text">
-                <X size={18} />
+                <X size={26} />
               </button>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-5">
               <div>
-                <label className="block text-xs text-text-muted mb-1">{t("projects.projectName")}</label>
+                <label className="block text-base text-text-muted mb-2">{t("projects.projectName")}</label>
                 <input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full px-3 py-2 bg-card border border-border rounded-lg text-sm text-text focus:outline-none focus:border-primary/50"
+                  className="w-full px-4 py-3 bg-card border border-white/15 rounded-xl text-lg text-text focus:outline-none focus:border-primary/50"
                   autoFocus
                 />
               </div>
               <div>
-                <label className="block text-xs text-text-muted mb-1">{t("projects.projectDescription")}</label>
+                <label className="block text-base text-text-muted mb-2">{t("projects.projectDescription")}</label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={3}
-                  className="w-full px-3 py-2 bg-card border border-border rounded-lg text-sm text-text focus:outline-none focus:border-primary/50 resize-none"
+                  className="w-full px-4 py-3 bg-card border border-white/15 rounded-xl text-lg text-text focus:outline-none focus:border-primary/50 resize-none"
                 />
               </div>
-              <div className="flex gap-2 justify-end pt-2">
+              <div className="flex gap-3 justify-end pt-2">
                 <button
                   onClick={() => setShowCreate(false)}
-                  className="px-4 py-2 text-sm text-text-muted hover:text-text transition-colors"
+                  className="px-5 py-3 text-base text-text-muted hover:text-text transition-colors"
                 >
                   {t("projects.cancel")}
                 </button>
                 <button
                   onClick={handleCreate}
                   disabled={!name.trim() || creating}
-                  className="px-4 py-2 bg-primary text-bg rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                  className="px-6 py-3 bg-primary text-bg rounded-xl text-base font-semibold hover:bg-primary/90 disabled:opacity-50 transition-colors"
                 >
                   {creating ? t("common.loading") : t("projects.create")}
                 </button>
@@ -166,15 +166,15 @@ export default function ProjectsView() {
       )}
 
       {loading ? (
-        <div className="text-center py-20 text-text-muted text-sm">{t("common.loading")}</div>
+        <div className="text-center py-24 text-text-muted text-lg">{t("common.loading")}</div>
       ) : projects.length === 0 ? (
-        <div className="text-center py-20">
-          <p className="text-text-muted text-sm">{t("projects.empty")}</p>
+        <div className="text-center py-24">
+          <p className="text-text-muted text-lg">{t("projects.empty")}</p>
           <button
             onClick={() => setShowCreate(true)}
-            className="mt-4 px-4 py-2 border border-border text-text-muted rounded-lg text-sm hover:border-border-hover hover:text-text transition-colors"
+            className="mt-6 px-6 py-3 border border-white/15 text-text-muted rounded-xl text-base hover:border-primary/40 hover:text-text transition-colors"
           >
-            <Plus size={14} className="inline mr-1" />
+            <Plus size={18} className="inline mr-2" />
             {t("projects.newProject")}
           </button>
         </div>
@@ -183,7 +183,7 @@ export default function ProjectsView() {
           variants={stagger(60)}
           initial="hidden"
           animate="show"
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"
+          className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
         >
           {projects.map((project) => (
             <motion.div key={project.id} variants={fadeSlideUp}>

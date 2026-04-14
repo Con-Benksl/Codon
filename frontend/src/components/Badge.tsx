@@ -15,7 +15,7 @@ const variantStyles: Record<string, string> = {
 export default function Badge({ variant = "default", children }: BadgeProps) {
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider rounded border ${variantStyles[variant]}`}
+      className={`inline-flex items-center px-3 py-1 text-xs font-semibold uppercase tracking-wider rounded-md border ${variantStyles[variant]}`}
     >
       {children}
     </span>

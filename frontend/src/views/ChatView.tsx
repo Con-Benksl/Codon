@@ -77,29 +77,29 @@ export default function ChatView() {
       exit="exit"
       className="flex flex-col h-screen"
     >
-      <div className="px-6 py-4 border-b border-border">
-        <h1 className="text-lg font-headline font-medium text-text tracking-tight">
+      <div className="px-10 py-7 border-b border-white/10">
+        <h1 className="text-3xl font-headline font-semibold text-text tracking-tight">
           {t("chat.title")}
         </h1>
-        <p className="text-xs text-text-muted mt-0.5">{t("chat.subtitle")}</p>
+        <p className="text-lg text-text-muted mt-2">{t("chat.subtitle")}</p>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+      <div className="flex-1 overflow-y-auto px-10 py-8 space-y-6">
         {messages.map((msg) => (
           <div key={msg.id}>
             <ChatMessage role={msg.role} content={msg.content} />
           </div>
         ))}
         {loading && (
-          <div className="flex gap-3">
-            <div className="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
-              <span className="text-primary text-xs">●</span>
+          <div className="flex gap-4">
+            <div className="w-11 h-11 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
+              <span className="text-primary text-base">●</span>
             </div>
-            <div className="bg-card border border-border rounded-xl px-4 py-3">
-              <div className="flex gap-1">
-                <div className="w-1.5 h-1.5 rounded-full bg-text-dim animate-pulse" />
-                <div className="w-1.5 h-1.5 rounded-full bg-text-dim animate-pulse [animation-delay:0.2s]" />
-                <div className="w-1.5 h-1.5 rounded-full bg-text-dim animate-pulse [animation-delay:0.4s]" />
+            <div className="bg-card-translucent border border-white/20 rounded-2xl px-6 py-4">
+              <div className="flex gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-text-dim animate-pulse" />
+                <div className="w-2 h-2 rounded-full bg-text-dim animate-pulse [animation-delay:0.2s]" />
+                <div className="w-2 h-2 rounded-full bg-text-dim animate-pulse [animation-delay:0.4s]" />
               </div>
             </div>
           </div>
@@ -107,8 +107,8 @@ export default function ChatView() {
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="px-6 py-4 border-t border-border">
-        <div className="flex gap-2 max-w-3xl">
+      <div className="px-10 py-6 border-t border-white/10">
+        <div className="flex gap-3 max-w-4xl">
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -120,14 +120,14 @@ export default function ChatView() {
             }}
             placeholder={t("chat.placeholder")}
             rows={1}
-            className="flex-1 px-4 py-3 bg-card border border-border rounded-lg text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-primary/50 resize-none"
+            className="flex-1 px-5 py-4 bg-card border border-white/15 rounded-xl text-lg text-text placeholder:text-text-dim focus:outline-none focus:border-primary/50 resize-none"
           />
           <button
             onClick={handleSend}
             disabled={!input.trim() || loading}
-            className="px-4 py-3 bg-primary text-bg rounded-lg hover:bg-primary/90 disabled:opacity-30 transition-colors"
+            className="px-6 py-4 bg-primary text-bg rounded-xl hover:bg-primary/90 disabled:opacity-30 transition-colors"
           >
-            <Send size={16} />
+            <Send size={22} />
           </button>
         </div>
       </div>

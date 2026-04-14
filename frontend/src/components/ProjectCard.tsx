@@ -31,11 +31,11 @@ export default function ProjectCard({ project, onOpen, onDelete, t }: ProjectCar
   return (
     <motion.div
       {...cardHover}
-      className="bg-card border border-border rounded-xl p-4 hover:border-border-hover transition-colors cursor-pointer"
+      className="bg-card-translucent border border-white/20 rounded-2xl p-6 hover:border-primary/40 hover:bg-primary/[0.04] transition-all duration-300 cursor-pointer"
       onClick={() => onOpen(project.id)}
     >
-      <div className="flex items-start justify-between mb-2">
-        <h3 className="text-sm font-medium text-text truncate pr-2">
+      <div className="flex items-start justify-between mb-3 gap-3">
+        <h3 className="text-xl font-semibold text-text truncate pr-1">
           {project.name}
         </h3>
         <Badge variant={statusVariant(project.status)}>
@@ -44,33 +44,33 @@ export default function ProjectCard({ project, onOpen, onDelete, t }: ProjectCar
       </div>
 
       {project.description && (
-        <p className="text-xs text-text-muted line-clamp-2 mb-3 leading-relaxed">
+        <p className="text-base text-text-muted line-clamp-2 mb-5 leading-relaxed">
           {project.description}
         </p>
       )}
 
       <div className="flex items-center justify-between">
-        <span className="text-[11px] text-text-dim">
+        <span className="text-sm text-text-dim">
           {t("projects.updated")} {timeAgo}
         </span>
-        <div className="flex gap-1">
+        <div className="flex gap-1.5">
           <button
             onClick={(e) => {
               e.stopPropagation();
               onDelete(project.id);
             }}
-            className="p-1.5 rounded-md hover:bg-danger/10 text-text-dim hover:text-danger transition-colors"
+            className="p-2.5 rounded-lg hover:bg-danger/10 text-text-dim hover:text-danger transition-colors"
           >
-            <Trash2 size={14} />
+            <Trash2 size={20} />
           </button>
           <button
             onClick={(e) => {
               e.stopPropagation();
               onOpen(project.id);
             }}
-            className="p-1.5 rounded-md hover:bg-primary/10 text-text-dim hover:text-primary transition-colors"
+            className="p-2.5 rounded-lg hover:bg-primary/10 text-text-dim hover:text-primary transition-colors"
           >
-            <ExternalLink size={14} />
+            <ExternalLink size={20} />
           </button>
         </div>
       </div>

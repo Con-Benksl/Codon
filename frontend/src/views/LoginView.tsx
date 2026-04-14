@@ -8,7 +8,7 @@ import { motion } from "motion/react";
 import { viewTransition } from "../lib/motion";
 
 const INPUT_CLASS =
-  "w-full pl-12 pr-4 py-3 bg-card border border-border rounded-lg text-text placeholder:text-text-dim focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all text-sm";
+  "w-full pl-14 pr-4 py-4 bg-card border border-white/15 rounded-xl text-text placeholder:text-text-dim focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all text-lg";
 
 type ApiDetailItem = { msg?: string };
 
@@ -76,27 +76,27 @@ export default function LoginView() {
       initial="initial"
       animate="animate"
       exit="exit"
-      className="min-h-screen bg-bg flex items-center justify-center px-4 relative overflow-hidden"
+      className="min-h-screen bg-bg flex items-center justify-center px-6 relative overflow-hidden"
     >
-      <div className="relative z-10 w-full max-w-sm">
-        <div className="text-center mb-8">
-          <div className="text-primary text-3xl mb-3">◇</div>
-          <h1 className="text-2xl font-headline font-semibold tracking-wide text-text">
+      <div className="relative z-10 w-full max-w-md">
+        <div className="text-center mb-12">
+          <div className="text-primary text-5xl mb-4 leading-none">◆</div>
+          <h1 className="text-4xl font-headline font-semibold tracking-wider text-text">
             CODON
           </h1>
-          <p className="text-sm text-text-muted mt-2">
+          <p className="text-lg text-text-muted mt-3">
             {isRegister ? t("login.createAccount") : t("login.signIn")}
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {isRegister && (
             <div>
-              <label className="block text-xs font-medium text-text-muted mb-1.5">
+              <label className="block text-base font-medium text-text-muted mb-2">
                 {t("login.username")}
               </label>
               <div className="relative">
-                <User size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-dim" />
+                <User size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-text-dim" />
                 <input
                   type="text"
                   placeholder="username"
@@ -110,11 +110,11 @@ export default function LoginView() {
           )}
 
           <div>
-            <label className="block text-xs font-medium text-text-muted mb-1.5">
+            <label className="block text-base font-medium text-text-muted mb-2">
               {t("login.email")}
             </label>
             <div className="relative">
-              <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-dim" />
+              <Mail size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-text-dim" />
               <input
                 type="email"
                 placeholder="your@email.com"
@@ -127,11 +127,11 @@ export default function LoginView() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-text-muted mb-1.5">
+            <label className="block text-base font-medium text-text-muted mb-2">
               {t("login.password")}
             </label>
             <div className="relative">
-              <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-dim" />
+              <Lock size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-text-dim" />
               <input
                 type="password"
                 placeholder="••••••••"
@@ -144,21 +144,21 @@ export default function LoginView() {
           </div>
 
           {error && (
-            <div className="p-3 bg-danger/10 border border-danger/20 rounded-lg">
-              <p className="text-danger text-xs">{error}</p>
+            <div className="p-4 bg-danger/10 border border-danger/20 rounded-xl">
+              <p className="text-danger text-base">{error}</p>
             </div>
           )}
 
           {success && (
-            <div className="p-3 bg-success/10 border border-success/20 rounded-lg">
-              <p className="text-success text-xs">{success}</p>
+            <div className="p-4 bg-success/10 border border-success/20 rounded-xl">
+              <p className="text-success text-base">{success}</p>
             </div>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className={`w-full py-3 rounded-lg font-medium text-sm transition-colors ${
+            className={`w-full py-4 rounded-xl font-semibold text-lg transition-colors ${
               loading
                 ? "bg-card text-text-muted cursor-not-allowed"
                 : "bg-primary text-bg hover:bg-primary/90"
@@ -169,11 +169,11 @@ export default function LoginView() {
               : isRegister ? t("login.register") : t("login.signIn")}
           </button>
 
-          <div className="text-center">
+          <div className="text-center pt-2">
             <button
               type="button"
               onClick={() => { setIsRegister(!isRegister); setError(""); setSuccess(""); }}
-              className="text-xs text-text-muted hover:text-primary transition-colors"
+              className="text-base text-text-muted hover:text-primary transition-colors"
             >
               {isRegister ? t("login.hasAccount") : t("login.noAccount")}
             </button>

@@ -77,8 +77,8 @@ export default function HomeView() {
       >
         {[
           { value: "6", label: t("home.stats.agents") },
-          { value: "1,247", label: t("home.stats.sequences") },
-          { value: "94.2%", label: t("home.stats.validation") },
+          { value: "30+", label: t("home.stats.sequences") },
+          { value: "46", label: t("home.stats.validation") },
         ].map((stat) => (
           <motion.div key={stat.label} variants={fadeSlideUp} className="text-center">
             <div className="text-3xl md:text-4xl font-semibold text-text font-mono tabular-nums tracking-tight">
@@ -262,46 +262,50 @@ export default function HomeView() {
           {([
             { key: "physics", num: "01", panel: (
               <div className="space-y-2">
-                <div className="flex justify-between"><span className="text-text-dim">Temperature</span><span className="text-primary">-73°C ~ -3°C</span></div>
-                <div className="flex justify-between"><span className="text-text-dim">Perchlorate</span><span className="text-primary">0.5 wt%</span></div>
-                <div className="flex justify-between"><span className="text-text-dim">UV Flux</span><span className="text-primary">50 W/m²</span></div>
-                <div className="mt-4 h-1.5 rounded-full bg-white/15 overflow-hidden">
-                  <div className="h-full w-[87%] rounded-full bg-gradient-to-r from-primary to-[#34d399]" />
-                </div>
-                <div className="flex justify-between text-sm"><span className="text-text-dim">Fitness Score</span><span className="text-primary">0.87</span></div>
+                <div className="flex justify-between"><span className="text-text-dim">Temperature</span><span className="text-primary">-100 ~ 150 °C</span></div>
+                <div className="flex justify-between"><span className="text-text-dim">Ionizing rad</span><span className="text-primary">0 ~ 600 mSv/y</span></div>
+                <div className="flex justify-between"><span className="text-text-dim">Water activity</span><span className="text-primary">0.0 ~ 1.0 a_w</span></div>
+                <div className="flex justify-between"><span className="text-text-dim">Pressure</span><span className="text-primary">0 ~ 300 atm</span></div>
+                <div className="mt-3 text-sm text-primary/80">9 dims · any extreme</div>
               </div>
             )},
             { key: "dag", num: "02", panel: (
               <div className="space-y-3">
-                {["EnvParse", "Extremophile", "GeneFunc", "CircuitDesign"].map((name, i) => (
-                  <div key={name} className="flex items-center gap-2">
+                {[
+                  { name: "Tolerance fit", weight: "0.5" },
+                  { name: "Genetic tractability", weight: "0.3" },
+                  { name: "Mission relevance", weight: "0.2" },
+                ].map((row) => (
+                  <div key={row.name} className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                    <span className="text-text-dim">{name}</span>
-                    {i < 3 && <span className="text-text-dim/70 ml-auto">&rarr;</span>}
+                    <span className="text-text-dim">{row.name}</span>
+                    <span className="ml-auto text-primary/80 font-mono text-sm">w = {row.weight}</span>
                   </div>
                 ))}
-                <div className="mt-2 text-sm text-primary/80">context auto-propagated</div>
+                <div className="mt-2 text-sm text-primary/80">Pareto rank · 30 chassis</div>
               </div>
             )},
             { key: "data", num: "03", panel: (
               <div className="space-y-1 text-text-dim">
-                <div><span className="text-primary/90">from</span> Bio.Entrez <span className="text-primary/90">import</span> efetch</div>
-                <div><span className="text-primary/90">from</span> cobra <span className="text-primary/90">import</span> Model</div>
-                <div className="mt-2 text-sm text-primary/80"># NCBI Gene · UniProt · COBRApy</div>
+                <div><span className="text-primary/90">GET</span> rest.uniprot.org/uniprotkb/{"{id}"}</div>
+                <div><span className="text-primary/90">GET</span> eutils.ncbi.nlm.nih.gov/.../esummary</div>
+                <div><span className="text-primary/90">GET</span> rest.kegg.jp/get/{"{ko}"}</div>
+                <div className="mt-2 text-sm text-primary/80"># SQLite cache · TTL 7d</div>
               </div>
             )},
             { key: "safety", num: "04", panel: (
               <div className="space-y-2">
-                <div className="flex items-center gap-2"><div className="w-6 h-6 rounded border border-danger/30 flex items-center justify-center text-[10px] text-danger">KS</div><span className="text-text-dim">Kill Switch</span><span className="ml-auto text-success text-sm">0.94</span></div>
-                <div className="flex items-center gap-2"><div className="w-6 h-6 rounded border border-primary/30 flex items-center justify-center text-[10px] text-primary">OG</div><span className="text-text-dim">Orthogonality</span><span className="ml-auto text-success text-sm">0.91</span></div>
+                <div className="flex items-center gap-2"><div className="w-6 h-6 rounded border border-primary/30 flex items-center justify-center text-[10px] text-primary">V</div><span className="text-text-dim">pSEVA251 / pBBR1MCS-2</span></div>
+                <div className="flex items-center gap-2"><div className="w-6 h-6 rounded border border-primary/30 flex items-center justify-center text-[10px] text-primary">P</div><span className="text-text-dim">J23119 / PrhaB / Plac</span></div>
+                <div className="flex items-center gap-2"><div className="w-6 h-6 rounded border border-danger/30 flex items-center justify-center text-[10px] text-danger">KS</div><span className="text-text-dim">mazF kill-switch</span><span className="ml-auto text-success text-sm">on</span></div>
               </div>
             )},
             { key: "realtime", num: "05", panel: (
-              <div className="space-y-1 text-text-dim">
-                <div><span className="text-success">&check;</span> Parsing environment...</div>
-                <div><span className="text-success">&check;</span> Screening organisms...</div>
-                <div><span className="text-warning">&#x27F3;</span> Running FBA simulation...</div>
-                <div className="text-sm text-primary/80 mt-2">SSE stream · real-time</div>
+              <div className="space-y-1 text-text-dim font-mono text-sm">
+                <div>dN/dt = r·N·(1 - N/K)·f(env) - d·N</div>
+                <div>dE/dt = α·N·V_max·S/(K_m + S) - β(E - E₀)</div>
+                <div>dS/dt = -γ·N·V_max·S/(K_m + S)</div>
+                <div className="mt-2 text-primary/80"># scipy solve_ivp · 200 steps</div>
               </div>
             )},
           ] as const).map((item, i) => (
@@ -495,7 +499,7 @@ export default function HomeView() {
       <footer className="py-12 px-8 border-t border-white/25">
         <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-2">
-            <span className="text-primary text-lg">&loz;</span>
+            <span className="text-primary text-lg leading-none">&#9670;</span>
             <span className="font-headline font-bold text-sm tracking-[0.25em] text-text">CODON</span>
           </div>
           <p className="text-sm text-text-dim">{t("home.footer.copyright")}</p>

@@ -23,7 +23,7 @@ export default function AppLayout() {
   }, [location.pathname]);
 
   return (
-    <div className="flex min-h-screen bg-bg">
+    <div className="flex h-screen bg-bg overflow-hidden">
       <Sidebar />
       <main ref={mainRef} className="flex-1 relative z-10 overflow-y-auto">
         <AnimatedOutlet />

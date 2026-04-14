@@ -17,7 +17,7 @@ export default function TopNav() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 h-14 bg-bg/80 backdrop-blur-sm border-b border-border">
       <Link to="/" className="flex items-center gap-2">
-        <span className="text-primary text-lg">◇</span>
+        <span className="text-primary text-lg leading-none">◆</span>
         <span className="font-headline font-bold text-[14px] tracking-[0.25em] text-text">
           CODON
         </span>

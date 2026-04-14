@@ -35,40 +35,40 @@ export default function Sidebar() {
 
   return (
     <aside
-      className={`flex flex-col h-screen bg-surface border-r border-border transition-all duration-200 ${
-        collapsed ? "w-16" : "w-56"
+      className={`sticky top-0 flex flex-col h-screen flex-shrink-0 bg-surface border-r border-white/10 transition-all duration-200 ${
+        collapsed ? "w-20" : "w-72"
       }`}
     >
-      <div className="flex items-center justify-between px-4 h-14 border-b border-border">
+      <div className="flex items-center justify-between px-6 h-14 border-b border-white/10">
         {!collapsed && (
           <Link to="/" className="flex items-center gap-2">
-            <span className="text-primary text-lg">●</span>
-            <span className="font-headline font-bold text-[14px] tracking-[0.25em] text-text">
+            <span className="text-primary text-lg leading-none">◆</span>
+            <span className="font-headline font-bold text-sm tracking-[0.25em] text-text">
               CODON
             </span>
           </Link>
         )}
         {collapsed && (
-          <Link to="/" className="mx-auto text-primary text-lg">
-            ●
+          <Link to="/" className="mx-auto text-primary text-lg leading-none">
+            ◆
           </Link>
         )}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className={`p-1 rounded-md text-text-dim hover:text-text-muted transition-colors ${
+          className={`p-1.5 rounded-lg text-text-dim hover:text-text-muted transition-colors ${
             collapsed ? "mx-auto mt-2" : ""
           }`}
         >
           <ChevronLeft
-            size={16}
+            size={22}
             className={`transition-transform ${collapsed ? "rotate-180" : ""}`}
           />
         </button>
       </div>
 
-      <nav className="flex-1 py-3 px-2 space-y-0.5">
+      <nav className="flex-1 py-5 px-3 space-y-1.5">
         {!collapsed && (
-          <div className="px-3 py-2 text-[10px] uppercase tracking-widest text-text-dim">
+          <div className="px-4 py-3 text-xs uppercase tracking-[0.2em] text-text-dim font-semibold">
             {locale === "zh" ? "导航" : "Navigation"}
           </div>
         )}
@@ -82,37 +82,37 @@ export default function Sidebar() {
             <Link
               key={item.path}
               to={item.path}
-              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] transition-colors ${
+              className={`flex items-center gap-4 px-4 py-3.5 rounded-xl text-lg font-medium transition-colors ${
                 isActive
-                  ? "bg-primary/8 text-primary"
-                  : "text-text-muted hover:text-text hover:bg-card"
+                  ? "bg-primary/10 text-primary"
+                  : "text-text-muted hover:text-text hover:bg-white/[0.04]"
               } ${collapsed ? "justify-center px-0" : ""}`}
               title={collapsed ? t(item.key) : undefined}
             >
-              <Icon size={18} strokeWidth={1.5} />
+              <Icon size={24} strokeWidth={1.6} />
               {!collapsed && t(item.key)}
             </Link>
           );
         })}
       </nav>
 
-      <div className="border-t border-border p-3 space-y-1">
+      <div className="border-t border-white/10 p-4 space-y-2">
         <button
           onClick={() => setLocale(locale === "zh" ? "en" : "zh")}
-          className={`flex items-center gap-3 w-full px-3 py-2 rounded-lg text-[13px] text-text-muted hover:text-text hover:bg-card transition-colors ${
+          className={`flex items-center gap-4 w-full px-4 py-3 rounded-xl text-base font-medium text-text-muted hover:text-text hover:bg-white/[0.04] transition-colors ${
             collapsed ? "justify-center px-0" : ""
           }`}
         >
-          <Globe size={18} strokeWidth={1.5} />
+          <Globe size={22} strokeWidth={1.6} />
           {!collapsed && (locale === "zh" ? "English" : "中文")}
         </button>
         <button
           onClick={handleLogout}
-          className={`flex items-center gap-3 w-full px-3 py-2 rounded-lg text-[13px] text-text-muted hover:text-danger hover:bg-danger/5 transition-colors ${
+          className={`flex items-center gap-4 w-full px-4 py-3 rounded-xl text-base font-medium text-text-muted hover:text-danger hover:bg-danger/5 transition-colors ${
             collapsed ? "justify-center px-0" : ""
           }`}
         >
-          <LogOut size={18} strokeWidth={1.5} />
+          <LogOut size={22} strokeWidth={1.6} />
           {!collapsed && t("common.logout")}
         </button>
       </div>
