@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+@theme {
+  --font-headline: "Syne", "Noto Sans SC", sans-serif;
+  --font-body: "Outfit", "Noto Sans SC", sans-serif;
+  --font-mono: "IBM Plex Mono", "Noto Sans SC", monospace;
+
+  --color-bg: #0F1523;
+  --color-surface: #0a0e1a;
+  --color-card: rgba(30, 41, 66, 0.85);
+  --color-card-translucent: rgba(30, 41, 66, 0.70);
+  --color-border: rgba(255, 255, 255, 0.18);
+  --color-border-hover: rgba(255, 255, 255, 0.30);
+  --color-primary: #38bdf8;
+  --color-danger: #f43f5e;
+  --color-success: #4ade80;
+  --color-warning: #fbbf24;
+  --color-text: #ffffff;
+  --color-text-muted: rgba(255, 255, 255, 0.75);
+  --color-text-dim: rgba(255, 255, 255, 0.50);
+}
+
+html {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+/* 粒子背景上的低对比度文字可读性增强 */
+.text-glow {
+  text-shadow: 0 0 12px rgba(0, 0, 0, 0.7), 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+::selection {
+  background: rgba(56, 189, 248, 0.3);
+  color: #fff;
+}
+
+/* Headline font feature settings for Syne */
+.font-headline {
+  font-feature-settings: "ss01" on, "ss02" on;
+  text-rendering: geometricPrecision;
+}
+
+/* Mono font for data display */
+.font-mono {
+  font-feature-settings: "tnum" on, "zero" on;
+}

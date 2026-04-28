@@ -1,0 +1,20 @@
+Codon Third-Party Notices
+=========================
+
+This project includes third-party visual assets in addition to the MIT-licensed
+source code.
+
+Solar System Scope Textures
+---------------------------
+
+- `frontend/public/textures/8k_mars.jpg`
+  - Source: https://commons.wikimedia.org/wiki/File:Solarsystemscope_texture_8k_mars.jpg
+  - Author: Solar System Scope
+  - License: Creative Commons Attribution 4.0 International (CC BY 4.0)
+  - License URL: https://creativecommons.org/licenses/by/4.0/
+
+- `frontend/public/textures/8k_stars_milky_way.jpg`
+  - Source: https://commons.wikimedia.org/wiki/File:Solarsystemscope_texture_8k_stars_milky_way.jpg
+  - Author: Solar System Scope
+  - License: Creative Commons Attribution 4.0 International (CC BY 4.0)
+  - License URL: https://creativecommons.org/licenses/by/4.0/

@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="18" y1="16" x2="238" y2="242" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2d3f51"/>
+      <stop offset="1" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="helix" x1="84" y1="220" x2="172" y2="30" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#39bdf8"/>
+      <stop offset="0.55" stop-color="#63e9de"/>
+      <stop offset="1" stop-color="#9dee8b"/>
+    </linearGradient>
+    <linearGradient id="rung" x1="96" y1="52" x2="160" y2="52" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#42c8ff"/>
+      <stop offset="1" stop-color="#96ec8f"/>
+    </linearGradient>
+    <filter id="outerGlow" x="-22%" y="-22%" width="144%" height="144%">
+      <feGaussianBlur stdDeviation="3.2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect x="6" y="6" width="244" height="244" rx="42" fill="url(#bg)"/>
+
+  <g stroke="#7fc7e7" stroke-opacity="0.22" fill="none">
+    <circle cx="128" cy="128" r="86"/>
+    <path d="M128 24 220 72 220 184 128 232 36 184 36 72 128 24z"/>
+  </g>
+
+  <g filter="url(#outerGlow)" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M92 222c0-30 70-30 70-60s-70-30-70-60 70-30 70-60" stroke="url(#helix)" stroke-width="14"/>
+    <path d="M164 222c0-30-70-30-70-60s70-30 70-60-70-30-70-60" stroke="url(#helix)" stroke-width="14"/>
+  </g>
+
+  <g stroke="url(#rung)" stroke-width="10" stroke-linecap="round">
+    <line x1="98" y1="62" x2="158" y2="62"/>
+    <line x1="98" y1="98" x2="158" y2="98"/>
+    <line x1="98" y1="134" x2="158" y2="134"/>
+    <line x1="98" y1="170" x2="158" y2="170"/>
+    <line x1="98" y1="206" x2="158" y2="206"/>
+  </g>
+
+  <g fill="url(#helix)" filter="url(#outerGlow)">
+    <path d="M145 32c11-15 24-16 34-10-4 11-17 22-34 22z"/>
+    <path d="M124 45c-9-13-21-15-31-9 3 10 14 20 31 19z"/>
+    <path d="M165 52c8-11 19-12 26-7-2 8-12 17-26 16z"/>
+  </g>
+</svg>

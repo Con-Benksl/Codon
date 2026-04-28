@@ -1,0 +1,38 @@
+# Web框架
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+python-multipart==0.0.6
+
+# 数据库
+sqlalchemy==2.0.25
+greenlet==3.0.3
+alembic==1.13.1
+psycopg2-binary==2.9.9
+
+# 任务队列
+celery==5.3.6
+redis==5.0.1
+
+# 数据验证
+pydantic==2.5.3
+pydantic-settings==2.1.0
+email-validator==2.1.0.post1
+
+# 认证（直用 bcrypt，已弃用 passlib —— 与 bcrypt>=4 不兼容）
+python-jose[cryptography]==3.3.0
+bcrypt>=4.1.0
+
+# LLM（OpenAI 兼容格式，支持中转 API）
+openai>=1.12.0
+
+# 生物信息学
+biopython>=1.83
+cobra>=0.29.0
+
+# 数值求解（Designer 6-step ODE 模拟）
+scipy>=1.11.0
+
+# HTTP客户端
+httpx==0.26.0
+
+# 测试

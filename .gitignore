@@ -1,0 +1,20 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+*.db
+*.sqlite
+*.sqlite3
+__pycache__/
+.pytest_cache/
+.vite/
+.code-review-graph/
+.local-open-source-archive/
+
+# Superpowers brainstorm artifacts
+.superpowers/
+docs/答辩PPT骨架.md

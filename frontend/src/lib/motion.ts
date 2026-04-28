@@ -1,0 +1,61 @@
+import type { Variants } from "motion/react";
+
+const ease = [0.25, 0.46, 0.45, 0.94] as const;
+
+export const viewTransition: Variants = {
+  initial: { opacity: 0, y: 20, scale: 0.98 },
+  animate: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: 0.4, ease },
+  },
+  exit: {
+    opacity: 0,
+    y: -12,
+    scale: 0.98,
+    transition: { duration: 0.2, ease },
+  },
+};
+
+export const stagger = (staggerMs = 50): Variants => ({
+  hidden: {},
+  show: {
+    transition: { staggerChildren: staggerMs / 1000 },
+  },
+});
+
+export const fadeSlideUp: Variants = {
+  hidden: { opacity: 0, y: 16 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.4, ease },
+  },
+};
+
+export const fadeIn: Variants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { duration: 0.4, ease },
+  },
+};
+
+export const cardHover = {
+  whileHover: {
+    y: -4,
+    scale: 1.01,
+    boxShadow: "0 10px 30px -10px rgba(56, 189, 248, 0.15)",
+    borderColor: "rgba(56, 189, 248, 0.4)",
+    transition: { duration: 0.25, ease },
+  },
+};
+
+export const buttonPress = {
+  whileTap: { scale: 0.97, transition: { duration: 0.1 } },
+};
+
+export const inViewport = {
+  viewport: { once: true, amount: 0.3 as const },
+};
