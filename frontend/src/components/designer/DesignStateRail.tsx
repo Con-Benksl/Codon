@@ -402,7 +402,7 @@ interface PanelBodyProps {
   selectedProteinName: string | null;
   selectedEditPlan: EditPlanCandidate | null;
   expanded: boolean;
-  onRollback: (step: number) => Promise<void>;
+  onRollback: (step: number) => Promise<boolean>;
   onModeChange: (mode: DesignStateRailPanelMode) => void;
   onPinnedToggle: () => void;
   panelMode: DesignStateRailPanelMode;
@@ -544,7 +544,7 @@ function ProgressSteps({
   state: DesignerState;
   riskItems: RiskItem[];
   expanded: boolean;
-  onRollback: (step: number) => Promise<void>;
+  onRollback: (step: number) => Promise<boolean>;
 }) {
   return (
     <div className={cx("grid", expanded ? "grid-cols-6 gap-2" : "gap-2")}>
@@ -699,7 +699,7 @@ function RollbackShortcuts({
   onRollback,
 }: {
   rollbackTargets: StepMeta[];
-  onRollback: (step: number) => Promise<void>;
+  onRollback: (step: number) => Promise<boolean>;
 }) {
   if (rollbackTargets.length === 0) {
     return (

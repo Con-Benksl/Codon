@@ -15,6 +15,7 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from app.config import get_settings
 from app.services import gene_db_client, llm_client
 
 logger = logging.getLogger(__name__)
@@ -27,6 +28,9 @@ try:
 except Exception as exc:  # noqa: BLE001
     logger.error("Failed to load function_proteins.json: %s", exc)
     PROTEIN_DATA = []
+
+_UNIPROT_DESC_CACHE: Dict[str, Optional[str]] = {}
+_PROTEIN_EXPLANATION_CACHE: Dict[str, str] = {}
 
 
 # ---------- mission → 蛋白筛选关键词 ----------
@@ -112,9 +116,12 @@ async def _fetch_uniprot_description(uniprot_id: str) -> Optional[str]:
     """从 UniProt 拉取蛋白功能描述（失败返回 None）。"""
     if not uniprot_id:
         return None
+    if uniprot_id in _UNIPROT_DESC_CACHE:
+        return _UNIPROT_DESC_CACHE[uniprot_id]
     try:
         data = await gene_db_client.fetch_uniprot_entry(uniprot_id)
         if not data:
+            _UNIPROT_DESC_CACHE[uniprot_id] = None
             return None
         # 尝试从 comments[functions] 提取描述
         comments = data.get("comments") or []
@@ -122,7 +129,9 @@ async def _fetch_uniprot_description(uniprot_id: str) -> Optional[str]:
             if c.get("commentType") == "FUNCTION":
                 texts = c.get("texts") or []
                 if texts:
-                    return str(texts[0].get("value", ""))[:400]
+                    desc = str(texts[0].get("value", ""))[:400]
+                    _UNIPROT_DESC_CACHE[uniprot_id] = desc
+                    return desc
         # 退化：用蛋白推荐名
         rec_name = (
             data.get("proteinDescription", {})
@@ -130,9 +139,12 @@ async def _fetch_uniprot_description(uniprot_id: str) -> Optional[str]:
             .get("fullName", {})
             .get("value")
         )
-        return rec_name
+        desc = str(rec_name) if rec_name else None
+        _UNIPROT_DESC_CACHE[uniprot_id] = desc
+        return desc
     except Exception as exc:  # noqa: BLE001
         logger.warning("UniProt fetch failed for %s: %s", uniprot_id, exc)
+        _UNIPROT_DESC_CACHE[uniprot_id] = None
         return None
 
 
@@ -144,6 +156,22 @@ async def _llm_explain(
 ) -> str:
     """调 LLM 生成 80 字中文 explanation；失败降级。"""
     fallback = (uniprot_desc or protein.get("llm_explanation") or "")[:80]
+    cache_key = "|".join(
+        [
+            str(protein.get("id") or ""),
+            chassis_id,
+            mission_id,
+            str(uniprot_desc or ""),
+        ]
+    )
+    if cache_key in _PROTEIN_EXPLANATION_CACHE:
+        return _PROTEIN_EXPLANATION_CACHE[cache_key]
+
+    settings = get_settings()
+    if not settings.LLM_PROTEIN_EXPLANATIONS_ENABLED or not llm_client.is_llm_configured():
+        _PROTEIN_EXPLANATION_CACHE[cache_key] = fallback
+        return fallback
+
     try:
         system_prompt = (
             "你是合成生物学专家。根据给定的蛋白信息、底盘和任务，"
@@ -169,10 +197,14 @@ async def _llm_explain(
         )
         text = (text or "").strip()
         if not text:
+            _PROTEIN_EXPLANATION_CACHE[cache_key] = fallback
             return fallback
-        return text[:120]
+        explanation = text[:120]
+        _PROTEIN_EXPLANATION_CACHE[cache_key] = explanation
+        return explanation
     except Exception as exc:  # noqa: BLE001
         logger.warning("LLM explain failed for protein %s: %s", protein.get("id"), exc)
+        _PROTEIN_EXPLANATION_CACHE[cache_key] = fallback
         return fallback
 
 
@@ -209,7 +241,13 @@ async def recommend_proteins(
     # 取前 top_n（如果全 0，至少返回前 top_n 个）
     selected = [p for p, _ in scored[:top_n]]
 
-    # 2) 并发拉 UniProt + LLM 解释
+    settings = get_settings()
+    enrich_with_llm = settings.LLM_PROTEIN_EXPLANATIONS_ENABLED and llm_client.is_llm_configured()
+
+    if not enrich_with_llm:
+        return [_to_candidate(p, (p.get("llm_explanation") or "")[:120]) for p in selected]
+
+    # 2) 可选：并发拉 UniProt + LLM 解释
     async def enrich(p: Dict[str, Any]) -> Dict[str, Any]:
         uniprot_id = p.get("uniprot_id", "")
         desc = await _fetch_uniprot_description(uniprot_id)

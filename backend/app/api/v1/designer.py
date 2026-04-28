@@ -9,10 +9,12 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.designer_session import DesignerSession
+from app.models.project import Project
 from app.models.user import User
 from app.schemas.designer import (
     AckResponse,
@@ -134,14 +136,34 @@ def create_session(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ) -> CreateSessionResponse:
+    project_id = payload.project_id
+    if project_id is not None:
+        project_exists = (
+            db.query(Project.id)
+            .filter(Project.id == project_id, Project.owner_id == current_user.id)
+            .first()
+        )
+        if project_exists is None:
+            logger.info(
+                "Ignoring stale designer project_id=%s for user_id=%s",
+                project_id,
+                current_user.id,
+            )
+            project_id = None
+
     session = DesignerSession(
         user_id=current_user.id,
-        project_id=payload.project_id,
+        project_id=project_id,
         current_step=1,
     )
-    db.add(session)
-    db.commit()
-    db.refresh(session)
+    try:
+        db.add(session)
+        db.commit()
+        db.refresh(session)
+    except SQLAlchemyError as exc:
+        db.rollback()
+        logger.exception("create designer session failed: %s", exc)
+        raise HTTPException(status_code=500, detail="Designer session create failed") from exc
     return CreateSessionResponse(sid=session.id)
 
 
@@ -263,13 +285,16 @@ async def submit_edit_plan(
     protein = _PROTEIN_BY_ID.get(session.protein_id or "", {})
 
     chosen: Optional[Dict[str, Any]] = None
-    try:
-        plans = await edit_plan_service.generate_edit_plans(chassis, protein)
-        chosen = next((p for p in plans if p.get("id") == payload.edit_plan_id), None)
-        if chosen is None and plans:
-            chosen = plans[0]
-    except Exception as exc:  # noqa: BLE001
-        logger.warning("re-generate plans failed in submit_edit_plan: %s", exc)
+    if payload.edit_plan is not None and payload.edit_plan.id == payload.edit_plan_id:
+        chosen = payload.edit_plan.model_dump()
+    else:
+        try:
+            plans = await edit_plan_service.generate_edit_plans(chassis, protein)
+            chosen = next((p for p in plans if p.get("id") == payload.edit_plan_id), None)
+            if chosen is None and plans:
+                chosen = plans[0]
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("re-generate plans failed in submit_edit_plan: %s", exc)
 
     if chosen is not None:
         # 通过 schema 校验后再写库

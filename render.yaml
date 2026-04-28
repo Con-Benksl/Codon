@@ -27,6 +27,9 @@ services:
         sync: false
       - key: LLM_MODEL
         sync: false
+      # Optional: enable per-protein LLM explanations. Keep false for faster, lower-cost flow.
+      - key: LLM_PROTEIN_EXPLANATIONS_ENABLED
+        sync: false
       # 前端 Vercel 域名（部署后回来填）
       - key: CORS_ORIGINS
         sync: false

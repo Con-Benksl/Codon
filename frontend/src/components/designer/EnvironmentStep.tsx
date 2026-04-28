@@ -263,7 +263,8 @@ export default function EnvironmentStep() {
   const [presetError, setPresetError] = useState<string | null>(null);
 
   const canSubmit = presetPicked || touched.size >= 9;
-  const isSessionBlocked = state.isSessionLoading || Boolean(state.sessionError) || !state.sessionId;
+  const isSessionBlocked =
+    state.isSessionLoading || state.isThinking || Boolean(state.sessionError) || !state.sessionId;
 
   useEffect(() => {
     let cancelled = false;

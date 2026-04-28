@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { ChevronDown, ChevronUp, Dna } from 'lucide-react';
 import { useLocale } from '../i18n/context';
@@ -401,6 +401,7 @@ function disableAction(
 }
 
 function buildDesignerStatePayload(state: DesignerState): Record<string, unknown> {
+  const recentSimulationSteps = state.simulationSteps.slice(-5);
   return {
     current_step: state.currentStep,
     environment: state.environment,
@@ -408,16 +409,38 @@ function buildDesignerStatePayload(state: DesignerState): Record<string, unknown
     chassis_id: state.selectedChassisId,
     protein_id: state.selectedProteinId,
     edit_plan_id: state.selectedEditPlanId,
-    simulation_steps: state.simulationSteps,
+    simulation_steps: recentSimulationSteps,
+    simulation_steps_count: state.simulationSteps.length,
   };
 }
 
 function buildAvailableContextPayload(state: DesignerState): Record<string, unknown> {
   return {
-    chassis_candidates: state.chassisCandidates,
-    protein_candidates: state.proteinCandidates,
-    edit_plan_candidates: state.editPlanCandidates,
-    simulation_steps: state.simulationSteps.slice(-8),
+    chassis_candidates: state.chassisCandidates.map((candidate) => ({
+      id: candidate.id,
+      scientific_name: candidate.scientific_name,
+      common_name: candidate.common_name,
+      match_score: candidate.match_score,
+      genetic_tractability: candidate.genetic_tractability,
+      recommendation_reason: candidate.recommendation_reason,
+    })),
+    protein_candidates: state.proteinCandidates.map((candidate) => ({
+      id: candidate.id,
+      name: candidate.name,
+      ec_number: candidate.ec_number,
+      source_organism: candidate.source_organism,
+      llm_explanation: candidate.llm_explanation,
+    })),
+    edit_plan_candidates: state.editPlanCandidates.map((candidate) => ({
+      id: candidate.id,
+      target_gene: candidate.target_gene,
+      strategy: candidate.strategy,
+      delivery_vector: candidate.delivery_vector,
+      promoter: candidate.promoter,
+      metabolic_burden: candidate.metabolic_burden,
+      has_kill_switch: candidate.has_kill_switch,
+    })),
+    simulation_steps: state.simulationSteps.slice(-5),
   };
 }
 
@@ -450,6 +473,24 @@ export default function DesignerView() {
   const [structuredDetailOpen, setStructuredDetailOpen] = useState(false);
   const [isCopilotResponding, setIsCopilotResponding] = useState(false);
   const [backendSuggestedPrompts, setBackendSuggestedPrompts] = useState<string[]>([]);
+  const mutationInFlightRef = useRef(false);
+
+  const beginMutation = useCallback((message: string): boolean => {
+    if (mutationInFlightRef.current) return false;
+    mutationInFlightRef.current = true;
+    dispatch({ type: 'START_THINKING', message });
+    return true;
+  }, []);
+
+  const finishMutation = useCallback(() => {
+    mutationInFlightRef.current = false;
+    dispatch({ type: 'STOP_THINKING' });
+  }, []);
+
+  const setRequestError = useCallback((err: unknown, fallback: string) => {
+    const msg = err instanceof Error ? err.message : fallback;
+    dispatch({ type: 'SET_ERROR', error: msg });
+  }, []);
 
   // Mount: create session
   useEffect(() => {
@@ -476,134 +517,143 @@ export default function DesignerView() {
   }, []);
 
   const handleEnvironmentSubmit = useCallback(
-    async (env: EnvironmentVector): Promise<void> => {
-      if (!state.sessionId) return;
-      dispatch({ type: 'START_THINKING', message: 'Parsing environment...' });
+    async (env: EnvironmentVector): Promise<boolean> => {
+      if (!state.sessionId || !beginMutation('Parsing environment...')) return false;
       try {
         await submitEnvironment(state.sessionId, env);
         dispatch({ type: 'SET_ENVIRONMENT', environment: env });
         dispatch({ type: 'GOTO_STEP', step: 2 });
+        return true;
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : 'Submit failed';
-        dispatch({ type: 'SET_ERROR', error: msg });
+        setRequestError(err, 'Submit failed');
+        return false;
       } finally {
-        dispatch({ type: 'STOP_THINKING' });
+        finishMutation();
       }
     },
-    [state.sessionId],
+    [beginMutation, finishMutation, setRequestError, state.sessionId],
   );
 
   const handleMissionSelect = useCallback(
-    async (missionId: string): Promise<void> => {
-      if (!state.sessionId) return;
-      dispatch({ type: 'START_THINKING', message: 'Matching chassis...' });
+    async (missionId: string): Promise<boolean> => {
+      if (!state.sessionId || !beginMutation('Matching chassis...')) return false;
       try {
         const candidates = await submitMission(state.sessionId, missionId);
         dispatch({ type: 'SET_MISSION', missionId });
         dispatch({ type: 'SET_CHASSIS_CANDIDATES', candidates });
         dispatch({ type: 'GOTO_STEP', step: 3 });
+        return true;
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : 'Submit failed';
-        dispatch({ type: 'SET_ERROR', error: msg });
+        setRequestError(err, 'Submit failed');
+        return false;
       } finally {
-        dispatch({ type: 'STOP_THINKING' });
+        finishMutation();
       }
     },
-    [state.sessionId],
+    [beginMutation, finishMutation, setRequestError, state.sessionId],
   );
 
   const handleChassisSelect = useCallback(
-    async (chassisId: string): Promise<void> => {
-      if (!state.sessionId) return;
-      dispatch({ type: 'START_THINKING', message: 'Searching proteins...' });
+    async (chassisId: string): Promise<boolean> => {
+      if (!state.sessionId || !beginMutation('Searching proteins...')) return false;
       try {
         const candidates = await submitChassis(state.sessionId, chassisId);
         dispatch({ type: 'SET_CHASSIS', chassisId });
         dispatch({ type: 'SET_PROTEIN_CANDIDATES', candidates });
         dispatch({ type: 'GOTO_STEP', step: 4 });
+        return true;
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : 'Submit failed';
-        dispatch({ type: 'SET_ERROR', error: msg });
+        setRequestError(err, 'Submit failed');
+        return false;
       } finally {
-        dispatch({ type: 'STOP_THINKING' });
+        finishMutation();
       }
     },
-    [state.sessionId],
+    [beginMutation, finishMutation, setRequestError, state.sessionId],
   );
 
   const handleProteinSelect = useCallback(
-    async (proteinId: string): Promise<void> => {
-      if (!state.sessionId) return;
-      dispatch({ type: 'START_THINKING', message: 'Planning edits...' });
+    async (proteinId: string): Promise<boolean> => {
+      if (!state.sessionId || !beginMutation('Planning edits...')) return false;
       try {
         const candidates = await submitProtein(state.sessionId, proteinId);
         dispatch({ type: 'SET_PROTEIN', proteinId });
         dispatch({ type: 'SET_EDIT_PLAN_CANDIDATES', candidates });
         dispatch({ type: 'GOTO_STEP', step: 5 });
+        return true;
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : 'Submit failed';
-        dispatch({ type: 'SET_ERROR', error: msg });
+        setRequestError(err, 'Submit failed');
+        return false;
       } finally {
-        dispatch({ type: 'STOP_THINKING' });
+        finishMutation();
       }
     },
-    [state.sessionId],
+    [beginMutation, finishMutation, setRequestError, state.sessionId],
   );
 
   const handleEditPlanSelect = useCallback(
-    async (planId: string): Promise<void> => {
-      if (!state.sessionId) return;
-      dispatch({ type: 'START_THINKING', message: 'Confirming plan...' });
+    async (planId: string): Promise<boolean> => {
+      if (!state.sessionId || !beginMutation('Confirming plan...')) return false;
       try {
-        await submitEditPlan(state.sessionId, planId);
+        const plan = state.editPlanCandidates.find((candidate) => candidate.id === planId);
+        if (!plan) {
+          throw new Error('Edit plan is no longer available');
+        }
+        await submitEditPlan(state.sessionId, planId, plan);
         dispatch({ type: 'SET_EDIT_PLAN', planId });
         dispatch({ type: 'GOTO_STEP', step: 6 });
+        return true;
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : 'Submit failed';
-        dispatch({ type: 'SET_ERROR', error: msg });
+        setRequestError(err, 'Submit failed');
+        return false;
       } finally {
-        dispatch({ type: 'STOP_THINKING' });
+        finishMutation();
       }
     },
-    [state.sessionId],
+    [beginMutation, finishMutation, setRequestError, state.editPlanCandidates, state.sessionId],
   );
 
-  const handleSimulate = useCallback(async (): Promise<void> => {
-    if (!state.sessionId) return;
+  const handleSimulate = useCallback(async (): Promise<boolean> => {
+    if (!state.sessionId || !beginMutation('Simulating...')) return false;
     dispatch({ type: 'RESET_SIMULATION_STEPS' });
-    dispatch({ type: 'START_THINKING', message: 'Simulating...' });
-    await new Promise<void>((resolve) => {
+    return new Promise<boolean>((resolve) => {
       const unsubscribe = subscribeSimulation(
         state.sessionId!,
         (step) => dispatch({ type: 'APPEND_SIM_STEP', step }),
         () => {
-          dispatch({ type: 'STOP_THINKING' });
-          resolve();
+          finishMutation();
+          resolve(true);
         },
         (err) => {
           dispatch({ type: 'SET_ERROR', error: err.message });
-          dispatch({ type: 'STOP_THINKING' });
-          resolve();
+          finishMutation();
+          resolve(false);
         },
       );
       // Keep reference to satisfy no-unused-vars via void
       void unsubscribe;
     });
-  }, [state.sessionId]);
+  }, [beginMutation, finishMutation, state.sessionId]);
 
   const rollbackTo = useCallback(
-    async (step: number): Promise<void> => {
-      if (!state.sessionId) return;
-      if (step < 1 || step > 6) return;
+    async (step: number): Promise<boolean> => {
+      if (!state.sessionId || !beginMutation('Rolling back...')) return false;
+      if (step < 1 || step > 6) {
+        finishMutation();
+        return false;
+      }
       try {
         await apiRollback(state.sessionId, step);
         dispatch({ type: 'ROLLBACK_TO', step: step as DesignerStep });
+        return true;
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : 'Rollback failed';
-        dispatch({ type: 'SET_ERROR', error: msg });
+        setRequestError(err, 'Rollback failed');
+        return false;
+      } finally {
+        finishMutation();
       }
     },
-    [state.sessionId],
+    [beginMutation, finishMutation, setRequestError, state.sessionId],
   );
 
   const contextValue: DesignerContextValue = {
@@ -735,13 +785,13 @@ export default function DesignerView() {
 
       switch (action.type) {
         case 'apply_environment':
-          await handleEnvironmentSubmit(action.payload.environment);
+          if (!(await handleEnvironmentSubmit(action.payload.environment))) return;
           setCopilotMessages((prev) => disableAction(prev, action.id, '已应用'));
           appendCopilotMessage('环境已应用。下一步可以选择任务目标。');
           collapseAfterMutation();
           return;
         case 'select_mission':
-          await handleMissionSelect(action.payload.mission_id);
+          if (!(await handleMissionSelect(action.payload.mission_id))) return;
           setCopilotMessages((prev) => disableAction(prev, action.id, '已应用'));
           appendCopilotMessage('任务已选择，Designer 已开始生成底盘候选。');
           collapseAfterMutation();
@@ -753,7 +803,7 @@ export default function DesignerView() {
             );
             return;
           }
-          await handleChassisSelect(action.payload.chassis_id);
+          if (!(await handleChassisSelect(action.payload.chassis_id))) return;
           setCopilotMessages((prev) => disableAction(prev, action.id, '已应用'));
           appendCopilotMessage('底盘已选择。下一步可以挑选功能蛋白。');
           collapseAfterMutation();
@@ -765,7 +815,7 @@ export default function DesignerView() {
             );
             return;
           }
-          await handleProteinSelect(action.payload.protein_id);
+          if (!(await handleProteinSelect(action.payload.protein_id))) return;
           setCopilotMessages((prev) => disableAction(prev, action.id, '已应用'));
           appendCopilotMessage('蛋白已选择。下一步可以确认编辑方案。');
           collapseAfterMutation();
@@ -781,19 +831,19 @@ export default function DesignerView() {
             );
             return;
           }
-          await handleEditPlanSelect(action.payload.edit_plan_id);
+          if (!(await handleEditPlanSelect(action.payload.edit_plan_id))) return;
           setCopilotMessages((prev) => disableAction(prev, action.id, '已应用'));
           appendCopilotMessage('编辑方案已确认。可以运行模拟验证整体设计。');
           collapseAfterMutation();
           return;
         case 'run_simulation':
-          await handleSimulate();
+          if (!(await handleSimulate())) return;
           setCopilotMessages((prev) => disableAction(prev, action.id, '已应用'));
           appendCopilotMessage('模拟已完成或已返回状态。结果会同步到设计状态栏。');
           collapseAfterMutation();
           return;
         case 'rollback_to_step':
-          await rollbackTo(action.payload.step);
+          if (!(await rollbackTo(action.payload.step))) return;
           setCopilotMessages((prev) => disableAction(prev, action.id, '已应用'));
           appendCopilotMessage(`已回退到 Step ${action.payload.step}。`);
           setPanelMode('expanded');

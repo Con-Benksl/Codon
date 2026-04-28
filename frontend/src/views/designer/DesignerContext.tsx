@@ -31,13 +31,13 @@ export interface DesignerState {
 
 export interface DesignerContextValue {
   state: DesignerState;
-  handleEnvironmentSubmit: (env: EnvironmentVector) => Promise<void>;
-  handleMissionSelect: (missionId: string) => Promise<void>;
-  handleChassisSelect: (chassisId: string) => Promise<void>;
-  handleProteinSelect: (proteinId: string) => Promise<void>;
-  handleEditPlanSelect: (planId: string) => Promise<void>;
-  handleSimulate: () => Promise<void>;
-  rollbackTo: (step: number) => Promise<void>;
+  handleEnvironmentSubmit: (env: EnvironmentVector) => Promise<boolean>;
+  handleMissionSelect: (missionId: string) => Promise<boolean>;
+  handleChassisSelect: (chassisId: string) => Promise<boolean>;
+  handleProteinSelect: (proteinId: string) => Promise<boolean>;
+  handleEditPlanSelect: (planId: string) => Promise<boolean>;
+  handleSimulate: () => Promise<boolean>;
+  rollbackTo: (step: number) => Promise<boolean>;
 }
 
 export const DesignerContext = createContext<DesignerContextValue | null>(null);

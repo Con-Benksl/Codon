@@ -295,10 +295,11 @@ export const submitProtein = async (
 export const submitEditPlan = async (
   sid: number,
   planId: string,
+  plan?: EditPlanCandidate,
 ): Promise<{ ok: true }> => {
   const response = await apiClient.post(
     `/designer/sessions/${sid}/edit-plan`,
-    { edit_plan_id: planId },
+    { edit_plan_id: planId, edit_plan: plan ?? null },
   );
   return response.data;
 };

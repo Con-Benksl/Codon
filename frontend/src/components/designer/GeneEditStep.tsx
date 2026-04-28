@@ -159,8 +159,9 @@ export default function GeneEditStep() {
                     )}
                     <button
                       type="button"
+                      disabled={state.isThinking}
                       onClick={() => {
-                        void handleEditPlanSelect(p.id);
+                        if (!state.isThinking) void handleEditPlanSelect(p.id);
                       }}
                       className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-primary/30 bg-primary/10 text-primary text-sm font-semibold hover:bg-primary/15 hover:border-primary/50 transition-colors"
                     >

@@ -5,10 +5,19 @@ from app.config import get_settings
 
 settings = get_settings()
 
-engine = create_engine(
-    settings.DATABASE_URL,
-    connect_args={"check_same_thread": False} if "sqlite" in settings.DATABASE_URL else {}
-)
+engine_kwargs = {
+    "connect_args": {"check_same_thread": False} if "sqlite" in settings.DATABASE_URL else {},
+}
+
+if "sqlite" not in settings.DATABASE_URL:
+    engine_kwargs.update(
+        {
+            "pool_pre_ping": True,
+            "pool_recycle": 1800,
+        }
+    )
+
+engine = create_engine(settings.DATABASE_URL, **engine_kwargs)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

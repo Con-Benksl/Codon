@@ -195,8 +195,9 @@ export default function ProteinStep() {
                   </a>
                   <button
                     type="button"
+                    disabled={state.isThinking}
                     onClick={() => {
-                      void handleProteinSelect(p.id);
+                      if (!state.isThinking) void handleProteinSelect(p.id);
                     }}
                     className="inline-flex items-center gap-2 px-3 py-1 rounded-md border border-primary/30 bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wider hover:bg-primary/15 hover:border-primary/50 transition-colors"
                   >

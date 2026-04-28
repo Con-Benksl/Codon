@@ -158,7 +158,8 @@ export default function MissionStep() {
   const [missions, setMissions] = useState<MissionPreset[]>(FALLBACK_MISSION_PRESETS);
   const [presetStatus, setPresetStatus] = useState<PresetLoadStatus>("loading");
   const [presetError, setPresetError] = useState<string | null>(null);
-  const isSessionBlocked = state.isSessionLoading || Boolean(state.sessionError) || !state.sessionId;
+  const isSessionBlocked =
+    state.isSessionLoading || state.isThinking || Boolean(state.sessionError) || !state.sessionId;
 
   useEffect(() => {
     let cancelled = false;

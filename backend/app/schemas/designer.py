@@ -174,6 +174,7 @@ class SubmitProteinRequest(BaseModel):
 
 class SubmitEditPlanRequest(BaseModel):
     edit_plan_id: str
+    edit_plan: Optional[EditPlanCandidate] = None
 
 
 class RollbackRequest(BaseModel):

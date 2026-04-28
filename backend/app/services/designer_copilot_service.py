@@ -453,6 +453,72 @@ def _sanitize_response(
     )
 
 
+def _compact_items(
+    items: List[Dict[str, Any]],
+    fields: Iterable[str],
+    limit: int = 8,
+) -> List[Dict[str, Any]]:
+    compacted: List[Dict[str, Any]] = []
+    for item in items[:limit]:
+        compacted.append({field: item.get(field) for field in fields if field in item})
+    return compacted
+
+
+def _compact_designer_state_for_prompt(designer_state: Dict[str, Any]) -> Dict[str, Any]:
+    state = dict(designer_state)
+    simulation_steps = state.get("simulation_steps")
+    if isinstance(simulation_steps, list):
+        state["simulation_steps_count"] = len(simulation_steps)
+        state["simulation_steps"] = simulation_steps[-5:]
+    return state
+
+
+def _compact_context_for_prompt(available_context: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        "environment_presets": _compact_items(
+            _list_context(available_context, "environment_presets"),
+            ["id", "name_zh", "name_en", "environment_vector"],
+            limit=6,
+        ),
+        "mission_presets": _compact_items(
+            _list_context(available_context, "mission_presets"),
+            ["id", "name_zh", "name_en", "category", "goal_substance", "consumed_substance"],
+            limit=12,
+        ),
+        "chassis_candidates": _compact_items(
+            _list_context(available_context, "chassis_candidates", "chassisCandidates"),
+            [
+                "id",
+                "scientific_name",
+                "common_name",
+                "match_score",
+                "genetic_tractability",
+                "recommendation_reason",
+            ],
+            limit=6,
+        ),
+        "protein_candidates": _compact_items(
+            _list_context(available_context, "protein_candidates", "proteinCandidates"),
+            ["id", "name", "ec_number", "source_organism", "llm_explanation"],
+            limit=6,
+        ),
+        "edit_plan_candidates": _compact_items(
+            _list_context(available_context, "edit_plan_candidates", "editPlanCandidates"),
+            [
+                "id",
+                "target_gene",
+                "strategy",
+                "delivery_vector",
+                "promoter",
+                "metabolic_burden",
+                "has_kill_switch",
+            ],
+            limit=6,
+        ),
+        "simulation_steps": _list_context(available_context, "simulation_steps")[-5:],
+    }
+
+
 async def generate_designer_copilot_response(
     message: str,
     designer_state: Dict[str, Any],
@@ -469,14 +535,14 @@ async def generate_designer_copilot_response(
 
     user_payload = {
         "user_message": message,
-        "designer_state": designer_state,
-        "available_context": available_context,
+        "designer_state": _compact_designer_state_for_prompt(designer_state),
+        "available_context": _compact_context_for_prompt(available_context),
     }
     try:
         result = await llm_client.chat_completion_json(
             SYSTEM_PROMPT,
             json.dumps(user_payload, ensure_ascii=False, default=str),
-            max_tokens=1600,
+            max_tokens=900,
             temperature=0.25,
         )
     except Exception as exc:  # noqa: BLE001
