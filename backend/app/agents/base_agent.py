@@ -1,9 +1,11 @@
 import json
+import asyncio
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 from datetime import datetime
 import logging
 
+from app.config import get_settings
 from app.services.llm_client import chat_completion_json
 
 logger = logging.getLogger(__name__)
@@ -34,10 +36,18 @@ class BaseAgent(ABC):
         self.log_progress(f"prompt 构建完成，长度 {len(user_prompt)} 字符")
 
         try:
-            result = await chat_completion_json(
-                system_prompt=self.system_prompt,
-                user_message=user_prompt,
+            timeout_seconds = float(get_settings().AGENT_EXECUTE_TIMEOUT_SECONDS)
+            result = await asyncio.wait_for(
+                chat_completion_json(
+                    system_prompt=self.system_prompt,
+                    user_message=user_prompt,
+                ),
+                timeout=timeout_seconds,
             )
+        except asyncio.TimeoutError:
+            error = f"Agent timed out after {timeout_seconds:g} seconds"
+            self.log_progress(error, level="error")
+            return {"status": "failed", "error": error, "findings": [], "metrics": {}}
         except Exception as e:
             self.log_progress(f"LLM 调用失败: {e}", level="error")
             return {"status": "failed", "error": str(e), "findings": [], "metrics": {}}

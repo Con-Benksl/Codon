@@ -1,6 +1,7 @@
 """编辑方案生成服务 — 调 LLM 生成 3-5 个工程化方案。"""
 from __future__ import annotations
 
+import copy
 import json
 import logging
 from typing import Any, Dict, List, Optional
@@ -8,6 +9,12 @@ from typing import Any, Dict, List, Optional
 from app.services import gene_db_client, llm_client
 
 logger = logging.getLogger(__name__)
+
+_EDIT_PLAN_CACHE: Dict[str, List[Dict[str, Any]]] = {}
+
+
+def _stable_cache_key(payload: Dict[str, Any]) -> str:
+    return json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"), default=str)
 
 
 def _safe_str(v: Any, default: str = "") -> str:
@@ -92,8 +99,17 @@ async def generate_edit_plans(
     protein: Dict[str, Any],
 ) -> List[Dict[str, Any]]:
     """调 LLM 生成 3-5 个候选方案；失败时返回 1 个保底方案。"""
+    chassis = chassis or {}
+    protein = protein or {}
+    cache_key = _stable_cache_key({"chassis": chassis, "protein": protein})
+    cached = _EDIT_PLAN_CACHE.get(cache_key)
+    if cached is not None:
+        return copy.deepcopy(cached)
+
     if not protein:
-        return [_fallback_plan(chassis or {}, {})]
+        result = [_fallback_plan(chassis, {})]
+        _EDIT_PLAN_CACHE[cache_key] = copy.deepcopy(result)
+        return copy.deepcopy(result)
 
     uniprot_id = _safe_str(protein.get("uniprot_id"), "")
     seq_length = await _fetch_sequence_length(uniprot_id)
@@ -133,15 +149,21 @@ async def generate_edit_plans(
         )
     except Exception as exc:  # noqa: BLE001
         logger.warning("LLM edit plan generation failed: %s", exc)
-        return [_fallback_plan(chassis, protein)]
+        result = [_fallback_plan(chassis, protein)]
+        _EDIT_PLAN_CACHE[cache_key] = copy.deepcopy(result)
+        return copy.deepcopy(result)
 
     if not isinstance(result, dict) or "error" in result:
         logger.warning("LLM edit plan returned error / non-dict: %s", str(result)[:200])
-        return [_fallback_plan(chassis, protein)]
+        fallback = [_fallback_plan(chassis, protein)]
+        _EDIT_PLAN_CACHE[cache_key] = copy.deepcopy(fallback)
+        return copy.deepcopy(fallback)
 
     plans_raw = result.get("plans") or result.get("edit_plans") or []
     if not isinstance(plans_raw, list) or not plans_raw:
-        return [_fallback_plan(chassis, protein)]
+        fallback = [_fallback_plan(chassis, protein)]
+        _EDIT_PLAN_CACHE[cache_key] = copy.deepcopy(fallback)
+        return copy.deepcopy(fallback)
 
     source_id = _safe_str(protein.get("id"), "")
     normalized = []
@@ -149,5 +171,9 @@ async def generate_edit_plans(
         if isinstance(p, dict):
             normalized.append(_normalize_plan(p, i + 1, source_id))
     if not normalized:
-        return [_fallback_plan(chassis, protein)]
-    return normalized[:5]
+        fallback = [_fallback_plan(chassis, protein)]
+        _EDIT_PLAN_CACHE[cache_key] = copy.deepcopy(fallback)
+        return copy.deepcopy(fallback)
+    final = normalized[:5]
+    _EDIT_PLAN_CACHE[cache_key] = copy.deepcopy(final)
+    return copy.deepcopy(final)

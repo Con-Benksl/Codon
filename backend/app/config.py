@@ -35,6 +35,10 @@ class Settings(BaseSettings):
     LLM_MAX_TOKENS: int = 4096
     LLM_TEMPERATURE: float = 0.3
     LLM_PROTEIN_EXPLANATIONS_ENABLED: bool = False
+    LLM_REQUEST_TIMEOUT_SECONDS: float = 30.0
+    LLM_RETRY_ATTEMPTS: int = 2
+    LLM_RETRY_BASE_DELAY_SECONDS: float = 1.0
+    AGENT_EXECUTE_TIMEOUT_SECONDS: float = 30.0
 
     # Keep local dev ports aligned with the Vite config and common alternates.
     CORS_ORIGINS: List[str] = [

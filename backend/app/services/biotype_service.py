@@ -9,6 +9,7 @@
 """
 from __future__ import annotations
 
+import copy
 import json
 import logging
 from pathlib import Path
@@ -98,6 +99,12 @@ _MISSION_KEYWORDS: Dict[str, List[str]] = {
         "biofilm", "eps", "exopolysaccharide", "endolithic", "desiccation",
     ],
 }
+
+_CHASSIS_CACHE: Dict[str, List[Dict[str, Any]]] = {}
+
+
+def _stable_cache_key(payload: Dict[str, Any]) -> str:
+    return json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"), default=str)
 
 
 # ---------- 评分函数 ----------
@@ -199,6 +206,11 @@ def recommend_chassis(
     top_n: int = 6,
 ) -> List[Dict[str, Any]]:
     """对 CHASSIS_DATA 做三维 Pareto 加权排序，返回前 top_n 条 ChassisCandidate dict。"""
+    cache_key = _stable_cache_key({"env": env or {}, "mission_id": mission_id, "top_n": top_n})
+    cached = _CHASSIS_CACHE.get(cache_key)
+    if cached is not None:
+        return copy.deepcopy(cached)
+
     if not CHASSIS_DATA:
         return []
 
@@ -233,4 +245,6 @@ def recommend_chassis(
             continue
 
     scored.sort(key=lambda c: c["match_score"], reverse=True)
-    return scored[:top_n]
+    result = scored[:top_n]
+    _CHASSIS_CACHE[cache_key] = copy.deepcopy(result)
+    return copy.deepcopy(result)

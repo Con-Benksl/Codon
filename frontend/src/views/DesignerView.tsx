@@ -39,6 +39,10 @@ import CopilotPanel from '../components/designer/CopilotPanel';
 import type { CopilotMessage } from '../components/designer/CopilotPanel';
 import DesignStateRail from '../components/designer/DesignStateRail';
 import type { DesignStateRailPanelMode } from '../components/designer/DesignStateRail';
+import DesignerToastViewport, {
+  type DesignerToast,
+  type DesignerToastType,
+} from '../components/designer/DesignerToastViewport';
 
 // ============================================================================
 // Reducer
@@ -175,6 +179,8 @@ function reducer(state: DesignerState, action: Action): DesignerState {
 // ============================================================================
 
 const ACTIVE_PROJECT_ID_STORAGE_KEY = 'active_project_id';
+const MUTATION_TIMEOUT_MS = 120_000;
+const MUTATION_TIMEOUT_SECONDS = MUTATION_TIMEOUT_MS / 1000;
 
 function readActiveProjectId(): number | undefined {
   let raw: string | null = null;
@@ -470,190 +476,313 @@ export default function DesignerView() {
   const [copilotInput, setCopilotInput] = useState('');
   const [panelMode, setPanelMode] = useState<DesignStateRailPanelMode>('expanded');
   const [pinnedOpen, setPinnedOpen] = useState(false);
-  const [structuredDetailOpen, setStructuredDetailOpen] = useState(false);
+  const [structuredDetailOpen, setStructuredDetailOpen] = useState(true);
   const [isCopilotResponding, setIsCopilotResponding] = useState(false);
   const [backendSuggestedPrompts, setBackendSuggestedPrompts] = useState<string[]>([]);
-  const mutationInFlightRef = useRef(false);
+  const [toasts, setToasts] = useState<DesignerToast[]>([]);
+  const mutationInFlightRef = useRef<number | null>(null);
+  const mutationSequenceRef = useRef(0);
+  const mutationTimeoutRef = useRef<number | null>(null);
+  const sessionRequestIdRef = useRef(0);
+  const stepSectionRef = useRef<HTMLElement | null>(null);
 
-  const beginMutation = useCallback((message: string): boolean => {
-    if (mutationInFlightRef.current) return false;
-    mutationInFlightRef.current = true;
-    dispatch({ type: 'START_THINKING', message });
-    return true;
+  const dismissToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((toast) => toast.id !== id));
   }, []);
 
-  const finishMutation = useCallback(() => {
-    mutationInFlightRef.current = false;
+  const showToast = useCallback(
+    (type: DesignerToastType, message: string) => {
+      const id = nextCopilotId('toast');
+      setToasts((prev) => [...prev.slice(-3), { id, type, message }]);
+      window.setTimeout(() => dismissToast(id), 6000);
+    },
+    [dismissToast],
+  );
+
+  const clearMutationTimeout = useCallback(() => {
+    if (mutationTimeoutRef.current) {
+      window.clearTimeout(mutationTimeoutRef.current);
+      mutationTimeoutRef.current = null;
+    }
+  }, []);
+
+  const isMutationCurrent = useCallback((token: number) => {
+    return mutationInFlightRef.current === token;
+  }, []);
+
+  const finishMutation = useCallback((token: number) => {
+    if (mutationInFlightRef.current !== token) return;
+    clearMutationTimeout();
+    mutationInFlightRef.current = null;
     dispatch({ type: 'STOP_THINKING' });
-  }, []);
+  }, [clearMutationTimeout]);
+
+  const reportError = useCallback(
+    (message: string) => {
+      dispatch({ type: 'SET_ERROR', error: message });
+      showToast('error', message);
+    },
+    [showToast],
+  );
+
+  const beginMutation = useCallback(
+    (message: string): number | null => {
+      if (mutationInFlightRef.current !== null) {
+        reportError('已有请求正在处理中，请等待当前步骤完成。');
+        return null;
+      }
+      const token = mutationSequenceRef.current + 1;
+      mutationSequenceRef.current = token;
+      mutationInFlightRef.current = token;
+      dispatch({ type: 'START_THINKING', message });
+      clearMutationTimeout();
+      mutationTimeoutRef.current = window.setTimeout(() => {
+        if (mutationInFlightRef.current !== token) return;
+        mutationInFlightRef.current = null;
+        mutationTimeoutRef.current = null;
+        const timeoutMessage = '请求超过 ' + MUTATION_TIMEOUT_SECONDS + ' 秒未完成，已停止等待。请重试当前步骤。';
+        dispatch({ type: 'STOP_THINKING' });
+        dispatch({ type: 'SET_ERROR', error: timeoutMessage });
+        showToast('error', timeoutMessage);
+      }, MUTATION_TIMEOUT_MS);
+      return token;
+    },
+    [clearMutationTimeout, reportError, showToast],
+  );
 
   const setRequestError = useCallback((err: unknown, fallback: string) => {
     const msg = err instanceof Error ? err.message : fallback;
     dispatch({ type: 'SET_ERROR', error: msg });
-  }, []);
+    showToast('error', msg);
+  }, [showToast]);
 
-  // Mount: create session
-  useEffect(() => {
-    let cancelled = false;
+  const requireSession = useCallback(
+    (operation: string): number | null => {
+      if (state.sessionId) return state.sessionId;
+      const msg = state.isSessionLoading
+        ? `会话正在创建中，暂不能${operation}。`
+        : `Designer 会话未创建成功，暂不能${operation}。请先重试创建会话。`;
+      reportError(msg);
+      return null;
+    },
+    [reportError, state.isSessionLoading, state.sessionId],
+  );
+
+  const retryCreateSession = useCallback(async () => {
+    const requestId = sessionRequestIdRef.current + 1;
+    sessionRequestIdRef.current = requestId;
     const projectId = readActiveProjectId();
     dispatch({
       type: 'SESSION_CREATE_STARTED',
       projectId: projectId ?? null,
     });
-    createSession(projectId)
-      .then((res) => {
-        if (!cancelled) {
-          dispatch({ type: 'SESSION_CREATED', sessionId: res.id });
-        }
-      })
-      .catch((err: unknown) => {
-        if (cancelled) return;
-        const msg = err instanceof Error ? err.message : 'Failed to create session';
-        dispatch({ type: 'SESSION_CREATE_FAILED', error: msg });
-      });
+
+    try {
+      const res = await createSession(projectId);
+      if (sessionRequestIdRef.current !== requestId) return;
+      dispatch({ type: 'SESSION_CREATED', sessionId: res.id });
+    } catch (err: unknown) {
+      if (sessionRequestIdRef.current !== requestId) return;
+      const msg = err instanceof Error ? err.message : 'Failed to create session';
+      dispatch({ type: 'SESSION_CREATE_FAILED', error: msg });
+      showToast('error', msg);
+    }
+  }, [showToast]);
+
+  // Mount: create session
+  useEffect(() => {
+    void retryCreateSession();
     return () => {
-      cancelled = true;
+      sessionRequestIdRef.current += 1;
+      clearMutationTimeout();
     };
-  }, []);
+  }, [clearMutationTimeout, retryCreateSession]);
+
+  useEffect(() => {
+    stepSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [state.currentStep]);
 
   const handleEnvironmentSubmit = useCallback(
     async (env: EnvironmentVector): Promise<boolean> => {
-      if (!state.sessionId || !beginMutation('Parsing environment...')) return false;
+      const sessionId = requireSession('提交环境');
+      const mutationToken = sessionId ? beginMutation('Parsing environment...') : null;
+      if (!sessionId || !mutationToken) return false;
       try {
-        await submitEnvironment(state.sessionId, env);
+        await submitEnvironment(sessionId, env);
+        if (!isMutationCurrent(mutationToken)) return false;
         dispatch({ type: 'SET_ENVIRONMENT', environment: env });
         dispatch({ type: 'GOTO_STEP', step: 2 });
         return true;
       } catch (err: unknown) {
-        setRequestError(err, 'Submit failed');
+        if (isMutationCurrent(mutationToken)) {
+          setRequestError(err, 'Submit failed');
+        }
         return false;
       } finally {
-        finishMutation();
+        finishMutation(mutationToken);
       }
     },
-    [beginMutation, finishMutation, setRequestError, state.sessionId],
+    [beginMutation, finishMutation, isMutationCurrent, requireSession, setRequestError],
   );
 
   const handleMissionSelect = useCallback(
     async (missionId: string): Promise<boolean> => {
-      if (!state.sessionId || !beginMutation('Matching chassis...')) return false;
+      const sessionId = requireSession('选择任务');
+      const mutationToken = sessionId ? beginMutation('Matching chassis...') : null;
+      if (!sessionId || !mutationToken) return false;
       try {
-        const candidates = await submitMission(state.sessionId, missionId);
+        const candidates = await submitMission(sessionId, missionId);
+        if (!isMutationCurrent(mutationToken)) return false;
         dispatch({ type: 'SET_MISSION', missionId });
         dispatch({ type: 'SET_CHASSIS_CANDIDATES', candidates });
         dispatch({ type: 'GOTO_STEP', step: 3 });
         return true;
       } catch (err: unknown) {
-        setRequestError(err, 'Submit failed');
+        if (isMutationCurrent(mutationToken)) {
+          setRequestError(err, 'Submit failed');
+        }
         return false;
       } finally {
-        finishMutation();
+        finishMutation(mutationToken);
       }
     },
-    [beginMutation, finishMutation, setRequestError, state.sessionId],
+    [beginMutation, finishMutation, isMutationCurrent, requireSession, setRequestError],
   );
 
   const handleChassisSelect = useCallback(
     async (chassisId: string): Promise<boolean> => {
-      if (!state.sessionId || !beginMutation('Searching proteins...')) return false;
+      const sessionId = requireSession('选择底盘');
+      const mutationToken = sessionId ? beginMutation('Searching proteins...') : null;
+      if (!sessionId || !mutationToken) return false;
       try {
-        const candidates = await submitChassis(state.sessionId, chassisId);
+        const candidates = await submitChassis(sessionId, chassisId);
+        if (!isMutationCurrent(mutationToken)) return false;
         dispatch({ type: 'SET_CHASSIS', chassisId });
         dispatch({ type: 'SET_PROTEIN_CANDIDATES', candidates });
         dispatch({ type: 'GOTO_STEP', step: 4 });
         return true;
       } catch (err: unknown) {
-        setRequestError(err, 'Submit failed');
+        if (isMutationCurrent(mutationToken)) {
+          setRequestError(err, 'Submit failed');
+        }
         return false;
       } finally {
-        finishMutation();
+        finishMutation(mutationToken);
       }
     },
-    [beginMutation, finishMutation, setRequestError, state.sessionId],
+    [beginMutation, finishMutation, isMutationCurrent, requireSession, setRequestError],
   );
 
   const handleProteinSelect = useCallback(
     async (proteinId: string): Promise<boolean> => {
-      if (!state.sessionId || !beginMutation('Planning edits...')) return false;
+      const sessionId = requireSession('选择蛋白');
+      const mutationToken = sessionId ? beginMutation('Planning edits...') : null;
+      if (!sessionId || !mutationToken) return false;
       try {
-        const candidates = await submitProtein(state.sessionId, proteinId);
+        const candidates = await submitProtein(sessionId, proteinId);
+        if (!isMutationCurrent(mutationToken)) return false;
         dispatch({ type: 'SET_PROTEIN', proteinId });
         dispatch({ type: 'SET_EDIT_PLAN_CANDIDATES', candidates });
         dispatch({ type: 'GOTO_STEP', step: 5 });
         return true;
       } catch (err: unknown) {
-        setRequestError(err, 'Submit failed');
+        if (isMutationCurrent(mutationToken)) {
+          setRequestError(err, 'Submit failed');
+        }
         return false;
       } finally {
-        finishMutation();
+        finishMutation(mutationToken);
       }
     },
-    [beginMutation, finishMutation, setRequestError, state.sessionId],
+    [beginMutation, finishMutation, isMutationCurrent, requireSession, setRequestError],
   );
 
   const handleEditPlanSelect = useCallback(
     async (planId: string): Promise<boolean> => {
-      if (!state.sessionId || !beginMutation('Confirming plan...')) return false;
+      const sessionId = requireSession('确认编辑方案');
+      const mutationToken = sessionId ? beginMutation('Confirming plan...') : null;
+      if (!sessionId || !mutationToken) return false;
       try {
         const plan = state.editPlanCandidates.find((candidate) => candidate.id === planId);
         if (!plan) {
           throw new Error('Edit plan is no longer available');
         }
-        await submitEditPlan(state.sessionId, planId, plan);
+        await submitEditPlan(sessionId, planId, plan);
+        if (!isMutationCurrent(mutationToken)) return false;
         dispatch({ type: 'SET_EDIT_PLAN', planId });
         dispatch({ type: 'GOTO_STEP', step: 6 });
         return true;
       } catch (err: unknown) {
-        setRequestError(err, 'Submit failed');
+        if (isMutationCurrent(mutationToken)) {
+          setRequestError(err, 'Submit failed');
+        }
         return false;
       } finally {
-        finishMutation();
+        finishMutation(mutationToken);
       }
     },
-    [beginMutation, finishMutation, setRequestError, state.editPlanCandidates, state.sessionId],
+    [beginMutation, finishMutation, isMutationCurrent, requireSession, setRequestError, state.editPlanCandidates],
   );
 
   const handleSimulate = useCallback(async (): Promise<boolean> => {
-    if (!state.sessionId || !beginMutation('Simulating...')) return false;
+    const sessionId = requireSession('运行模拟');
+    const mutationToken = sessionId ? beginMutation('Simulating...') : null;
+    if (!sessionId || !mutationToken) return false;
     dispatch({ type: 'RESET_SIMULATION_STEPS' });
     return new Promise<boolean>((resolve) => {
       const unsubscribe = subscribeSimulation(
-        state.sessionId!,
-        (step) => dispatch({ type: 'APPEND_SIM_STEP', step }),
+        sessionId,
+        (step) => {
+          if (isMutationCurrent(mutationToken)) {
+            dispatch({ type: 'APPEND_SIM_STEP', step });
+          }
+        },
         () => {
-          finishMutation();
+          if (!isMutationCurrent(mutationToken)) {
+            resolve(false);
+            return;
+          }
+          finishMutation(mutationToken);
           resolve(true);
         },
         (err) => {
-          dispatch({ type: 'SET_ERROR', error: err.message });
-          finishMutation();
+          if (isMutationCurrent(mutationToken)) {
+            setRequestError(err, 'Simulation failed');
+          }
+          finishMutation(mutationToken);
           resolve(false);
         },
       );
       // Keep reference to satisfy no-unused-vars via void
       void unsubscribe;
     });
-  }, [beginMutation, finishMutation, state.sessionId]);
+  }, [beginMutation, finishMutation, isMutationCurrent, requireSession, setRequestError]);
 
   const rollbackTo = useCallback(
     async (step: number): Promise<boolean> => {
-      if (!state.sessionId || !beginMutation('Rolling back...')) return false;
+      const sessionId = requireSession('回退步骤');
+      const mutationToken = sessionId ? beginMutation('Rolling back...') : null;
+      if (!sessionId || !mutationToken) return false;
       if (step < 1 || step > 6) {
-        finishMutation();
+        reportError('无法回退到不存在的步骤。');
+        finishMutation(mutationToken);
         return false;
       }
       try {
-        await apiRollback(state.sessionId, step);
+        await apiRollback(sessionId, step);
+        if (!isMutationCurrent(mutationToken)) return false;
         dispatch({ type: 'ROLLBACK_TO', step: step as DesignerStep });
         return true;
       } catch (err: unknown) {
-        setRequestError(err, 'Rollback failed');
+        if (isMutationCurrent(mutationToken)) {
+          setRequestError(err, 'Rollback failed');
+        }
         return false;
       } finally {
-        finishMutation();
+        finishMutation(mutationToken);
       }
     },
-    [beginMutation, finishMutation, setRequestError, state.sessionId],
+    [beginMutation, finishMutation, isMutationCurrent, requireSession, reportError, setRequestError],
   );
 
   const contextValue: DesignerContextValue = {
@@ -711,7 +840,11 @@ export default function DesignerView() {
   const handleCopilotPrompt = useCallback(
     async (prompt: string) => {
       const trimmed = prompt.trim();
-      if (!trimmed || isCopilotResponding) return;
+      if (!trimmed) return;
+      if (isCopilotResponding) {
+        reportError('Copilot 正在生成回复，请稍后再发送。');
+        return;
+      }
       const userMessage: CopilotMessage = {
         id: nextCopilotId('user'),
         role: 'user',
@@ -721,6 +854,11 @@ export default function DesignerView() {
       setCopilotInput('');
 
       if (!state.sessionId) {
+        reportError(
+          state.isSessionLoading
+            ? '会话正在创建中，Copilot 暂时使用本地规则兜底。'
+            : 'Designer 会话未创建成功，Copilot 暂时使用本地规则兜底。',
+        );
         const assistantMessage = buildCopilotResponse(trimmed, state);
         setCopilotMessages((prev) => [...prev, assistantMessage]);
         return;
@@ -746,6 +884,7 @@ export default function DesignerView() {
         const fallback = buildCopilotResponse(trimmed, state);
         const reason =
           error instanceof Error ? error.message : 'Designer Copilot backend unavailable';
+        showToast('error', `Copilot 后端不可用，已使用本地规则兜底：${reason}`);
         setCopilotMessages((prev) => [
           ...prev,
           {
@@ -758,7 +897,7 @@ export default function DesignerView() {
         setIsCopilotResponding(false);
       }
     },
-    [isCopilotResponding, state],
+    [isCopilotResponding, reportError, showToast, state],
   );
 
   const collapseAfterMutation = useCallback(() => {
@@ -798,6 +937,7 @@ export default function DesignerView() {
           return;
         case 'select_chassis':
           if (!state.chassisCandidates.some((item) => item.id === action.payload.chassis_id)) {
+            reportError('底盘候选已过期，请重新询问 Copilot 或回到步骤重新生成。');
             setCopilotMessages((prev) =>
               disableAction(prev, action.id, '候选已过期，请重新询问'),
             );
@@ -810,6 +950,7 @@ export default function DesignerView() {
           return;
         case 'select_protein':
           if (!state.proteinCandidates.some((item) => item.id === action.payload.protein_id)) {
+            reportError('蛋白候选已过期，请重新询问 Copilot 或回到步骤重新生成。');
             setCopilotMessages((prev) =>
               disableAction(prev, action.id, '候选已过期，请重新询问'),
             );
@@ -826,6 +967,7 @@ export default function DesignerView() {
               (item) => item.id === action.payload.edit_plan_id,
             )
           ) {
+            reportError('编辑方案候选已过期，请重新询问 Copilot 或回到步骤重新生成。');
             setCopilotMessages((prev) =>
               disableAction(prev, action.id, '候选已过期，请重新询问'),
             );
@@ -864,6 +1006,7 @@ export default function DesignerView() {
       handleMissionSelect,
       handleProteinSelect,
       handleSimulate,
+      reportError,
       rollbackTo,
       state.chassisCandidates,
       state.editPlanCandidates,
@@ -889,7 +1032,7 @@ export default function DesignerView() {
               {t('designer.title')}
             </h1>
             <p className="mt-1 text-sm text-text-muted">
-              对话是主工作台，结构化状态随时可折叠查看。
+              六步 Wizard 是主流程，Copilot 作为辅助建议区提供可确认动作。
             </p>
           </div>
         </div>
@@ -905,27 +1048,52 @@ export default function DesignerView() {
       )}
 
       {(state.sessionError || state.error) && (
-        <div className="mb-4 px-4 py-2 rounded-lg border border-red-500/30 bg-red-500/10 text-red-300 text-xs">
-          {state.sessionError || state.error}
+        <div className="mb-4 flex flex-col gap-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs text-red-300 sm:flex-row sm:items-center sm:justify-between">
+          <span>{state.sessionError || state.error}</span>
+          {state.sessionError ? (
+            <button
+              type="button"
+              onClick={() => void retryCreateSession()}
+              disabled={state.isSessionLoading}
+              className="rounded-lg border border-red-400/30 bg-red-400/10 px-3 py-2 font-semibold text-red-100 transition-colors hover:bg-red-400/15 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              重试创建会话
+            </button>
+          ) : null}
         </div>
       )}
 
       <DesignerContext.Provider value={contextValue}>
-        <div className="flex min-h-0 flex-1 flex-col gap-4 xl:flex-row">
+        <div className="relative flex min-h-0 flex-1 flex-col gap-4 xl:flex-row">
+          {(state.isSessionLoading || state.sessionError) && (
+            <div className="absolute inset-0 z-30 flex items-center justify-center rounded-2xl border border-white/10 bg-bg/70 px-4 backdrop-blur-sm">
+              <div className="max-w-md rounded-xl border border-white/15 bg-surface/95 p-5 text-center shadow-2xl shadow-black/30">
+                <div className="text-base font-semibold text-text">
+                  {state.sessionError ? 'Designer 会话创建失败' : '正在创建 Designer 会话'}
+                </div>
+                <p className="mt-2 text-sm leading-relaxed text-text-muted">
+                  {state.sessionError
+                    ? state.sessionError
+                    : '会话准备完成前，Wizard 与 Copilot 暂不可交互。'}
+                </p>
+                {state.sessionError ? (
+                  <button
+                    type="button"
+                    onClick={() => void retryCreateSession()}
+                    disabled={state.isSessionLoading}
+                    className="mt-4 rounded-lg border border-primary/35 bg-primary/15 px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    重试创建会话
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          )}
           <main className="flex min-w-0 flex-1 flex-col gap-4">
-            <CopilotPanel
-              messages={copilotMessages}
-              inputValue={copilotInput}
-              onInputChange={setCopilotInput}
-              onSubmitPrompt={handleCopilotPrompt}
-              applyAction={handleCopilotAction}
-              suggestedPrompts={suggestedPrompts}
-              isThinking={state.isThinking || isCopilotResponding}
-              disabled={state.isSessionLoading || Boolean(state.sessionError)}
-              className="min-h-[520px] flex-1"
-            />
-
-            <section className="rounded-xl border border-white/15 bg-card-translucent">
+            <section
+              ref={stepSectionRef}
+              className="rounded-xl border border-white/15 bg-card-translucent"
+            >
               <button
                 type="button"
                 onClick={() => setStructuredDetailOpen((open) => !open)}
@@ -933,10 +1101,10 @@ export default function DesignerView() {
               >
                 <span>
                   <span className="block text-sm font-semibold text-text">
-                    结构化详情 · Step {state.currentStep}
+                    Wizard 主流程 · Step {state.currentStep}
                   </span>
                   <span className="mt-0.5 block text-xs text-text-dim">
-                    保留原六步 Designer 控件，按需展开手动调整。
+                    按六步结构化控件推进设计，Copilot 的建议需要回到这里确认应用。
                   </span>
                 </span>
                 {structuredDetailOpen ? (
@@ -963,6 +1131,28 @@ export default function DesignerView() {
                 )}
               </AnimatePresence>
             </section>
+
+            <section className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
+              <div className="mb-3 flex items-center justify-between gap-3 px-1">
+                <div>
+                  <h2 className="text-sm font-semibold text-text">Copilot 辅助区</h2>
+                  <p className="mt-0.5 text-xs text-text-dim">
+                    用于生成建议和解释风险，所有状态变更仍由 Wizard/API 执行。
+                  </p>
+                </div>
+              </div>
+              <CopilotPanel
+                messages={copilotMessages}
+                inputValue={copilotInput}
+                onInputChange={setCopilotInput}
+                onSubmitPrompt={handleCopilotPrompt}
+                applyAction={handleCopilotAction}
+                suggestedPrompts={suggestedPrompts}
+                isThinking={state.isThinking || isCopilotResponding}
+                disabled={state.isSessionLoading || Boolean(state.sessionError)}
+                className="flex-1"
+              />
+            </section>
           </main>
 
           <DesignStateRail
@@ -974,6 +1164,7 @@ export default function DesignerView() {
           />
         </div>
       </DesignerContext.Provider>
+      <DesignerToastViewport toasts={toasts} onDismiss={dismissToast} />
     </motion.div>
   );
 }

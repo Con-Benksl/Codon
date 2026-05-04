@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
-import { ArrowRight, Thermometer } from "lucide-react";
+import { AlertCircle, ArrowRight, Check, Loader2, RotateCw, Thermometer } from "lucide-react";
 import { useDesigner } from "../../views/designer/DesignerContext";
 import { getEnvironmentPresets } from "../../api/designer";
 import type { EnvironmentPreset, EnvironmentVector } from "../../api/designer";
@@ -8,6 +8,12 @@ import { useLocale } from "../../i18n/context";
 import { viewTransition, fadeSlideUp, stagger } from "../../lib/motion";
 
 type PresetLoadStatus = "loading" | "ready" | "fallback";
+type SubmitSource = "next" | `preset:${string}`;
+type SubmitState =
+  | { status: "idle" }
+  | { status: "pending"; source: SubmitSource }
+  | { status: "success"; source: SubmitSource }
+  | { status: "error"; source: SubmitSource; message: string; env: EnvironmentVector };
 
 const FALLBACK_ENVIRONMENT_PRESETS: EnvironmentPreset[] = [
   {
@@ -261,10 +267,20 @@ export default function EnvironmentStep() {
   const [presets, setPresets] = useState<EnvironmentPreset[]>(FALLBACK_ENVIRONMENT_PRESETS);
   const [presetStatus, setPresetStatus] = useState<PresetLoadStatus>("loading");
   const [presetError, setPresetError] = useState<string | null>(null);
+  const [submitState, setSubmitState] = useState<SubmitState>({ status: "idle" });
+  const submitRequestIdRef = useRef(0);
 
   const canSubmit = presetPicked || touched.size >= 9;
+  const isSubmitting = submitState.status === "pending" || state.isThinking;
   const isSessionBlocked =
-    state.isSessionLoading || state.isThinking || Boolean(state.sessionError) || !state.sessionId;
+    state.isSessionLoading || isSubmitting || Boolean(state.sessionError) || !state.sessionId;
+  const disabledReason = state.sessionError
+    ? `会话失败：${state.sessionError}`
+    : state.isSessionLoading || !state.sessionId
+      ? "会话创建中，请稍候。"
+      : isSubmitting
+        ? state.thinkingMessage || "正在处理上一项提交。"
+        : null;
 
   useEffect(() => {
     let cancelled = false;
@@ -306,8 +322,56 @@ export default function EnvironmentStep() {
   const onPreset = (preset: EnvironmentPreset) => {
     setEnv(preset.environment_vector);
     setPresetPicked(true);
-    void handleEnvironmentSubmit(preset.environment_vector);
+    void submitEnvironment(preset.environment_vector, `preset:${preset.id}`);
   };
+
+  const submitEnvironment = async (nextEnv: EnvironmentVector, source: SubmitSource) => {
+    if (submitState.status === "pending") return;
+    const requestId = submitRequestIdRef.current + 1;
+    submitRequestIdRef.current = requestId;
+    if (isSessionBlocked) {
+      setSubmitState({
+        status: "error",
+        source,
+        message: disabledReason || "当前会话不可提交，请稍后重试。",
+        env: nextEnv,
+      });
+      return;
+    }
+
+    setSubmitState({ status: "pending", source });
+    const ok = await handleEnvironmentSubmit(nextEnv);
+    if (submitRequestIdRef.current !== requestId) return;
+    if (ok) {
+      setSubmitState({ status: "success", source });
+      return;
+    }
+    setSubmitState({
+      status: "error",
+      source,
+      message: state.error || state.sessionError || "环境提交失败，请重试。",
+      env: nextEnv,
+    });
+  };
+
+  const retrySubmit = () => {
+    if (submitState.status !== "error") return;
+    void submitEnvironment(submitState.env, submitState.source);
+  };
+
+  useEffect(() => {
+    if (submitState.status !== "pending") return;
+    const terminalError = state.error || state.sessionError;
+    if (state.isThinking || !terminalError) return;
+
+    submitRequestIdRef.current += 1;
+    setSubmitState({
+      status: "error",
+      source: submitState.source,
+      message: terminalError,
+      env,
+    });
+  }, [env, state.error, state.isThinking, state.sessionError, submitState]);
 
   return (
     <motion.div
@@ -324,9 +388,8 @@ export default function EnvironmentStep() {
         </p>
       </div>
 
-      {/* 预设卡片横向滚动 */}
       <div>
-        <div className="flex items-center justify-between gap-4 mb-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <div className="text-sm uppercase tracking-[0.2em] text-text-dim">
             预设场景
           </div>
@@ -339,38 +402,104 @@ export default function EnvironmentStep() {
             </div>
           ) : null}
         </div>
+        {disabledReason ? (
+          <div className="mb-4 flex items-start gap-2 rounded-lg border border-white/15 bg-white/[0.04] px-3 py-2 text-sm text-text-muted">
+            <AlertCircle size={16} className="mt-0.5 shrink-0 text-amber-300" />
+            <span>{disabledReason}</span>
+          </div>
+        ) : null}
+        {submitState.status === "error" && submitState.source.startsWith("preset:") ? (
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-rose-500/35 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
+            <div className="flex min-w-0 items-start gap-2">
+              <AlertCircle size={16} className="mt-0.5 shrink-0" />
+              <span className="break-words">{submitState.message}</span>
+            </div>
+            <button
+              type="button"
+              onClick={retrySubmit}
+              disabled={isSubmitting}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-rose-300/30 px-2.5 py-1 text-xs font-semibold transition-colors hover:bg-rose-300/10 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <RotateCw size={13} />
+              重试
+            </button>
+          </div>
+        ) : null}
         <motion.div
           variants={stagger(40)}
           initial="hidden"
           animate="show"
-          className="flex gap-5 overflow-x-auto pb-3 -mx-2 px-2"
+          className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3"
         >
-          {presets.map((p) => (
-            <motion.button
-              key={p.id}
-              variants={fadeSlideUp}
-              whileHover={{ y: -3 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => onPreset(p)}
-              disabled={isSessionBlocked}
-              className="flex-shrink-0 w-60 text-left p-6 rounded-2xl border border-white/20 bg-card-translucent hover:border-primary/40 hover:bg-primary/[0.04] transition-all duration-300"
-            >
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
-                  <Thermometer size={20} className="text-primary" />
+          {presets.map((p) => {
+            const source: SubmitSource = `preset:${p.id}`;
+            const isThisPending = submitState.status === "pending" && submitState.source === source;
+            const isThisSuccess = submitState.status === "success" && submitState.source === source;
+            const isThisError = submitState.status === "error" && submitState.source === source;
+
+            return (
+              <motion.button
+                key={p.id}
+                variants={fadeSlideUp}
+                whileHover={!isSessionBlocked ? { y: -3 } : undefined}
+                whileTap={!isSessionBlocked ? { scale: 0.98 } : undefined}
+                onClick={() => onPreset(p)}
+                disabled={isSessionBlocked}
+                title={disabledReason || `选择 ${getEnvironmentName(p, locale)}`}
+                className={`min-h-[236px] min-w-0 text-left p-5 rounded-2xl border bg-card-translucent transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-65 ${
+                  isThisSuccess
+                    ? "border-emerald-400/50 bg-emerald-400/10"
+                    : isThisError
+                      ? "border-rose-400/45 bg-rose-500/10"
+                      : "border-white/20 hover:border-primary/40 hover:bg-primary/[0.04]"
+                }`}
+              >
+                <div className="mb-3 flex min-w-0 items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10">
+                    {isThisPending ? (
+                      <Loader2 size={20} className="animate-spin text-primary" />
+                    ) : isThisSuccess ? (
+                      <Check size={20} className="text-emerald-300" />
+                    ) : (
+                      <Thermometer size={20} className="text-primary" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="break-words text-lg font-semibold leading-tight text-text">
+                      {getEnvironmentName(p, locale)}
+                    </div>
+                    <div
+                      className={`mt-1 text-xs font-semibold ${
+                        isThisSuccess
+                          ? "text-emerald-300"
+                          : isThisPending
+                            ? "text-primary"
+                            : isThisError
+                              ? "text-rose-300"
+                              : "text-text-dim"
+                      }`}
+                    >
+                      {isThisSuccess
+                        ? "已选中"
+                        : isThisPending
+                          ? "提交中..."
+                          : isThisError
+                            ? "提交失败"
+                            : "点击选择"}
+                    </div>
+                  </div>
                 </div>
-                <div className="text-lg font-semibold text-text">{getEnvironmentName(p, locale)}</div>
-              </div>
-              <div className="text-sm text-text-muted leading-relaxed">
-                {p.description}
-              </div>
-              {p.real_reference ? (
-                <div className="text-xs text-text-dim leading-relaxed mt-3">
-                  参考：{p.real_reference}
+                <div className="break-words text-sm leading-relaxed text-text-muted">
+                  {p.description}
                 </div>
-              ) : null}
-            </motion.button>
-          ))}
+                {p.real_reference ? (
+                  <div className="mt-3 break-words text-xs leading-relaxed text-text-dim">
+                    参考：{p.real_reference}
+                  </div>
+                ) : null}
+              </motion.button>
+            );
+          })}
         </motion.div>
       </div>
 
@@ -418,22 +547,56 @@ export default function EnvironmentStep() {
       </div>
 
       {/* 下一步 */}
-      <div className="flex justify-end pt-3">
+      <div className="flex flex-col items-end gap-3 pt-3">
+        {submitState.status === "error" && submitState.source === "next" ? (
+          <div className="flex max-w-xl flex-wrap items-center justify-end gap-3 rounded-lg border border-rose-500/35 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
+            <div className="flex min-w-0 items-start gap-2">
+              <AlertCircle size={16} className="mt-0.5 shrink-0" />
+              <span className="break-words">{submitState.message}</span>
+            </div>
+            <button
+              type="button"
+              onClick={retrySubmit}
+              disabled={isSubmitting}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-rose-300/30 px-2.5 py-1 text-xs font-semibold transition-colors hover:bg-rose-300/10 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <RotateCw size={13} />
+              重试
+            </button>
+          </div>
+        ) : disabledReason ? (
+          <div className="max-w-xl text-right text-sm text-text-dim">{disabledReason}</div>
+        ) : null}
         <motion.button
-          whileHover={canSubmit ? { x: 2 } : undefined}
-          whileTap={canSubmit ? { scale: 0.97 } : undefined}
+          whileHover={canSubmit && !isSessionBlocked ? { x: 2 } : undefined}
+          whileTap={canSubmit && !isSessionBlocked ? { scale: 0.97 } : undefined}
           disabled={!canSubmit || isSessionBlocked}
           onClick={() => {
-            if (canSubmit && !isSessionBlocked) void handleEnvironmentSubmit(env);
+            if (canSubmit) void submitEnvironment(env, "next");
           }}
+          title={!canSubmit ? "请选择预设，或完成 9 维环境参数调节。" : disabledReason || "提交环境并进入任务选择"}
           className={`inline-flex items-center gap-3 px-8 py-4 rounded-xl text-lg font-semibold transition-colors ${
             canSubmit && !isSessionBlocked
               ? "bg-primary text-bg hover:bg-primary/90"
               : "bg-card text-text-dim border border-border cursor-not-allowed"
           }`}
         >
-          下一步 · 选择任务
-          <ArrowRight size={20} />
+          {submitState.status === "pending" && submitState.source === "next" ? (
+            <>
+              提交中
+              <Loader2 size={20} className="animate-spin" />
+            </>
+          ) : submitState.status === "success" && submitState.source === "next" ? (
+            <>
+              已提交
+              <Check size={20} />
+            </>
+          ) : (
+            <>
+              下一步 · 选择任务
+              <ArrowRight size={20} />
+            </>
+          )}
         </motion.button>
       </div>
     </motion.div>

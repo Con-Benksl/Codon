@@ -15,19 +15,16 @@ logger = logging.getLogger(__name__)
 
 _client: Optional[AsyncOpenAI] = None
 
-REQUEST_TIMEOUT = 180
-MAX_RETRIES = 2
-RETRY_DELAY = 3
-
 
 def get_llm_client() -> AsyncOpenAI:
     global _client
     if _client is None:
         settings = get_settings()
+        request_timeout = float(settings.LLM_REQUEST_TIMEOUT_SECONDS)
         _client = AsyncOpenAI(
             api_key=settings.LLM_API_KEY,
             base_url=settings.LLM_BASE_URL,
-            timeout=httpx.Timeout(REQUEST_TIMEOUT, connect=30),
+            timeout=httpx.Timeout(request_timeout, connect=request_timeout),
             max_retries=0,
         )
     return _client
@@ -69,23 +66,30 @@ async def chat_completion(
     }
 
     last_error: Optional[Exception] = None
+    retry_attempts = max(0, int(settings.LLM_RETRY_ATTEMPTS))
+    total_attempts = retry_attempts + 1
+    request_timeout = float(settings.LLM_REQUEST_TIMEOUT_SECONDS)
+    base_delay = max(0.0, float(settings.LLM_RETRY_BASE_DELAY_SECONDS))
 
-    for attempt in range(MAX_RETRIES + 1):
+    for attempt in range(total_attempts):
         try:
             logger.info(
                 "LLM request (attempt %d/%d): model=%s, prompt_len=%d",
-                attempt + 1, MAX_RETRIES + 1, settings.LLM_MODEL, len(user_message),
+                attempt + 1, total_attempts, settings.LLM_MODEL, len(user_message),
             )
-            response = await client.chat.completions.create(**kwargs)
+            response = await asyncio.wait_for(
+                client.chat.completions.create(**kwargs),
+                timeout=request_timeout,
+            )
             content = response.choices[0].message.content or ""
             logger.info("LLM response: tokens=%s", response.usage)
             return content
 
         except Exception as e:
             last_error = e
-            logger.warning("LLM request failed (attempt %d/%d): %s", attempt + 1, MAX_RETRIES + 1, e)
-            if attempt < MAX_RETRIES:
-                await asyncio.sleep(RETRY_DELAY * (attempt + 1))
+            logger.warning("LLM request failed (attempt %d/%d): %s", attempt + 1, total_attempts, e)
+            if attempt < retry_attempts:
+                await asyncio.sleep(base_delay * (2 ** attempt))
 
     raise last_error  # type: ignore[misc]
 

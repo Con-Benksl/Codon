@@ -10,6 +10,7 @@ import {
   Lock,
   PanelRightClose,
   PanelRightOpen,
+  PencilLine,
   Pin,
   PinOff,
   ShieldAlert,
@@ -89,9 +90,26 @@ function hasCompletedStep(state: DesignerState, step: DesignerStep): boolean {
 }
 
 function getStepStatus(state: DesignerState, step: DesignerStep): StepStatus {
-  if (hasCompletedStep(state, step)) return "done";
   if (state.currentStep === step) return "active";
+  if (hasCompletedStep(state, step)) return "done";
   return "pending";
+}
+
+function getStepTitle(
+  state: DesignerState,
+  meta: StepMeta,
+  canRollback: boolean,
+): string {
+  if (canRollback) {
+    return `${meta.step}. ${meta.label} 已完成，点击回退修改`;
+  }
+  if (meta.step === state.currentStep) {
+    return `${meta.step}. ${meta.label} 当前步骤`;
+  }
+  if (meta.step > state.currentStep) {
+    return `${meta.step}. ${meta.label} 尚未解锁，请先完成前序步骤`;
+  }
+  return `${meta.step}. ${meta.label}`;
 }
 
 function getSelectedEditPlan(state: DesignerState): EditPlanCandidate | null {
@@ -557,13 +575,15 @@ function ProgressSteps({
         }, null);
         const canRollback =
           meta.step < state.currentStep && hasCompletedStep(state, meta.step);
+        const isCurrent = meta.step === state.currentStep;
+        const isLocked = meta.step > state.currentStep;
         const Icon = meta.icon;
 
         return (
           <button
             key={meta.step}
             type="button"
-            title={`${meta.step}. ${meta.label}`}
+            title={getStepTitle(state, meta, canRollback)}
             disabled={!canRollback}
             onClick={() => {
               if (canRollback) void onRollback(meta.step);
@@ -572,22 +592,44 @@ function ProgressSteps({
               "relative flex min-h-12 items-center justify-center rounded-lg border transition-colors",
               expanded ? "flex-col gap-1 px-1 py-2" : "h-12 w-12",
               status === "done" &&
-                "border-primary/35 bg-primary/10 text-primary hover:border-primary/60",
+                "border-primary/45 bg-primary/10 text-primary hover:border-primary/70 hover:bg-primary/15",
               status === "active" &&
-                "border-white/25 bg-white/[0.06] text-text shadow-inner shadow-primary/10",
+                "border-primary/70 bg-primary/[0.16] text-text shadow-[0_0_0_2px_rgba(56,189,248,0.18)]",
               status === "pending" && "border-white/10 bg-white/[0.02] text-text-dim",
-              canRollback ? "cursor-pointer" : "cursor-default",
+              canRollback ? "cursor-pointer" : "cursor-not-allowed",
+              isCurrent && "ring-1 ring-primary/35",
+              isLocked && "opacity-70",
             )}
           >
-            {status === "done" ? <Check size={16} /> : <Icon size={16} />}
+            {canRollback ? (
+              <PencilLine size={16} />
+            ) : status === "done" ? (
+              <Check size={16} />
+            ) : isLocked ? (
+              <Lock size={16} />
+            ) : (
+              <Icon size={16} />
+            )}
             {expanded && (
-              <span className="text-[10px] font-semibold leading-none">
-                {meta.label}
-              </span>
+              <>
+                <span className="text-[10px] font-semibold leading-none">
+                  {meta.label}
+                </span>
+                <span
+                  className={cx(
+                    "text-[9px] font-semibold leading-none",
+                    canRollback && "text-primary",
+                    isCurrent && "text-primary",
+                    isLocked && "text-text-dim",
+                  )}
+                >
+                  {canRollback ? "修改" : isCurrent ? "当前" : isLocked ? "锁定" : "完成"}
+                </span>
+              </>
             )}
             {!expanded && (
               <span className="sr-only">
-                {meta.step}. {meta.label}
+                {getStepTitle(state, meta, canRollback)}
               </span>
             )}
             {maxRisk && (
