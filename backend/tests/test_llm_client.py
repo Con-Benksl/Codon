@@ -104,6 +104,25 @@ class LlmClientTests(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(asyncio.TimeoutError):
                 await llm_client.chat_completion("system", "user")
 
+    async def test_chat_completion_json_extracts_final_json_after_reasoning_prefix(self):
+        raw = """
+<think>
+I should return an object shaped like {"message": "...", "actions": []}.
+</think>
+{
+  "message": "ok",
+  "actions": [],
+  "suggested_prompts": [],
+  "warnings": []
+}
+"""
+
+        with patch.object(llm_client, "chat_completion", return_value=raw):
+            result = await llm_client.chat_completion_json("system", "user")
+
+        self.assertEqual(result["message"], "ok")
+        self.assertEqual(result["actions"], [])
+
 
 if __name__ == "__main__":
     unittest.main()
