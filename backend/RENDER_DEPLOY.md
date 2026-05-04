@@ -40,6 +40,7 @@
    | 变量 | 值 |
    |------|---|
    | `DATABASE_URL` | 步骤 0 的 Supabase URI |
+   | `DB_CONNECT_TIMEOUT_SECONDS` | `10` |
    | `SECRET_KEY` | 在终端跑 `openssl rand -hex 32` 生成 |
    | `LLM_API_KEY` | OpenAI-compatible API key，可留空以使用本地规则兜底 |
    | `LLM_BASE_URL` | OpenAI-compatible endpoint，例如 `https://api.openai.com/v1` |

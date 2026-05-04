@@ -16,6 +16,9 @@ services:
       # Supabase Postgres URL（Render 控制台手动填，不在此处硬编码）
       - key: DATABASE_URL
         sync: false
+      # Fail fast when the database URL or network is wrong.
+      - key: DB_CONNECT_TIMEOUT_SECONDS
+        value: "10"
       # 用 openssl rand -hex 32 生成
       - key: SECRET_KEY
         sync: false

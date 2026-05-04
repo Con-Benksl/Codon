@@ -7,7 +7,7 @@ from alembic import context
 
 # 导入配置和模型
 from app.config import get_settings
-from app.database import Base
+from app.database import Base, build_engine_kwargs
 from app.models import *
 
 # this is the Alembic Config object, which provides
@@ -68,6 +68,7 @@ def run_migrations_online() -> None:
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        **build_engine_kwargs(settings.DATABASE_URL, settings.DB_CONNECT_TIMEOUT_SECONDS),
     )
 
     with connectable.connect() as connection:

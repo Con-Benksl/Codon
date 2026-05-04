@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     DEBUG: bool = False
 
     DATABASE_URL: str = "sqlite:///./codon.db"
+    DB_CONNECT_TIMEOUT_SECONDS: int = 10
     REDIS_URL: str = "redis://127.0.0.1:6379/0"
 
     SECRET_KEY: str = "codon-local-dev-secret"
