@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "=== Mars Design Backend 启动脚本 ==="
+echo "=== Codon Backend 启动脚本 ==="
 
 # 激活虚拟环境
 if [ -d "venv" ]; then

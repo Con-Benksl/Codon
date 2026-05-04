@@ -9,7 +9,7 @@
 
 1. 访问 https://supabase.com → Sign in with GitHub
 2. New Project：
-   - Name: `mars-design`
+   - Name: `codon`
    - Database Password: 自己设一个（**记下来**）
    - Region: `Northeast Asia (Tokyo)`（离国内最近）
    - Plan: Free
@@ -32,7 +32,7 @@
 
 1. 访问 https://render.com → Sign in with GitHub
 2. New + → **Blueprint**
-3. Connect Repository → 选择你的 Codon / Mars_design 仓库
+3. Connect Repository → 选择你的 `Codon` 仓库
 4. Render 自动检测仓库根目录的 `render.yaml`，显示要部署的服务
 5. 点 **Apply**
 6. 在弹出的环境变量面板填入：
@@ -47,13 +47,13 @@
    | `CORS_ORIGINS` | 暂填 `["*"]`，前端域名定下来后改为 `["https://你的vercel.app"]` |
 
 7. Render 开始构建（约 5-10 分钟，scipy/biopython/cobra 装得慢）
-8. 构建完成后页面会显示一个公网域名，形如 `https://mars-backend.onrender.com`
+8. 构建完成后页面会显示一个公网域名，形如 `https://codon-backend.onrender.com`
 
 ### 方式 B：手动创建 Web Service（如果 Blueprint 报错）
 
-1. New + → **Web Service** → 连接 `Mars_design` 仓库
+1. New + → **Web Service** → 连接 `Codon` 仓库
 2. 配置：
-   - Name: `mars-backend`
+   - Name: `codon-backend`
    - Region: `Singapore`
    - Branch: `main`
    - Root Directory: `backend`
@@ -70,8 +70,8 @@
 
 构建完成后浏览器打开：
 
-- `https://mars-backend.onrender.com/health` → 应返回 `{"status":"healthy"}`
-- `https://mars-backend.onrender.com/api/docs` → 应看到 FastAPI Swagger
+- `https://codon-backend.onrender.com/health` → 应返回 `{"status":"healthy"}`
+- `https://codon-backend.onrender.com/api/docs` → 应看到 FastAPI Swagger
 
 ⚠️ **首次访问可能要等 30-60 秒**——Render 免费版有冷启动。后续 15 分钟无请求会休眠。
 
@@ -82,7 +82,7 @@
 在 Vercel 项目的环境变量里：
 
 ```
-VITE_API_URL=https://mars-backend.onrender.com
+VITE_API_URL=https://codon-backend.onrender.com/api/v1
 ```
 
 更新后重新部署前端。
@@ -104,11 +104,11 @@ Render 免费版 15 分钟无请求 → 休眠。下次访问要冷启动 30-60 
 **演示前保活策略**（任选其一）：
 
 ### A. 演示前手动唤醒
-演示开始前 2 分钟在浏览器访问一次 `https://mars-backend.onrender.com/health`，让它热起来。
+演示开始前 2 分钟在浏览器访问一次 `https://codon-backend.onrender.com/health`，让它热起来。
 
 ### B. UptimeRobot 免费保活
 1. 注册 https://uptimerobot.com（免费）
-2. New Monitor → HTTP(s) → URL 填 `https://mars-backend.onrender.com/health` → 间隔 5 分钟
+2. New Monitor → HTTP(s) → URL 填 `https://codon-backend.onrender.com/health` → 间隔 5 分钟
 3. 每 5 分钟自动 ping 一次，永不休眠
 
 ### C. 升级 Starter（$7/月）
@@ -123,10 +123,10 @@ Render 免费版 15 分钟无请求 → 休眠。下次访问要冷启动 30-60 
 ```bash
 # 导出旧数据库；OLD_DATABASE_URL 只放在本地 shell，不要提交
 OLD_DATABASE_URL="<old database URL>"
-pg_dump "$OLD_DATABASE_URL" > /tmp/mars_backup.sql
+pg_dump "$OLD_DATABASE_URL" > /tmp/codon_backup.sql
 
 # 导入 Supabase
-psql "<Supabase URI>" < mars_backup.sql
+psql "<Supabase URI>" < /tmp/codon_backup.sql
 ```
 
 如果之前没多少数据，**直接跳过这步**——Alembic 迁移会自动建空表。

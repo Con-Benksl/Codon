@@ -31,6 +31,8 @@ Codon 将“为一个极端环境设计一株能生存并执行生态修复任�
 - **蛋白与数据库支撑**：维护 46 种功能蛋白记录，并接入 UniProt、NCBI E-utils、KEGG REST 查询与本地 SQLite 缓存。
 - **LLM 编辑方案生成**：生成含载体、启动子、密码子优化、代谢负担、参考文献和 Kill Switch 的工程化编辑方案。
 - **ODE 动态仿真**：使用 `scipy.solve_ivp` 求解种群、环境目标和限制性养分的耦合动态，并通过 SSE 推送 200 步轨迹。
+- **项目化 Designer**：裸 `/designer` 可直接开始设计；首次有效输入后自动保存为草稿 Project / Design / DesignerSession。
+- **持续方案报告**：每一步确认后持续更新 `DesignReport`，支持 Markdown 快照导出。
 - **沉浸式前端体验**：React + Three.js DNA 粒子背景、动效路由、项目绑定 Designer 会话和中英文界面。
 
 ## Designer 六步流程
@@ -43,14 +45,22 @@ Codon 将“为一个极端环境设计一株能生存并执行生态修复任�
 | 4. 蛋白选择 | `ProteinStep.tsx` | `POST /designer/sessions/{sid}/protein` | `protein_service.recommend_proteins()` + UniProt/BRENDA 链接 + LLM 解释 |
 | 5. 编辑方案 | `GeneEditStep.tsx` | `POST /designer/sessions/{sid}/edit-plan` | `edit_plan_service.generate_edit_plans()` 生成 3-5 个候选方案 |
 | 6. 动态仿真 | `SimulationStep.tsx` | `POST /designer/sessions/{sid}/simulate` | `simulation_service.simulate()` 生成 ODE 轨迹并通过 SSE 推送 |
+| 方案报告 | `DesignReportPreview.tsx` | `GET /designer/sessions/{sid}/report` / `POST /designer/sessions/{sid}/report/exports/markdown` | 持续生成报告章节并导出 Markdown 快照 |
 | Copilot 对话 | `CopilotPanel.tsx` | `POST /designer/sessions/{sid}/copilot` | OpenAI-compatible LLM 生成结构化 action；未配置 key 时使用本地规则兜底 |
 
-每一步支持回滚；前端会在项目页打开 Designer 时把 `active_project_id` 绑定到后端 session。
+每一步支持回滚；回滚会同步清理下游旧选择、候选快照和报告章节。
+
+项目恢复链路是 `Project -> Design -> DesignerSession`：
+
+- 裸 `/designer` 是主入口，不要求用户先创建项目。
+- 项目卡片打开 `/projects/:projectId/designer`，后端恢复该项目默认或最新 `Design` 的 `DesignerSession`。
+- `DesignerSessionState` 会返回 `project_id`、`design_id`、项目名、方案名、候选快照、仿真结果和报告状态所需字段。
+- `DesignReport` 从设计过程开始持续记录，不等六步全部完成后才生成。
 
 ## 项目结构
 
 ```text
-Mars_design/
+Codon/
 ├── frontend/                         # React 19 + TypeScript + Vite
 │   ├── src/
 │   │   ├── App.tsx                   # 路由、鉴权、全局 DNA 背景
@@ -66,7 +76,7 @@ Mars_design/
 ├── backend/                          # FastAPI + SQLAlchemy
 │   ├── app/
 │   │   ├── api/v1/                  # auth、projects、designer、agents、chat
-│   │   ├── services/                # 推荐、蛋白、编辑方案、仿真、数据库查询、LLM
+│   │   ├── services/                # 推荐、蛋白、编辑方案、仿真、方案报告、数据库查询、LLM
 │   │   ├── models/                  # SQLAlchemy ORM
 │   │   ├── schemas/                 # Pydantic schemas
 │   │   ├── data/                    # 环境、任务、底盘、蛋白知识库 JSON
@@ -165,7 +175,7 @@ VITE_API_URL=https://<your-backend-domain>/api/v1
 `backend/.env` 最少需要：
 
 ```bash
-DATABASE_URL=sqlite:///./mars_design.db
+DATABASE_URL=sqlite:///./codon.db
 SECRET_KEY=replace-with-a-long-random-secret
 LLM_API_KEY=
 LLM_BASE_URL=https://api.openai.com/v1
@@ -192,6 +202,8 @@ curl -fsS http://127.0.0.1:8000/health
 4. 创建 Designer session。
 5. 提交环境向量。
 6. 提交任务并获取底盘候选。
+7. 读取持续方案报告，确认已生成对应章节。
+8. 从项目路由恢复 Designer session，确认候选和已选状态不丢失。
 
 ## 部署
 
@@ -212,10 +224,13 @@ curl -fsS http://127.0.0.1:8000/health
 |---|---|
 | `users` | 用户、密码哈希、登录态 |
 | `projects` | 用户项目 |
-| `designer_sessions` | Designer 六步流程状态 |
+| `designs` | 项目下可命名、可恢复的设计方案 |
+| `designer_sessions` | 归属到 Design 的 Designer 六步流程状态与候选快照 |
+| `design_reports` | 随 Designer 步骤持续更新的方案文稿 |
+| `report_exports` | 方案报告的导出快照记录 |
 | `agent_runs` | Legacy agent 编排记录 |
 | `project_artifacts` / `project_datasets` / `project_jobs` / `project_view_snapshots` | 项目运行时资源 |
-| `gene_modules` / `designs` / `simulations` / `exports` | 设计与仿真产物 |
+| `gene_modules` / `simulations` / `exports` | 设计与仿真产物 |
 | `backend/app/data/*.json` | 环境、任务、底盘、蛋白知识库 |
 | `backend/gene_query_cache.db` | UniProt / NCBI / KEGG 查询缓存，TTL 7 天 |
 
@@ -265,6 +280,8 @@ The platform is intended for education, research prototyping, and product demons
 - **Functional protein support**: 46 curated protein records with UniProt, NCBI E-utils, KEGG REST integrations and local SQLite caching.
 - **LLM-generated edit plans**: Candidate plans include vectors, promoters, codon optimization notes, metabolic burden, references, and Kill Switch status.
 - **ODE simulation**: `scipy.solve_ivp` models population, environment target, and nutrient dynamics, streaming a 200-step trajectory over SSE.
+- **Project-backed Designer**: Bare `/designer` can start immediately; the first valid input auto-saves a draft Project / Design / DesignerSession.
+- **Live design reports**: Each confirmed step updates a `DesignReport`, with Markdown snapshot export support.
 - **Interactive frontend**: React, Three.js DNA particle background, animated routes, project-bound Designer sessions, and bilingual UI.
 
 ## Designer Six-Step Workflow
@@ -277,14 +294,22 @@ The platform is intended for education, research prototyping, and product demons
 | 4. Protein | `ProteinStep.tsx` | `POST /designer/sessions/{sid}/protein` | `protein_service.recommend_proteins()` with UniProt/BRENDA links and LLM explanation |
 | 5. Edit Plan | `GeneEditStep.tsx` | `POST /designer/sessions/{sid}/edit-plan` | `edit_plan_service.generate_edit_plans()` generates 3-5 candidate plans |
 | 6. Simulation | `SimulationStep.tsx` | `POST /designer/sessions/{sid}/simulate` | `simulation_service.simulate()` streams an ODE trajectory over SSE |
+| Design Report | `DesignReportPreview.tsx` | `GET /designer/sessions/{sid}/report` / `POST /designer/sessions/{sid}/report/exports/markdown` | Keeps report sections current and exports Markdown snapshots |
 | Copilot Chat | `CopilotPanel.tsx` | `POST /designer/sessions/{sid}/copilot` | OpenAI-compatible LLM returns structured actions, with local-rule fallback when no key is configured |
 
-Each step supports rollback. When the Designer is opened from a project, the frontend binds `active_project_id` to the backend session.
+Each step supports rollback. Rollback clears downstream selections, candidate snapshots, and report sections.
+
+The project restore chain is `Project -> Design -> DesignerSession`:
+
+- Bare `/designer` is the primary entry and does not require users to create a project first.
+- Project cards open `/projects/:projectId/designer`; the backend restores the default or latest `Design` and its `DesignerSession`.
+- `DesignerSessionState` returns `project_id`, `design_id`, project name, design name, candidate snapshots, simulation result, and fields needed by report state.
+- `DesignReport` starts during the design process instead of waiting for all six steps to finish.
 
 ## Project Structure
 
 ```text
-Mars_design/
+Codon/
 ├── frontend/                         # React 19 + TypeScript + Vite
 │   ├── src/
 │   │   ├── App.tsx                   # Routing, auth guard, global DNA background
@@ -300,7 +325,7 @@ Mars_design/
 ├── backend/                          # FastAPI + SQLAlchemy
 │   ├── app/
 │   │   ├── api/v1/                  # auth, projects, designer, agents, chat
-│   │   ├── services/                # recommendation, proteins, edit plans, simulation, DB lookup, LLM
+│   │   ├── services/                # recommendation, proteins, edit plans, simulation, design reports, DB lookup, LLM
 │   │   ├── models/                  # SQLAlchemy ORM
 │   │   ├── schemas/                 # Pydantic schemas
 │   │   ├── data/                    # environment, mission, chassis, protein JSON knowledge bases
@@ -399,7 +424,7 @@ VITE_API_URL=https://<your-backend-domain>/api/v1
 Minimum `backend/.env`:
 
 ```bash
-DATABASE_URL=sqlite:///./mars_design.db
+DATABASE_URL=sqlite:///./codon.db
 SECRET_KEY=replace-with-a-long-random-secret
 LLM_API_KEY=
 LLM_BASE_URL=https://api.openai.com/v1
@@ -426,6 +451,8 @@ A minimal Designer API smoke test should cover:
 4. Create a Designer session.
 5. Submit an environment vector.
 6. Submit a mission and receive chassis candidates.
+7. Read the live design report and confirm matching sections exist.
+8. Restore the Designer from a project route and confirm candidates and selections persist.
 
 ## Deployment
 
@@ -446,10 +473,13 @@ Legacy Railway and Sealos deployment files have been removed from the open-sourc
 |---|---|
 | `users` | Users, password hashes, auth state |
 | `projects` | User projects |
-| `designer_sessions` | Six-step Designer state |
+| `designs` | Named, restorable design variants under projects |
+| `designer_sessions` | Design-owned six-step Designer state and candidate snapshots |
+| `design_reports` | Live design documents updated as Designer steps complete |
+| `report_exports` | Export snapshots for design reports |
 | `agent_runs` | Legacy agent orchestration records |
 | `project_artifacts` / `project_datasets` / `project_jobs` / `project_view_snapshots` | Project runtime resources |
-| `gene_modules` / `designs` / `simulations` / `exports` | Design and simulation artifacts |
+| `gene_modules` / `simulations` / `exports` | Design and simulation artifacts |
 | `backend/app/data/*.json` | Environment, mission, chassis, protein knowledge bases |
 | `backend/gene_query_cache.db` | UniProt / NCBI / KEGG query cache, 7-day TTL |
 

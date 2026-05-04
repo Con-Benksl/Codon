@@ -7,14 +7,14 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    APP_NAME: str = "Mars Design Backend"
+    APP_NAME: str = "Codon Backend"
     VERSION: str = "1.0.0"
     DEBUG: bool = False
 
-    DATABASE_URL: str = "sqlite:///./mars_design.db"
+    DATABASE_URL: str = "sqlite:///./codon.db"
     REDIS_URL: str = "redis://127.0.0.1:6379/0"
 
-    SECRET_KEY: str = "mars-design-local-dev-secret"
+    SECRET_KEY: str = "codon-local-dev-secret"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     AUTH_COOKIE_NAME: str = "access_token"

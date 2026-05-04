@@ -50,7 +50,7 @@ async def shutdown():
 
 @app.get("/")
 async def root():
-    return {"message": "Mars Design Backend API", "version": settings.VERSION}
+    return {"message": "Codon Backend API", "version": settings.VERSION}
 
 
 @app.get("/health")

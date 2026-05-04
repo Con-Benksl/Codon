@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: local-dev-password
-      POSTGRES_DB: mars_design
+      POSTGRES_DB: codon
     ports:
       - "5432:5432"
     volumes:

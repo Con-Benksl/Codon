@@ -4,7 +4,7 @@ from app.config import get_settings
 settings = get_settings()
 
 celery_app = Celery(
-    "mars_design",
+    "codon",
     broker=settings.CELERY_BROKER_URL,
     backend=settings.CELERY_RESULT_BACKEND,
     include=["app.tasks.agent_tasks"]
