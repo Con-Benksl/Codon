@@ -170,6 +170,14 @@ VITE_API_URL=http://127.0.0.1:8000/api/v1
 VITE_API_URL=https://<your-backend-domain>/api/v1
 ```
 
+当前生产后端：
+
+```bash
+VITE_API_URL=https://codon-backend.onrender.com/api/v1
+```
+
+前端代码会拒绝使用旧的 `mars-backend-2au4.onrender.com` 地址，避免 Vercel 上残留的旧环境变量把生产站点连回已废弃后端。
+
 ### 后端
 
 `backend/.env` 最少需要：
@@ -212,7 +220,7 @@ curl -fsS http://127.0.0.1:8000/health
 | 前端 | Vercel | 设置 `VITE_API_URL=https://<backend>/api/v1` 后重新部署 |
 | 后端 | Render | 使用根目录 `render.yaml` Blueprint 或手动 Web Service |
 | 数据库 | Supabase PostgreSQL | Render 生产环境使用 Supabase Session Pooler 连接串 |
-| CORS | 后端环境变量 | `CORS_ORIGINS=["https://<your-vercel-domain>"]` |
+| CORS | 后端环境变量 | 当前生产值：`CORS_ORIGINS=["https://www.marssynbioagent.cn","https://marssynbioagent.cn"]`，并保留 Vercel preview 域名正则 |
 
 详细步骤见 [backend/RENDER_DEPLOY.md](./backend/RENDER_DEPLOY.md)。
 
@@ -419,6 +427,14 @@ Production values must include the `/api/v1` prefix:
 VITE_API_URL=https://<your-backend-domain>/api/v1
 ```
 
+Current production backend:
+
+```bash
+VITE_API_URL=https://codon-backend.onrender.com/api/v1
+```
+
+The frontend refuses the legacy `mars-backend-2au4.onrender.com` value so a stale Vercel environment variable cannot connect production traffic to the retired backend.
+
 ### Backend
 
 Minimum `backend/.env`:
@@ -461,7 +477,7 @@ A minimal Designer API smoke test should cover:
 | Frontend | Vercel | Set `VITE_API_URL=https://<backend>/api/v1` and redeploy |
 | Backend | Render | Use the root `render.yaml` Blueprint or create a Web Service manually |
 | Database | Supabase PostgreSQL | Use the Supabase Session Pooler URL for Render |
-| CORS | Backend environment variable | `CORS_ORIGINS=["https://<your-vercel-domain>"]` |
+| CORS | Backend environment variable | Current production value: `CORS_ORIGINS=["https://www.marssynbioagent.cn","https://marssynbioagent.cn"]`, with the Vercel preview-domain regex kept enabled |
 
 See [backend/RENDER_DEPLOY.md](./backend/RENDER_DEPLOY.md) for detailed deployment steps.
 

@@ -91,10 +91,17 @@ VITE_API_URL=https://codon-backend.onrender.com/api/v1
 回到 Render 后端的环境变量，把 `CORS_ORIGINS` 改为：
 
 ```
-CORS_ORIGINS=["https://你的vercel域名.vercel.app"]
+CORS_ORIGINS=["https://www.marssynbioagent.cn","https://marssynbioagent.cn"]
 ```
 
 保存后 Render 会自动重启。
+
+如果 Vercel preview 域名需要直接访问后端，当前后端代码默认保留 `CORS_ORIGIN_REGEX=^https://.*\.vercel\.app$`，无需把每个 preview 域名都写进 `CORS_ORIGINS`。生产环境建议同时设置：
+
+```
+AUTH_COOKIE_SECURE=true
+AUTH_COOKIE_SAMESITE=none
+```
 
 ---
 
