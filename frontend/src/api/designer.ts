@@ -121,15 +121,38 @@ export interface SimulationStepData {
   nutrient: number;
 }
 
+export interface SimulationResult {
+  steps: SimulationStepData[];
+  notes?: string | string[] | null;
+}
+
+export interface DesignSummary {
+  id?: number;
+  project_id?: number;
+  name?: string | null;
+  status?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
 export interface DesignerSessionState {
   id: number;
+  project_id: number | null;
+  design_id: number | null;
+  project_name?: string | null;
+  design_name?: string | null;
   current_step: 1 | 2 | 3 | 4 | 5 | 6;
   environment?: EnvironmentVector | null;
   mission_id?: string | null;
   chassis_id?: string | null;
   protein_id?: string | null;
   edit_plan?: EditPlanCandidate | null;
-  simulation_result?: SimulationStepData[] | null;
+  simulation_result?: SimulationResult | null;
+  chassis_candidates: ChassisCandidate[];
+  protein_candidates: ProteinCandidate[];
+  edit_plan_candidates: EditPlanCandidate[];
+  created_at?: string | null;
+  updated_at?: string | null;
 }
 
 export type CopilotActionBase = {
@@ -216,6 +239,59 @@ export interface DesignerCopilotResponse {
   actions: CopilotAction[];
   suggested_prompts: string[];
   warnings: DesignerCopilotWarning[];
+}
+
+export type DesignReportStatus =
+  | 'draft'
+  | 'updating'
+  | 'complete'
+  | 'publishable'
+  | 'published'
+  | 'failed'
+  | string;
+
+export type DesignReportSectionStatus =
+  | 'empty'
+  | 'draft'
+  | 'updated'
+  | 'edited'
+  | 'stale'
+  | 'failed'
+  | string;
+
+export interface DesignReportSection {
+  id: string;
+  title: string;
+  status: DesignReportSectionStatus;
+  source_step?: number | null;
+  updated_at?: string | null;
+  content?: string | null;
+}
+
+export interface DesignReport {
+  id: number | string;
+  project_id?: number | null;
+  design_id?: number | null;
+  title: string;
+  status: DesignReportStatus;
+  summary?: string | null;
+  version?: number | string | null;
+  sections: DesignReportSection[];
+  markdown?: string | null;
+  updated_at?: string | null;
+  published_at?: string | null;
+}
+
+export interface DesignReportExport {
+  id?: number | string;
+  report_id?: number | string;
+  format: 'markdown' | string;
+  status: 'queued' | 'running' | 'complete' | 'failed' | string;
+  filename?: string | null;
+  download_url?: string | null;
+  file_path_or_url?: string | null;
+  content_snapshot?: string | null;
+  created_at?: string | null;
 }
 
 // ============================================================================
@@ -311,6 +387,25 @@ export const getSession = async (
   return response.data;
 };
 
+export const getDefaultDesignSession = async (
+  projectId: number | string,
+): Promise<DesignerSessionState> => {
+  const response = await apiClient.get(
+    `/designer/projects/${projectId}/designs/default/session`,
+  );
+  return response.data;
+};
+
+export const getDesignSession = async (
+  projectId: number | string,
+  designId: number | string,
+): Promise<DesignerSessionState> => {
+  const response = await apiClient.get(
+    `/designer/projects/${projectId}/designs/${designId}/session`,
+  );
+  return response.data;
+};
+
 export const rollback = async (
   sid: number,
   toStep: number,
@@ -337,6 +432,117 @@ export const requestDesignerCopilot = async (
       ? response.data.suggested_prompts
       : [],
     warnings: Array.isArray(response.data?.warnings) ? response.data.warnings : [],
+  };
+};
+
+function normalizeReportSection(
+  raw: unknown,
+  index: number,
+  fallbackId?: string,
+): DesignReportSection {
+  const item = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {};
+  const id = item.id ?? item.key ?? item.slug ?? fallbackId ?? `section-${index + 1}`;
+  const title = item.title ?? item.name ?? `Section ${index + 1}`;
+  return {
+    id: String(id),
+    title: String(title),
+    status: String(item.status ?? 'draft'),
+    source_step:
+      typeof item.source_step === 'number'
+        ? item.source_step
+        : typeof item.step === 'number'
+          ? item.step
+          : null,
+    updated_at:
+      typeof item.updated_at === 'string'
+        ? item.updated_at
+        : typeof item.updatedAt === 'string'
+          ? item.updatedAt
+          : null,
+    content: typeof item.content === 'string' ? item.content : null,
+  };
+}
+
+function normalizeDesignReport(raw: unknown): DesignReport {
+  const data =
+    raw && typeof raw === 'object' && 'report' in raw
+      ? (raw as { report: unknown }).report
+      : raw;
+  if (!data || typeof data !== 'object') {
+    throw new Error('getDesignReport: invalid response shape');
+  }
+  const item = data as Record<string, unknown>;
+  const id = item.id ?? item.report_id;
+  if (typeof id !== 'number' && typeof id !== 'string') {
+    throw new Error('getDesignReport: missing report id');
+  }
+  const sectionsValue = item.sections ?? item.sections_json ?? {};
+  const sections = Array.isArray(sectionsValue)
+    ? sectionsValue.map((section, index) => normalizeReportSection(section, index))
+    : sectionsValue && typeof sectionsValue === 'object'
+      ? Object.entries(sectionsValue as Record<string, unknown>).map(
+          ([key, section], index) => normalizeReportSection(section, index, key),
+        )
+      : [];
+  return {
+    id,
+    project_id: typeof item.project_id === 'number' ? item.project_id : null,
+    design_id: typeof item.design_id === 'number' ? item.design_id : null,
+    title: String(item.title ?? '未命名方案报告'),
+    status: String(item.status ?? 'draft'),
+    summary: typeof item.summary === 'string' ? item.summary : null,
+    version:
+      typeof item.version === 'number' || typeof item.version === 'string'
+        ? item.version
+        : null,
+    sections,
+    markdown: typeof item.markdown === 'string' ? item.markdown : null,
+    updated_at: typeof item.updated_at === 'string' ? item.updated_at : null,
+    published_at: typeof item.published_at === 'string' ? item.published_at : null,
+  };
+}
+
+export const getSessionDesignReport = async (
+  sid: number,
+): Promise<DesignReport> => {
+  const response = await apiClient.get(`/designer/sessions/${sid}/report`);
+  return normalizeDesignReport(response.data);
+};
+
+export const exportSessionDesignReportMarkdown = async (
+  sid: number,
+): Promise<DesignReportExport> => {
+  const response = await apiClient.post(
+    `/designer/sessions/${sid}/report/exports/markdown`,
+  );
+  const data = response.data;
+  if (!data || typeof data !== 'object') {
+    throw new Error('exportDesignReportMarkdown: invalid response shape');
+  }
+  const item = data as Record<string, unknown>;
+  return {
+    id:
+      typeof item.id === 'number' || typeof item.id === 'string'
+        ? item.id
+        : undefined,
+    report_id:
+      typeof item.report_id === 'number' || typeof item.report_id === 'string'
+        ? item.report_id
+        : undefined,
+    format: String(item.format ?? 'markdown'),
+    status: String(item.status ?? 'queued'),
+    filename: typeof item.filename === 'string' ? item.filename : null,
+    download_url:
+      typeof item.download_url === 'string'
+        ? item.download_url
+        : typeof item.url === 'string'
+          ? item.url
+          : null,
+    file_path_or_url:
+      typeof item.file_path_or_url === 'string' ? item.file_path_or_url : null,
+    content_snapshot:
+      typeof item.content_snapshot === 'string' ? item.content_snapshot : null,
+    created_at: typeof item.created_at === 'string' ? item.created_at : null,
   };
 };
 

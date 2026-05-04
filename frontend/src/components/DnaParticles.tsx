@@ -320,71 +320,62 @@ export default function DnaParticles({
           vec3 pos = position;
           float progress = smoothstep(0.0, 1.0, uScrollProgress);
 
-          if (uMorphTarget > 1.5) {
-            // ═══ Logo-Sphere 五幕模式 ═══
+          // ═══ Base DNA pose ═══
+          float breathe = sin(uTime * 0.4 + position.y * 0.25) * 0.04;
+          vec3 dnaPos = position;
+          dnaPos.x *= 1.0 + breathe;
+          dnaPos.z *= 1.0 + breathe;
 
-            // ① (0-10%) DNA 正常 + 呼吸
-            float breathe = sin(uTime * 0.4 + pos.y * 0.25) * 0.04;
-            pos.x *= 1.0 + breathe;
-            pos.z *= 1.0 + breathe;
+          // ═══ Sphere pose ═══
+          vec3 sphereNoiseInput = position * 0.15 + vec3(aRandom * 6.28, uTime * 0.08, 0.0);
+          float sx = snoise(sphereNoiseInput);
+          float sy = snoise(sphereNoiseInput + vec3(31.7, 0.0, 0.0));
+          float sz = snoise(sphereNoiseInput + vec3(0.0, 47.3, 0.0));
+          vec3 scatter = vec3(sx, sy, sz) * uScatterAmplitude * progress;
+          float sphereMorph = smoothstep(0.3, 0.9, progress);
+          vec3 spherePos = mix(dnaPos, aMorphTarget1, sphereMorph * 0.5) + scatter;
 
-            // ② (10-30%) 骤然松解
-            float dissolve = smoothstep(0.08, 0.28, progress);
-            vec3 noiseInput = position * 0.2 + vec3(aRandom * 6.28, uTime * 0.1, 0.0);
-            float nx = snoise(noiseInput);
-            float ny = snoise(noiseInput + vec3(31.7, 0.0, 0.0));
-            float nz = snoise(noiseInput + vec3(0.0, 47.3, 0.0));
-            float chaosFadeOut = 1.0 - smoothstep(0.55, 0.85, progress);
-            vec3 chaos = vec3(nx, ny, nz) * 3.0 * dissolve * chaosFadeOut;
-            float typeDelay = aParticleType * 0.08;
-            chaos *= smoothstep(0.08 - typeDelay, 0.25 - typeDelay, progress);
-            pos += chaos;
+          // ═══ Logo-sphere five-act pose ═══
+          vec3 logoPos = dnaPos;
+          float dissolve = smoothstep(0.08, 0.28, progress);
+          vec3 logoNoiseInput = position * 0.2 + vec3(aRandom * 6.28, uTime * 0.1, 0.0);
+          float lx = snoise(logoNoiseInput);
+          float ly = snoise(logoNoiseInput + vec3(31.7, 0.0, 0.0));
+          float lz = snoise(logoNoiseInput + vec3(0.0, 47.3, 0.0));
+          float chaosFadeOut = 1.0 - smoothstep(0.55, 0.85, progress);
+          vec3 chaos = vec3(lx, ly, lz) * 3.0 * dissolve * chaosFadeOut;
+          float typeDelay = aParticleType * 0.08;
+          chaos *= smoothstep(0.08 - typeDelay, 0.25 - typeDelay, progress);
+          logoPos += chaos;
 
-            // ③ (30-50%) 腰间收束
-            float cinch = smoothstep(0.25, 0.48, progress);
-            float yNorm = position.y / 16.0;
-            float waist = exp(-yNorm * yNorm * 3.0);
-            float spread = (1.0 - waist);
-            float cinchRadius = mix(1.0, 0.3, cinch * waist);
-            pos.x *= cinchRadius;
-            pos.z *= cinchRadius;
-            pos.x += spread * cinch * nx * 2.5 * chaosFadeOut;
-            pos.y += spread * cinch * sign(pos.y) * 1.5 * chaosFadeOut;
-            pos.z += spread * cinch * nz * 2.5 * chaosFadeOut;
+          float cinch = smoothstep(0.25, 0.48, progress);
+          float yNorm = position.y / 16.0;
+          float waist = exp(-yNorm * yNorm * 3.0);
+          float spread = (1.0 - waist);
+          float cinchRadius = mix(1.0, 0.3, cinch * waist);
+          logoPos.x *= cinchRadius;
+          logoPos.z *= cinchRadius;
+          logoPos.x += spread * cinch * lx * 2.5 * chaosFadeOut;
+          logoPos.y += spread * cinch * sign(logoPos.y) * 1.5 * chaosFadeOut;
+          logoPos.z += spread * cinch * lz * 2.5 * chaosFadeOut;
 
-            // ④ (50-70%) 下拽侧扯
-            float wrap = smoothstep(0.45, 0.72, progress);
-            vec3 sphereCenter = vec3(0.0, -2.0, 0.0);
-            vec3 diff = sphereCenter - pos;
-            float dist = length(diff);
-            vec3 toCenter = diff / max(dist, 0.01) * wrap * 6.0;
-            pos += toCenter;
+          float wrap = smoothstep(0.45, 0.72, progress);
+          vec3 sphereCenter = vec3(0.0, -2.0, 0.0);
+          vec3 diff = sphereCenter - logoPos;
+          float dist = length(diff);
+          vec3 toCenter = diff / max(dist, 0.01) * wrap * 6.0;
+          logoPos += toCenter;
 
-            // ⑤ (60-90%) 缠球成锦
-            float settle = smoothstep(0.55, 0.85, progress);
-            pos = mix(pos, aMorphTarget2, settle);
-            float surfaceBreath = sin(uTime * 0.6 + aRandom * 6.28) * 0.06 * settle;
-            vec3 surfaceNormal = normalize(pos);
-            pos += surfaceNormal * surfaceBreath;
+          float settle = smoothstep(0.55, 0.85, progress);
+          logoPos = mix(logoPos, aMorphTarget2, settle);
+          float surfaceBreath = sin(uTime * 0.6 + aRandom * 6.28) * 0.06 * settle;
+          vec3 surfaceNormal = normalize(logoPos);
+          logoPos += surfaceNormal * surfaceBreath;
 
-          } else if (uMorphTarget > 0.5) {
-            // ═══ Sphere 模式（其他路由不变）═══
-            float breathe = sin(uTime * 0.4 + pos.y * 0.25) * 0.04;
-            pos.x *= 1.0 + breathe;
-            pos.z *= 1.0 + breathe;
-            vec3 noiseInput = position * 0.15 + vec3(aRandom * 6.28, uTime * 0.08, 0.0);
-            float nx = snoise(noiseInput);
-            float ny = snoise(noiseInput + vec3(31.7, 0.0, 0.0));
-            float nz = snoise(noiseInput + vec3(0.0, 47.3, 0.0));
-            vec3 scatter = vec3(nx, ny, nz) * uScatterAmplitude * progress;
-            float morphBlend = smoothstep(0.3, 0.9, progress) * step(0.5, uMorphTarget);
-            pos = mix(pos, aMorphTarget1, morphBlend * 0.5) + scatter;
-          } else {
-            // ═══ None 模式 ═══
-            float breathe = sin(uTime * 0.4 + pos.y * 0.25) * 0.04;
-            pos.x *= 1.0 + breathe;
-            pos.z *= 1.0 + breathe;
-          }
+          float logoBlend = smoothstep(1.15, 1.85, uMorphTarget);
+          float sphereBlend = smoothstep(0.15, 0.95, uMorphTarget) * (1.0 - logoBlend);
+          pos = mix(dnaPos, spherePos, sphereBlend);
+          pos = mix(pos, logoPos, logoBlend);
 
           // ═══ Reverse burst: 回滚时粒子先从当前位置炸散再收回 DNA ═══
           if (uReverseBurst > 0.01) {
@@ -436,10 +427,9 @@ export default function DnaParticles({
           vAlpha = smoothstep(100.0, 1.0, depth);
 
           // Logo 模式：散乱阶段降低透明度保护文字
-          if (uMorphTarget > 1.5) {
-            float midFade = 1.0 - smoothstep(0.1, 0.3, progress) * (1.0 - smoothstep(0.6, 0.9, progress)) * 0.4;
-            vAlpha *= midFade;
-          }
+          float logoAlphaBlend = smoothstep(1.15, 1.85, uMorphTarget);
+          float midFade = 1.0 - smoothstep(0.1, 0.3, progress) * (1.0 - smoothstep(0.6, 0.9, progress)) * 0.4;
+          vAlpha *= mix(1.0, midFade, logoAlphaBlend);
         }
       `,
       fragmentShader: `
@@ -501,6 +491,9 @@ export default function DnaParticles({
 
     // ── Animation with smooth interpolation ──
     const clock = new THREE.Clock();
+    let elapsed = 0;
+    let rotationPhase = points.rotation.y;
+    const maxFrameDeltaSeconds = 0.05;
     const lerpFactor = 0.035; // Smooth ~1s transition
 
     let currentScrollProgress = 0;
@@ -510,7 +503,8 @@ export default function DnaParticles({
 
     const animate = () => {
       frameRef.current = requestAnimationFrame(animate);
-      const elapsed = clock.getElapsedTime();
+      const deltaSeconds = Math.min(clock.getDelta(), maxFrameDeltaSeconds);
+      elapsed += deltaSeconds;
       const cur = currentRef.current;
       const tgt = targetRef.current;
 
@@ -537,7 +531,7 @@ export default function DnaParticles({
 
       // 驱动爆散周期 0→1（约 2.5 秒走完）
       if (reverseTriggered) {
-        reverseBurst += 0.008;
+        reverseBurst += deltaSeconds / 2.5;
         if (reverseBurst >= 1.0) {
           reverseBurst = 0;
           reverseTriggered = false;
@@ -552,41 +546,44 @@ export default function DnaParticles({
         tgt.morphTarget === 'sphere' ? 1.0 : 0.0;
       material.uniforms.uMorphTarget.value +=
         (morphTargetValue - material.uniforms.uMorphTarget.value) * lerpFactor;
+      const currentMorphValue = material.uniforms.uMorphTarget.value;
+      const logoBlend = jsSmoothstep(currentMorphValue, 1.15, 1.85);
 
-      // Drift-right mode — getDriftRight() 已内置阻尼平滑
-      material.uniforms.uDriftRight.value = getDriftRight();
+      // Drift-right mode stays opt-in; the global route background remains stable.
+      material.uniforms.uDriftRight.value = cur.scrollMorphEnabled ? getDriftRight() : 0;
 
-      if (tgt.morphTarget === 'logo') {
-        const slowdown = Math.max(0.6, 1.0 - jsSmoothstep(currentScrollProgress, 0.6, 0.9));
-        // 凝聚阶段（settle）自动转一整圈展示 CODON
-        const settleProgress = jsSmoothstep(currentScrollProgress, 0.5, 0.95);
-        const revealSpin = settleProgress * Math.PI * 2;
-        const logoYOffset = -Math.PI * 1.3;
-        points.rotation.y = logoYOffset + revealSpin + elapsed * cur.speed * 2.5 * slowdown;
-        // Logo 球模式：最终保留 15° 倾斜增加立体感，确保 CODON 仍可读
-        const lockH = jsSmoothstep(currentScrollProgress, 0.7, 0.95);
-        const tiltX = 0.26; // ~15° 前倾
-        const tiltZ = 0.10; // ~6° 侧倾
-        points.rotation.x = (0.15 + scrollY * 0.0008) * (1.0 - lockH) + tiltX * lockH;
-        points.rotation.z = (cur.rotZ + scrollY * 0.0003) * (1.0 - lockH) + tiltZ * lockH;
-      } else {
-        points.rotation.y = elapsed * cur.speed;
-        points.rotation.x = 0.15 + scrollY * 0.0008;
-        points.rotation.z = cur.rotZ + scrollY * 0.0003;
-      }
+      const slowdown = Math.max(0.6, 1.0 - jsSmoothstep(currentScrollProgress, 0.6, 0.9));
+      rotationPhase += deltaSeconds * cur.speed * (1.0 + logoBlend * (2.5 * slowdown - 1.0));
+
+      // 凝聚阶段（settle）自动转一整圈展示 CODON
+      const settleProgress = jsSmoothstep(currentScrollProgress, 0.5, 0.95);
+      const revealSpin = settleProgress * Math.PI * 2;
+      const logoYOffset = -Math.PI * 1.3;
+      const dnaRotationY = rotationPhase;
+      const logoRotationY = logoYOffset + revealSpin + rotationPhase;
+      points.rotation.y = THREE.MathUtils.lerp(dnaRotationY, logoRotationY, logoBlend);
+
+      // Logo 球模式：最终保留 15° 倾斜增加立体感，确保 CODON 仍可读
+      const lockH = jsSmoothstep(currentScrollProgress, 0.7, 0.95);
+      const tiltX = 0.26; // ~15° 前倾
+      const tiltZ = 0.10; // ~6° 侧倾
+      const dnaRotationX = 0.15 + scrollY * 0.0008;
+      const dnaRotationZ = cur.rotZ + scrollY * 0.0003;
+      const logoRotationX = dnaRotationX * (1.0 - lockH) + tiltX * lockH;
+      const logoRotationZ = dnaRotationZ * (1.0 - lockH) + tiltZ * lockH;
+      points.rotation.x = THREE.MathUtils.lerp(dnaRotationX, logoRotationX, logoBlend);
+      points.rotation.z = THREE.MathUtils.lerp(dnaRotationZ, logoRotationZ, logoBlend);
       points.position.x = cur.posX;
 
-      // Mouse parallax + logo camera
+      // Mouse parallax + logo camera, blended so route changes do not snap
       camera.position.x += (mouseX * 2.0 - camera.position.x) * 0.015;
-      if (tgt.morphTarget === 'logo') {
-        const logoP = jsSmoothstep(currentScrollProgress, 0.5, 1.0);
-        const targetY = -mouseY * 1.5 - logoP * 2;
-        const targetZ = 18 + logoP * 3;
-        camera.position.y += (targetY - camera.position.y) * 0.015;
-        camera.position.z += (targetZ - camera.position.z) * 0.015;
-      } else {
-        camera.position.y += (-mouseY * 1.5 - camera.position.y) * 0.015;
-      }
+      const logoP = jsSmoothstep(currentScrollProgress, 0.5, 1.0);
+      const dnaTargetY = -mouseY * 1.5;
+      const logoTargetY = dnaTargetY - logoP * 2;
+      const targetY = THREE.MathUtils.lerp(dnaTargetY, logoTargetY, logoBlend);
+      const targetZ = 18 + logoBlend * logoP * 3;
+      camera.position.y += (targetY - camera.position.y) * 0.015;
+      camera.position.z += (targetZ - camera.position.z) * 0.015;
       camera.lookAt(0, 0, 0);
 
       renderer.render(scene, camera);

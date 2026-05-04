@@ -147,7 +147,7 @@ const en = {
       login: "Sign In",
     },
     footer: {
-      copyright: "© 2026 Codon. Designed for life in extremes.",
+      copyright: "© 2026 Codon. Bio-design for extreme environments.",
       github: "GitHub",
       docs: "Docs",
       contact: "Contact",

@@ -81,8 +81,7 @@ export default function ProjectsView() {
   };
 
   const handleOpen = (id: number) => {
-    localStorage.setItem("active_project_id", String(id));
-    navigate("/designer");
+    navigate(`/projects/${id}/designer`);
   };
 
   return (
@@ -200,4 +199,3 @@ export default function ProjectsView() {
     </motion.div>
   );
 }
-

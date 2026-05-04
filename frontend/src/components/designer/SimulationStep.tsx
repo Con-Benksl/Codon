@@ -110,13 +110,13 @@ export default function SimulationStep() {
   const [playing, setPlaying] = useState(true);
   const [index, setIndex] = useState(0);
 
-  // 挂载即启动
+  // 挂载时仅在没有历史结果时启动，避免恢复已完成设计时重跑模拟。
   useEffect(() => {
-    if (!startedRef.current) {
+    if (!startedRef.current && data.length === 0) {
       startedRef.current = true;
       void handleSimulate();
     }
-  }, [handleSimulate]);
+  }, [data.length, handleSimulate]);
 
   // 自动跟随最新帧
   useEffect(() => {

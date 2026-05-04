@@ -1,6 +1,7 @@
 """Designer 6-step 流程的 Pydantic schemas（骨架 / mock 阶段）。"""
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field
@@ -137,19 +138,67 @@ class SimulationResult(BaseModel):
 
 class DesignerSessionState(BaseModel):
     id: int
+    project_id: Optional[int] = None
+    design_id: Optional[int] = None
+    project_name: Optional[str] = None
+    design_name: Optional[str] = None
     current_step: int
     environment: Optional[EnvironmentVector] = None
     mission_id: Optional[str] = None
     chassis_id: Optional[str] = None
     protein_id: Optional[str] = None
+    chassis_candidates: List[ChassisCandidate] = Field(default_factory=list)
+    protein_candidates: List[ProteinCandidate] = Field(default_factory=list)
+    edit_plan_candidates: List[EditPlanCandidate] = Field(default_factory=list)
     edit_plan: Optional[EditPlanCandidate] = None
     simulation_result: Optional[SimulationResult] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+
+# ---------- 方案报告 ----------
+
+class DesignReportSection(BaseModel):
+    title: str
+    source_step: int
+    content: str
+    updated_at: Optional[datetime] = None
+
+
+class DesignReportResponse(BaseModel):
+    id: int
+    project_id: int
+    design_id: int
+    title: str
+    status: str
+    summary: Optional[str] = None
+    sections: Dict[str, DesignReportSection] = Field(default_factory=dict)
+    source_session_id: int
+    version: int
+    markdown: str
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+
+class ReportExportResponse(BaseModel):
+    id: int
+    report_id: int
+    project_id: int
+    design_id: int
+    format: str
+    status: str
+    filename: str
+    file_path_or_url: Optional[str] = None
+    content_snapshot: str
+    report_version: int
+    created_at: Optional[datetime] = None
 
 
 # ---------- 请求体 ----------
 
 class CreateSessionRequest(BaseModel):
     project_id: Optional[int] = None
+    design_id: Optional[int] = None
 
 
 class CreateSessionResponse(BaseModel):

@@ -1,9 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
-import { useMemo, Suspense, lazy } from "react";
+import { Fragment, Suspense, lazy } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import ErrorBoundary from "./ErrorBoundary";
 import { DnaParticles } from "./components";
-import { getSceneForPath } from "./lib/dna-scenes";
+import { globalDnaScene } from "./lib/dna-scenes";
 import { useAuth } from "./auth/context";
 import HomeLayout from "./views/HomeLayout";
 import AppLayout from "./views/AppLayout";
@@ -67,57 +67,68 @@ function PublicOnlyRoute() {
 
 function AnimatedRoutes() {
   const location = useLocation();
-  const dnaParams = useMemo(() => getSceneForPath(location.pathname), [location.pathname]);
 
   return (
     <>
-      <DnaParticles params={dnaParams} particleCount={5000} />
+      <DnaParticles params={globalDnaScene} particleCount={5000} />
 
       <AnimatePresence mode="wait">
-        <Routes location={location} {...{ key: location.pathname } as any}>
-          <Route element={<PublicOnlyRoute />}>
-            <Route path="/login" element={
-              <Suspense fallback={<RouteLoadingFallback />}>
-                <LoginView />
-              </Suspense>
-            } />
-          </Route>
-
-          <Route element={<HomeLayout />}>
-            <Route index element={
-              <Suspense fallback={<RouteLoadingFallback />}>
-                <HomeView />
-              </Suspense>
-            } />
-          </Route>
-
-          <Route element={<RequireAuth />}>
-            <Route element={<AppLayout />}>
-              <Route path="projects" element={
+        <Fragment key={location.pathname}>
+          <Routes location={location}>
+            <Route element={<PublicOnlyRoute />}>
+              <Route path="/login" element={
                 <Suspense fallback={<RouteLoadingFallback />}>
-                  <ProjectsView />
-                </Suspense>
-              } />
-              <Route path="designer" element={
-                <Suspense fallback={<RouteLoadingFallback />}>
-                  <DesignerView />
-                </Suspense>
-              } />
-              <Route path="chat" element={
-                <Suspense fallback={<RouteLoadingFallback />}>
-                  <ChatView />
-                </Suspense>
-              } />
-              <Route path="analysis" element={
-                <Suspense fallback={<RouteLoadingFallback />}>
-                  <AnalysisView />
+                  <LoginView />
                 </Suspense>
               } />
             </Route>
-          </Route>
 
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+            <Route element={<HomeLayout />}>
+              <Route index element={
+                <Suspense fallback={<RouteLoadingFallback />}>
+                  <HomeView />
+                </Suspense>
+              } />
+            </Route>
+
+            <Route element={<RequireAuth />}>
+              <Route element={<AppLayout />}>
+                <Route path="projects" element={
+                  <Suspense fallback={<RouteLoadingFallback />}>
+                    <ProjectsView />
+                  </Suspense>
+                } />
+                <Route path="projects/:projectId/designer" element={
+                  <Suspense fallback={<RouteLoadingFallback />}>
+                    <DesignerView />
+                  </Suspense>
+                } />
+                <Route path="projects/:projectId/designs/:designId/designer" element={
+                  <Suspense fallback={<RouteLoadingFallback />}>
+                    <DesignerView />
+                  </Suspense>
+                } />
+                <Route path="designer" element={
+                  <Suspense fallback={<RouteLoadingFallback />}>
+                    <DesignerView />
+                  </Suspense>
+                } />
+                <Route path="chat" element={
+                  <Suspense fallback={<RouteLoadingFallback />}>
+                    <ChatView />
+                  </Suspense>
+                } />
+                <Route path="analysis" element={
+                  <Suspense fallback={<RouteLoadingFallback />}>
+                    <AnalysisView />
+                  </Suspense>
+                } />
+              </Route>
+            </Route>
+
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Fragment>
       </AnimatePresence>
     </>
   );
@@ -132,4 +143,3 @@ export default function App() {
     </ErrorBoundary>
   );
 }
-

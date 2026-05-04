@@ -4,8 +4,8 @@ import { useLocale } from "../i18n/context";
 
 const NAV_ITEMS = [
   { path: "/", key: "nav.home" },
-  { path: "/projects", key: "nav.projects" },
   { path: "/designer", key: "nav.designer" },
+  { path: "/projects", key: "nav.projects" },
   { path: "/analysis", key: "nav.analysis" },
 ];
 

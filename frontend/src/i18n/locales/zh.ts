@@ -147,7 +147,7 @@ const zh = {
       login: "登录",
     },
     footer: {
-      copyright: "© 2026 Codon. Designed for life in extremes.",
+      copyright: "© 2026 Codon. 面向极端环境的生物设计平台。",
       github: "GitHub",
       docs: "文档",
       contact: "联系我们",

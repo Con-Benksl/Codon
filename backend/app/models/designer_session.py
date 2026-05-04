@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, JSON
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from app.database import Base
@@ -12,6 +13,7 @@ class DesignerSession(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=True, index=True)
+    design_id = Column(Integer, ForeignKey("designs.id"), nullable=True, index=True)
 
     current_step = Column(Integer, nullable=False, default=1)
 
@@ -19,8 +21,15 @@ class DesignerSession(Base):
     mission_id = Column(String, nullable=True)
     chassis_id = Column(String, nullable=True)
     protein_id = Column(String, nullable=True)
+    chassis_candidates_json = Column(JSON, nullable=True)
+    protein_candidates_json = Column(JSON, nullable=True)
+    edit_plan_candidates_json = Column(JSON, nullable=True)
     edit_plan_json = Column(JSON, nullable=True)
     simulation_result_json = Column(JSON, nullable=True)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    project = relationship("Project")
+    design = relationship("Design", back_populates="designer_sessions")
+    design_reports = relationship("DesignReport", back_populates="source_session")

@@ -5,6 +5,9 @@ import { viewTransition, fadeSlideUp, stagger } from "../lib/motion";
 import { AgentShowcase } from "../components";
 import { Cpu, GitBranch, ShieldCheck, Target, Users, Zap, Globe, Bug, Dna, Activity, Atom, FileText, ArrowRight, Check } from "lucide-react";
 
+const GITHUB_REPO_URL = "https://github.com/Con-Benksl/Codon";
+const GITHUB_README_URL = `${GITHUB_REPO_URL}#readme`;
+
 export default function HomeView() {
   const { t, locale } = useLocale();
   const isZh = locale === "zh";
@@ -504,8 +507,8 @@ export default function HomeView() {
           </div>
           <p className="text-sm text-text-dim">{t("home.footer.copyright")}</p>
           <div className="flex gap-6">
-            <a href="#" className="text-sm text-text-dim hover:text-text-muted transition-colors">{t("home.footer.github")}</a>
-            <a href="#" className="text-sm text-text-dim hover:text-text-muted transition-colors">{t("home.footer.docs")}</a>
+            <a href={GITHUB_REPO_URL} target="_blank" rel="noreferrer" className="text-sm text-text-dim hover:text-text-muted transition-colors">{t("home.footer.github")}</a>
+            <a href={GITHUB_README_URL} target="_blank" rel="noreferrer" className="text-sm text-text-dim hover:text-text-muted transition-colors">{t("home.footer.docs")}</a>
             <a href="#" className="text-sm text-text-dim hover:text-text-muted transition-colors">{t("home.footer.contact")}</a>
           </div>
         </div>

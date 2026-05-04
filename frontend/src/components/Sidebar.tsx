@@ -14,8 +14,8 @@ import { useAuth } from "../auth/context";
 
 const NAV_ITEMS = [
   { path: "/", icon: Home, key: "nav.home" },
-  { path: "/projects", icon: FolderOpen, key: "nav.projects" },
   { path: "/designer", icon: Dna, key: "nav.designer" },
+  { path: "/projects", icon: FolderOpen, key: "nav.projects" },
   { path: "/analysis", icon: BarChart3, key: "nav.analysis" },
 ];
 
@@ -75,7 +75,12 @@ export default function Sidebar() {
           const isActive =
             item.path === "/"
               ? location.pathname === "/"
-              : location.pathname.startsWith(item.path);
+              : item.path === "/designer"
+                ? location.pathname.includes("/designer")
+                : item.path === "/projects"
+                  ? location.pathname.startsWith("/projects") &&
+                    !location.pathname.includes("/designer")
+                  : location.pathname.startsWith(item.path);
           return (
             <Link
               key={item.path}

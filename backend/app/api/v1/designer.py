@@ -9,10 +9,12 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
+from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.models.design import Design
 from app.models.designer_session import DesignerSession
 from app.models.project import Project
 from app.models.user import User
@@ -23,12 +25,14 @@ from app.schemas.designer import (
     CopilotResponse,
     CreateSessionRequest,
     CreateSessionResponse,
+    DesignReportResponse,
     DesignerSessionState,
     EditPlanCandidate,
     EnvironmentPreset,
     EnvironmentVector,
     MissionPreset,
     ProteinCandidate,
+    ReportExportResponse,
     RollbackRequest,
     SimulationResult,
     SimulationStep,
@@ -40,6 +44,7 @@ from app.schemas.designer import (
 )
 from app.services import (
     biotype_service,
+    design_report_service,
     designer_copilot_service,
     edit_plan_service,
     protein_service,
@@ -95,6 +100,119 @@ def _get_session(db: Session, sid: int, user: User) -> DesignerSession:
     return session
 
 
+def _get_owned_project(db: Session, project_id: int, user: User) -> Project:
+    project = (
+        db.query(Project)
+        .filter(Project.id == project_id, Project.owner_id == user.id)
+        .first()
+    )
+    if project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return project
+
+
+def _get_owned_design(db: Session, project_id: int, design_id: int, user: User) -> Design:
+    project = _get_owned_project(db, project_id, user)
+    design = (
+        db.query(Design)
+        .filter(Design.id == design_id, Design.project_id == project.id)
+        .first()
+    )
+    if design is None:
+        raise HTTPException(status_code=404, detail="Design not found")
+    return design
+
+
+def _latest_design_for_project(db: Session, project_id: int) -> Optional[Design]:
+    latest_at = func.coalesce(Design.updated_at, Design.created_at)
+    return (
+        db.query(Design)
+        .filter(Design.project_id == project_id)
+        .order_by(latest_at.desc(), Design.id.desc())
+        .first()
+    )
+
+
+def _latest_session_for_design(db: Session, design_id: int, user: User) -> Optional[DesignerSession]:
+    return (
+        db.query(DesignerSession)
+        .filter(DesignerSession.design_id == design_id, DesignerSession.user_id == user.id)
+        .order_by(
+            DesignerSession.updated_at.desc(),
+            DesignerSession.created_at.desc(),
+            DesignerSession.id.desc(),
+        )
+        .first()
+    )
+
+
+def _create_default_design(db: Session, project: Project) -> Design:
+    name = f"{project.name} Design" if project.name else "Default Design"
+    design = Design(project_id=project.id, name=name)
+    db.add(design)
+    db.flush()
+    return design
+
+
+def _create_session_for_design(
+    db: Session,
+    design: Design,
+    user: User,
+) -> DesignerSession:
+    session = DesignerSession(
+        user_id=user.id,
+        project_id=design.project_id,
+        design_id=design.id,
+        current_step=1,
+    )
+    db.add(session)
+    db.flush()
+    return session
+
+
+def _get_or_create_session_for_design(
+    db: Session,
+    design: Design,
+    user: User,
+) -> DesignerSession:
+    session = _latest_session_for_design(db, design.id, user)
+    if session is not None:
+        return session
+    return _create_session_for_design(db, design, user)
+
+
+def _get_or_create_default_design_session(
+    db: Session,
+    project: Project,
+    user: User,
+) -> DesignerSession:
+    design = _latest_design_for_project(db, project.id)
+    if design is None:
+        design = _create_default_design(db, project)
+    return _get_or_create_session_for_design(db, design, user)
+
+
+def _parse_candidate_list(raw: Any, schema: Any) -> List[Any]:
+    if raw is None:
+        return []
+    if isinstance(raw, str):
+        try:
+            raw = json.loads(raw)
+        except Exception:
+            return []
+    if not isinstance(raw, list):
+        return []
+    parsed: List[Any] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            return []
+        try:
+            parsed.append(schema(**item))
+        except Exception:
+            return []
+    return parsed
+
+
 def _session_to_state(session: DesignerSession) -> DesignerSessionState:
     env = None
     if session.environment_json:
@@ -116,13 +234,64 @@ def _session_to_state(session: DesignerSession) -> DesignerSessionState:
             sim = None
     return DesignerSessionState(
         id=session.id,
+        project_id=session.project_id,
+        design_id=session.design_id,
+        project_name=getattr(session.project, "name", None),
+        design_name=getattr(session.design, "name", None),
         current_step=session.current_step,
         environment=env,
         mission_id=session.mission_id,
         chassis_id=session.chassis_id,
         protein_id=session.protein_id,
+        chassis_candidates=_parse_candidate_list(
+            session.chassis_candidates_json,
+            ChassisCandidate,
+        ),
+        protein_candidates=_parse_candidate_list(
+            session.protein_candidates_json,
+            ProteinCandidate,
+        ),
+        edit_plan_candidates=_parse_candidate_list(
+            session.edit_plan_candidates_json,
+            EditPlanCandidate,
+        ),
         edit_plan=plan,
         simulation_result=sim,
+        created_at=session.created_at,
+        updated_at=session.updated_at,
+    )
+
+
+def _report_to_response(report: Any) -> DesignReportResponse:
+    return DesignReportResponse(
+        id=report.id,
+        project_id=report.project_id,
+        design_id=report.design_id,
+        title=report.title,
+        status=report.status,
+        summary=report.summary,
+        sections=report.sections_json or {},
+        source_session_id=report.source_session_id,
+        version=report.version,
+        markdown=design_report_service.render_markdown(report),
+        created_at=report.created_at,
+        updated_at=report.updated_at,
+    )
+
+
+def _report_export_to_response(export: Any) -> ReportExportResponse:
+    return ReportExportResponse(
+        id=export.id,
+        report_id=export.report_id,
+        project_id=export.project_id,
+        design_id=export.design_id,
+        format=export.format,
+        status=export.status,
+        filename=export.filename,
+        file_path_or_url=export.file_path_or_url,
+        content_snapshot=export.content_snapshot,
+        report_version=export.report_version,
+        created_at=export.created_at,
     )
 
 
@@ -137,19 +306,40 @@ def create_session(
     current_user: User = Depends(get_current_active_user),
 ) -> CreateSessionResponse:
     project_id = payload.project_id
-    if project_id is not None:
-        project_exists = (
-            db.query(Project.id)
-            .filter(Project.id == project_id, Project.owner_id == current_user.id)
-            .first()
-        )
-        if project_exists is None:
-            logger.info(
-                "Ignoring stale designer project_id=%s for user_id=%s",
-                project_id,
-                current_user.id,
+    if payload.design_id is not None:
+        design_project_id = project_id
+        if design_project_id is None:
+            design = (
+                db.query(Design)
+                .join(Project, Design.project_id == Project.id)
+                .filter(Design.id == payload.design_id, Project.owner_id == current_user.id)
+                .first()
             )
-            project_id = None
+            if design is None:
+                raise HTTPException(status_code=404, detail="Design not found")
+        else:
+            design = _get_owned_design(db, design_project_id, payload.design_id, current_user)
+        try:
+            session = _get_or_create_session_for_design(db, design, current_user)
+            db.commit()
+            db.refresh(session)
+        except SQLAlchemyError as exc:
+            db.rollback()
+            logger.exception("create designer session failed: %s", exc)
+            raise HTTPException(status_code=500, detail="Designer session create failed") from exc
+        return CreateSessionResponse(sid=session.id)
+
+    if project_id is not None:
+        project = _get_owned_project(db, project_id, current_user)
+        try:
+            session = _get_or_create_default_design_session(db, project, current_user)
+            db.commit()
+            db.refresh(session)
+        except SQLAlchemyError as exc:
+            db.rollback()
+            logger.exception("create designer session failed: %s", exc)
+            raise HTTPException(status_code=500, detail="Designer session create failed") from exc
+        return CreateSessionResponse(sid=session.id)
 
     session = DesignerSession(
         user_id=current_user.id,
@@ -165,6 +355,43 @@ def create_session(
         logger.exception("create designer session failed: %s", exc)
         raise HTTPException(status_code=500, detail="Designer session create failed") from exc
     return CreateSessionResponse(sid=session.id)
+
+
+@router.get("/projects/{project_id}/designs/default/session", response_model=DesignerSessionState)
+def get_default_design_session(
+    project_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> DesignerSessionState:
+    project = _get_owned_project(db, project_id, current_user)
+    try:
+        session = _get_or_create_default_design_session(db, project, current_user)
+        db.commit()
+        db.refresh(session)
+    except SQLAlchemyError as exc:
+        db.rollback()
+        logger.exception("create designer session failed: %s", exc)
+        raise HTTPException(status_code=500, detail="Designer session create failed") from exc
+    return _session_to_state(session)
+
+
+@router.get("/projects/{project_id}/designs/{design_id}/session", response_model=DesignerSessionState)
+def get_design_session(
+    project_id: int,
+    design_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> DesignerSessionState:
+    design = _get_owned_design(db, project_id, design_id, current_user)
+    try:
+        session = _get_or_create_session_for_design(db, design, current_user)
+        db.commit()
+        db.refresh(session)
+    except SQLAlchemyError as exc:
+        db.rollback()
+        logger.exception("create designer session failed: %s", exc)
+        raise HTTPException(status_code=500, detail="Designer session create failed") from exc
+    return _session_to_state(session)
 
 
 @router.get("/presets/environments", response_model=List[EnvironmentPreset])
@@ -203,6 +430,7 @@ def submit_environment(
     session = _get_session(db, sid, current_user)
     session.environment_json = payload.environment.model_dump()
     session.current_step = max(session.current_step, 2)
+    design_report_service.update_report_from_session(db, session, current_user)
     db.commit()
     return AckResponse(ok=True, current_step=session.current_step)
 
@@ -217,7 +445,6 @@ def submit_mission(
     session = _get_session(db, sid, current_user)
     session.mission_id = payload.mission_id
     session.current_step = max(session.current_step, 3)
-    db.commit()
 
     env_dict: Dict[str, Any] = session.environment_json or {}
     try:
@@ -225,7 +452,17 @@ def submit_mission(
     except Exception as exc:  # noqa: BLE001
         logger.exception("recommend_chassis failed: %s", exc)
         candidates = []
-    return [ChassisCandidate(**c) for c in candidates]
+    parsed = [ChassisCandidate(**c) for c in candidates]
+    session.chassis_candidates_json = [c.model_dump() for c in parsed]
+    session.chassis_id = None
+    session.protein_id = None
+    session.protein_candidates_json = None
+    session.edit_plan_candidates_json = None
+    session.edit_plan_json = None
+    session.simulation_result_json = None
+    design_report_service.update_report_from_session(db, session, current_user)
+    db.commit()
+    return parsed
 
 
 @router.post("/sessions/{sid}/chassis", response_model=List[ProteinCandidate])
@@ -238,7 +475,6 @@ async def submit_chassis(
     session = _get_session(db, sid, current_user)
     session.chassis_id = payload.chassis_id
     session.current_step = max(session.current_step, 4)
-    db.commit()
 
     mission_id = session.mission_id or ""
     try:
@@ -248,7 +484,15 @@ async def submit_chassis(
     except Exception as exc:  # noqa: BLE001
         logger.exception("recommend_proteins failed: %s", exc)
         candidates = []
-    return [ProteinCandidate(**c) for c in candidates]
+    parsed = [ProteinCandidate(**c) for c in candidates]
+    session.protein_candidates_json = [c.model_dump() for c in parsed]
+    session.protein_id = None
+    session.edit_plan_candidates_json = None
+    session.edit_plan_json = None
+    session.simulation_result_json = None
+    design_report_service.update_report_from_session(db, session, current_user)
+    db.commit()
+    return parsed
 
 
 @router.post("/sessions/{sid}/protein", response_model=List[EditPlanCandidate])
@@ -261,7 +505,6 @@ async def submit_protein(
     session = _get_session(db, sid, current_user)
     session.protein_id = payload.protein_id
     session.current_step = max(session.current_step, 5)
-    db.commit()
 
     chassis = _CHASSIS_BY_ID.get(session.chassis_id or "", {})
     protein = _PROTEIN_BY_ID.get(payload.protein_id, {})
@@ -270,7 +513,13 @@ async def submit_protein(
     except Exception as exc:  # noqa: BLE001
         logger.exception("generate_edit_plans failed: %s", exc)
         plans = []
-    return [EditPlanCandidate(**p) for p in plans]
+    parsed = [EditPlanCandidate(**p) for p in plans]
+    session.edit_plan_candidates_json = [p.model_dump() for p in parsed]
+    session.edit_plan_json = None
+    session.simulation_result_json = None
+    design_report_service.update_report_from_session(db, session, current_user)
+    db.commit()
+    return parsed
 
 
 @router.post("/sessions/{sid}/edit-plan", response_model=AckResponse)
@@ -305,6 +554,7 @@ async def submit_edit_plan(
             session.edit_plan_json = chosen
 
     session.current_step = max(session.current_step, 6)
+    design_report_service.update_report_from_session(db, session, current_user)
     db.commit()
     return AckResponse(ok=True, current_step=session.current_step)
 
@@ -355,6 +605,7 @@ async def simulate_session(
         if db_session is not None:
             db_session.simulation_result_json = result.model_dump()
             db_session.current_step = 6
+            design_report_service.update_report_from_session(db, db_session, current_user)
             db.commit()
 
         done_payload = json.dumps({"status": "completed", "sid": sid_fixed}, ensure_ascii=False)
@@ -375,6 +626,35 @@ def get_session_state(
 ) -> DesignerSessionState:
     session = _get_session(db, sid, current_user)
     return _session_to_state(session)
+
+
+@router.get("/sessions/{sid}/report", response_model=DesignReportResponse)
+def get_session_report(
+    sid: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> DesignReportResponse:
+    session = _get_session(db, sid, current_user)
+    report = design_report_service.get_report_for_session(db, session)
+    if report is None:
+        raise HTTPException(status_code=404, detail="Report not found")
+    return _report_to_response(report)
+
+
+@router.post("/sessions/{sid}/report/exports/markdown", response_model=ReportExportResponse)
+def export_session_report_markdown(
+    sid: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> ReportExportResponse:
+    session = _get_session(db, sid, current_user)
+    report = design_report_service.get_report_for_session(db, session)
+    if report is None:
+        raise HTTPException(status_code=404, detail="Report not found")
+    export = design_report_service.create_markdown_export(db, report)
+    db.commit()
+    db.refresh(export)
+    return _report_export_to_response(export)
 
 
 @router.post("/sessions/{sid}/copilot", response_model=CopilotResponse)
@@ -419,15 +699,20 @@ def rollback_session(
         session.environment_json = None
     if step <= 2:
         session.mission_id = None
+        session.chassis_candidates_json = None
     if step <= 3:
         session.chassis_id = None
+        session.protein_candidates_json = None
     if step <= 4:
         session.protein_id = None
+        session.edit_plan_candidates_json = None
     if step <= 5:
         session.edit_plan_json = None
     if step <= 6:
         session.simulation_result_json = None
     session.current_step = step
+    if session.project_id is not None and session.design_id is not None:
+        design_report_service.update_report_from_session(db, session, current_user)
     db.commit()
     db.refresh(session)
     return _session_to_state(session)

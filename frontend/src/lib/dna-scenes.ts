@@ -6,12 +6,25 @@ import type { DnaSceneParams } from "../components/DnaParticles";
 // 'logo'   — five-act narrative: dissolve → cinch → wrap → logo sphere
 
 /**
- * DNA particle scene presets per route.
- * DnaParticles interpolates smoothly between these on navigation.
+ * DNA particle scene presets.
+ *
+ * The global scene is the default runtime background. It intentionally does not
+ * change during route transitions, so navigation feels like foreground pages
+ * moving over a stable, continuously rotating DNA stage.
  *
  * - home:     full opacity, right offset, slow rotation — hero backdrop
  * - app:      dimmed, centered, faster spin — subtle workspace ambiance
  */
+export const globalDnaScene: DnaSceneParams = {
+  opacity: 0.62,
+  posX: 8,
+  rotZ: 0.48,
+  speed: 0.045,
+  scrollMorphEnabled: true,
+  maxScatterAmplitude: 3.0,
+  morphTarget: 'logo',
+};
+
 export const dnaScenes: Record<string, DnaSceneParams> = {
   home: {
     opacity: 0.85,

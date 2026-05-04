@@ -92,7 +92,7 @@ export default function CopilotPanel({
 
   return (
     <aside
-      className={`flex h-full min-h-[560px] flex-col overflow-hidden rounded-2xl border border-white/15 bg-surface/85 shadow-2xl shadow-black/20 backdrop-blur-md ${className}`}
+      className={`flex min-h-[560px] flex-col overflow-hidden rounded-2xl border border-white/15 bg-surface/85 shadow-2xl shadow-black/20 backdrop-blur-md ${className}`}
     >
       <header className="border-b border-white/10 px-5 py-4">
         <div className="flex items-center gap-3">

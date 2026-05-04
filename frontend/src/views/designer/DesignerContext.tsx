@@ -12,6 +12,9 @@ export type DesignerStep = 1 | 2 | 3 | 4 | 5 | 6;
 export interface DesignerState {
   sessionId: number | null;
   activeProjectId: number | null;
+  activeDesignId: number | null;
+  activeProjectName: string | null;
+  activeDesignName: string | null;
   isSessionLoading: boolean;
   sessionError: string | null;
   currentStep: DesignerStep;

@@ -30,5 +30,11 @@ class Design(Base):
 
     # 关系
     project = relationship("Project", back_populates="designs")
+    designer_sessions = relationship(
+        "DesignerSession",
+        back_populates="design",
+        cascade="all, delete-orphan",
+    )
     simulations = relationship("Simulation", back_populates="design")
     exports = relationship("Export", back_populates="design")
+    design_reports = relationship("DesignReport", back_populates="design", cascade="all, delete-orphan")

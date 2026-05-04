@@ -1,10 +1,15 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
-import { ChevronDown, ChevronUp, Dna } from 'lucide-react';
+import { ChevronDown, ChevronUp, Dna, FileText, FolderOpen, Play, PlusCircle, Save } from 'lucide-react';
 import { useLocale } from '../i18n/context';
 import { viewTransition } from '../lib/motion';
 import {
   createSession,
+  exportSessionDesignReportMarkdown,
+  getDefaultDesignSession,
+  getDesignSession,
+  getSessionDesignReport,
   requestDesignerCopilot,
   rollback as apiRollback,
   submitChassis,
@@ -18,6 +23,8 @@ import type {
   ChassisCandidate,
   CopilotAction,
   DesignerCopilotWarning,
+  DesignReport,
+  DesignerSessionState,
   EditPlanCandidate,
   EnvironmentVector,
   ProteinCandidate,
@@ -39,10 +46,12 @@ import CopilotPanel from '../components/designer/CopilotPanel';
 import type { CopilotMessage } from '../components/designer/CopilotPanel';
 import DesignStateRail from '../components/designer/DesignStateRail';
 import type { DesignStateRailPanelMode } from '../components/designer/DesignStateRail';
+import DesignReportPreview from '../components/designer/DesignReportPreview';
 import DesignerToastViewport, {
   type DesignerToast,
   type DesignerToastType,
 } from '../components/designer/DesignerToastViewport';
+import { getProject, getProjects, updateProject, type Project } from '../api/projects';
 
 // ============================================================================
 // Reducer
@@ -52,6 +61,14 @@ type Action =
   | { type: 'SESSION_CREATE_STARTED'; projectId: number | null }
   | { type: 'SESSION_CREATED'; sessionId: number }
   | { type: 'SESSION_CREATE_FAILED'; error: string }
+  | { type: 'SESSION_LOAD_STARTED'; projectId: number | null; designId: number | null }
+  | {
+      type: 'SESSION_HYDRATED';
+      session: DesignerSessionState;
+      projectId: number | null;
+      designId: number | null;
+    }
+  | { type: 'SESSION_LOAD_FAILED'; error: string }
   | { type: 'SET_ENVIRONMENT'; environment: EnvironmentVector }
   | { type: 'SET_MISSION'; missionId: string }
   | { type: 'SET_CHASSIS_CANDIDATES'; candidates: ChassisCandidate[] }
@@ -71,6 +88,9 @@ type Action =
 const initialState: DesignerState = {
   sessionId: null,
   activeProjectId: null,
+  activeDesignId: null,
+  activeProjectName: null,
+  activeDesignName: null,
   isSessionLoading: false,
   sessionError: null,
   currentStep: 1,
@@ -93,9 +113,23 @@ function reducer(state: DesignerState, action: Action): DesignerState {
     case 'SESSION_CREATE_STARTED':
       return {
         ...state,
+        sessionId: null,
         activeProjectId: action.projectId,
+        activeDesignId: null,
+        activeProjectName: null,
+        activeDesignName: null,
         isSessionLoading: true,
         sessionError: null,
+        currentStep: 1,
+        environment: null,
+        selectedMissionId: null,
+        selectedChassisId: null,
+        selectedProteinId: null,
+        selectedEditPlanId: null,
+        chassisCandidates: [],
+        proteinCandidates: [],
+        editPlanCandidates: [],
+        simulationSteps: [],
         error: null,
       };
     case 'SESSION_CREATED':
@@ -109,6 +143,70 @@ function reducer(state: DesignerState, action: Action): DesignerState {
     case 'SESSION_CREATE_FAILED':
       return {
         ...state,
+        sessionId: null,
+        isSessionLoading: false,
+        sessionError: action.error,
+        error: action.error,
+      };
+    case 'SESSION_LOAD_STARTED':
+      return {
+        ...state,
+        sessionId: null,
+        activeProjectId: action.projectId,
+        activeDesignId: action.designId,
+        activeProjectName: null,
+        activeDesignName: null,
+        isSessionLoading: true,
+        sessionError: null,
+        currentStep: 1,
+        environment: null,
+        selectedMissionId: null,
+        selectedChassisId: null,
+        selectedProteinId: null,
+        selectedEditPlanId: null,
+        chassisCandidates: [],
+        proteinCandidates: [],
+        editPlanCandidates: [],
+        simulationSteps: [],
+        error: null,
+      };
+    case 'SESSION_HYDRATED': {
+      const session = action.session;
+      const simulationSteps = Array.isArray(session.simulation_result?.steps)
+        ? session.simulation_result.steps
+        : [];
+      return {
+        ...state,
+        sessionId: session.id,
+        activeProjectId: session.project_id ?? action.projectId,
+        activeDesignId: session.design_id ?? action.designId,
+        activeProjectName: session.project_name ?? null,
+        activeDesignName: session.design_name ?? null,
+        isSessionLoading: false,
+        sessionError: null,
+        currentStep: session.current_step,
+        environment: session.environment ?? null,
+        selectedMissionId: session.mission_id ?? null,
+        selectedChassisId: session.chassis_id ?? null,
+        selectedProteinId: session.protein_id ?? null,
+        selectedEditPlanId: session.edit_plan?.id ?? null,
+        chassisCandidates: Array.isArray(session.chassis_candidates)
+          ? session.chassis_candidates
+          : [],
+        proteinCandidates: Array.isArray(session.protein_candidates)
+          ? session.protein_candidates
+          : [],
+        editPlanCandidates: Array.isArray(session.edit_plan_candidates)
+          ? session.edit_plan_candidates
+          : [],
+        simulationSteps,
+        error: null,
+      };
+    }
+    case 'SESSION_LOAD_FAILED':
+      return {
+        ...state,
+        sessionId: null,
         isSessionLoading: false,
         sessionError: action.error,
         error: action.error,
@@ -178,27 +276,8 @@ function reducer(state: DesignerState, action: Action): DesignerState {
 // Helpers
 // ============================================================================
 
-const ACTIVE_PROJECT_ID_STORAGE_KEY = 'active_project_id';
 const MUTATION_TIMEOUT_MS = 120_000;
 const MUTATION_TIMEOUT_SECONDS = MUTATION_TIMEOUT_MS / 1000;
-
-function readActiveProjectId(): number | undefined {
-  let raw: string | null = null;
-  try {
-    raw = localStorage.getItem(ACTIVE_PROJECT_ID_STORAGE_KEY);
-  } catch {
-    return undefined;
-  }
-
-  if (!raw) return undefined;
-
-  const projectId = Number(raw);
-  if (!Number.isInteger(projectId) || projectId <= 0) {
-    return undefined;
-  }
-
-  return projectId;
-}
 
 const MARS_SURFACE_ENVIRONMENT: EnvironmentVector = {
   temperature: -63,
@@ -219,6 +298,33 @@ const STEP_TITLES: Record<DesignerStep, string> = {
   4: '蛋白选择',
   5: '编辑方案',
   6: '模拟验证',
+};
+
+const REPORT_SECTION_BY_STEP: Record<DesignerStep, string> = {
+  1: '环境条件',
+  2: '设计目标/任务定义',
+  3: '底盘选择与理由',
+  4: '功能蛋白/模块选择',
+  5: '基因编辑方案',
+  6: '仿真结果、风险和结论',
+};
+
+type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+
+const DEFAULT_DESIGN_LABEL = '默认方案';
+
+const SAVE_STATUS_LABEL: Record<SaveStatus, string> = {
+  idle: '准备编辑',
+  saving: '保存中',
+  saved: '已保存',
+  error: '保存失败',
+};
+
+const SAVE_STATUS_STYLE: Record<SaveStatus, string> = {
+  idle: 'border-white/15 bg-white/[0.04] text-text-muted',
+  saving: 'border-amber-300/30 bg-amber-400/10 text-amber-200',
+  saved: 'border-primary/30 bg-primary/10 text-primary',
+  error: 'border-red-400/30 bg-red-500/10 text-red-300',
 };
 
 const INITIAL_COPILOT_MESSAGES: CopilotMessage[] = [
@@ -463,12 +569,69 @@ function appendWarningsToContent(
   return `${content}\n\n${visible.join('\n')}`;
 }
 
+function getRequestFailureMessage(error: unknown, fallback: string): string {
+  const detail = (error as any)?.response?.data?.detail;
+  if (typeof detail === 'string' && detail.trim()) return detail;
+  if (error instanceof Error && error.message) return error.message;
+  return fallback;
+}
+
+function isReportNotFoundError(error: unknown): boolean {
+  const response = (error as any)?.response;
+  const detail = response?.data?.detail;
+  return response?.status === 404 && detail === 'Report not found';
+}
+
+function downloadTextFile(filename: string, content: string, mimeType: string) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+function formatDesignLabel(
+  designName: string | null | undefined,
+  projectName: string,
+  hasDesign: boolean,
+): string {
+  const normalized = designName?.trim();
+  if (!hasDesign) return '新方案草稿';
+  if (!normalized || normalized === 'Default Design') return DEFAULT_DESIGN_LABEL;
+  if (normalized === `${projectName} Design`) return DEFAULT_DESIGN_LABEL;
+  if (/^Design\s+\d+$/i.test(normalized)) return DEFAULT_DESIGN_LABEL;
+  if (/^未命名设计\s+\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}\s+Design$/i.test(normalized)) {
+    return DEFAULT_DESIGN_LABEL;
+  }
+  return normalized;
+}
+
 // ============================================================================
 // View
 // ============================================================================
 
 export default function DesignerView() {
   const { t } = useLocale();
+  const { projectId: projectIdParam, designId: designIdParam } = useParams<{
+    projectId?: string;
+    designId?: string;
+  }>();
+  const navigate = useNavigate();
+  const routeProjectId = useMemo(() => {
+    if (!projectIdParam) return null;
+    const parsed = Number(projectIdParam);
+    return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+  }, [projectIdParam]);
+  const routeDesignId = useMemo(() => {
+    if (!designIdParam) return null;
+    const parsed = Number(designIdParam);
+    return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+  }, [designIdParam]);
+  const isProjectRoute = Boolean(projectIdParam);
   const [state, dispatch] = useReducer(reducer, initialState);
   const [copilotMessages, setCopilotMessages] = useState<CopilotMessage[]>(
     INITIAL_COPILOT_MESSAGES,
@@ -480,6 +643,16 @@ export default function DesignerView() {
   const [isCopilotResponding, setIsCopilotResponding] = useState(false);
   const [backendSuggestedPrompts, setBackendSuggestedPrompts] = useState<string[]>([]);
   const [toasts, setToasts] = useState<DesignerToast[]>([]);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
+  const [report, setReport] = useState<DesignReport | null>(null);
+  const [reportLoading, setReportLoading] = useState(false);
+  const [reportLoadError, setReportLoadError] = useState<string | null>(null);
+  const [reportExporting, setReportExporting] = useState(false);
+  const [currentProject, setCurrentProject] = useState<Project | null>(null);
+  const [recentProjects, setRecentProjects] = useState<Project[]>([]);
+  const [isProjectRenaming, setIsProjectRenaming] = useState(false);
+  const [projectNameDraft, setProjectNameDraft] = useState('');
+  const [projectRenameSaving, setProjectRenameSaving] = useState(false);
   const mutationInFlightRef = useRef<number | null>(null);
   const mutationSequenceRef = useRef(0);
   const mutationTimeoutRef = useRef<number | null>(null);
@@ -517,7 +690,7 @@ export default function DesignerView() {
     dispatch({ type: 'STOP_THINKING' });
   }, [clearMutationTimeout]);
 
-  const reportError = useCallback(
+  const showDesignerError = useCallback(
     (message: string) => {
       dispatch({ type: 'SET_ERROR', error: message });
       showToast('error', message);
@@ -525,12 +698,153 @@ export default function DesignerView() {
     [showToast],
   );
 
+  const refreshReport = useCallback(
+    async (
+      sessionId: number,
+      options: { silent?: boolean; updatedSectionName?: string } = {},
+    ): Promise<boolean> => {
+      if (!options.silent) {
+        setReportLoading(true);
+      }
+      try {
+        const nextReport = await getSessionDesignReport(sessionId);
+        setReport(nextReport);
+        setReportLoadError(null);
+        if (options.updatedSectionName) {
+          showToast('success', `已更新方案报告：${options.updatedSectionName}`);
+        }
+        return true;
+      } catch (err: unknown) {
+        if (isReportNotFoundError(err)) {
+          setReport(null);
+          setReportLoadError(null);
+          return false;
+        }
+        const msg = getRequestFailureMessage(err, '方案报告刷新失败');
+        setReportLoadError(msg);
+        if (!options.silent) {
+          showToast('error', `方案报告刷新失败：${msg}`);
+        }
+        return false;
+      } finally {
+        if (!options.silent) {
+          setReportLoading(false);
+        }
+      }
+    },
+    [showToast],
+  );
+
+  const refreshReportAfterStep = useCallback(
+    async (sessionId: number, step: DesignerStep) => {
+      setReportLoading(true);
+      await refreshReport(sessionId, {
+        silent: true,
+        updatedSectionName: REPORT_SECTION_BY_STEP[step],
+      });
+      setReportLoading(false);
+    },
+    [refreshReport],
+  );
+
+  const handleReportRefresh = useCallback(() => {
+    if (!state.sessionId) {
+      setReportLoadError('Designer 会话尚未准备完成，暂不能读取方案报告。');
+      return;
+    }
+    void refreshReport(state.sessionId);
+  }, [refreshReport, state.sessionId]);
+
+  const handleMarkdownExport = useCallback(async () => {
+    if (!state.sessionId) {
+      setReportLoadError('Designer 会话尚未准备完成，暂不能导出方案报告。');
+      return;
+    }
+    setReportExporting(true);
+    try {
+      const exported = await exportSessionDesignReportMarkdown(state.sessionId);
+      const url = exported.download_url ?? exported.file_path_or_url;
+      if (url) {
+        window.open(url, '_blank', 'noopener,noreferrer');
+      } else if (exported.content_snapshot) {
+        downloadTextFile(
+          exported.filename ?? `design-report-${state.sessionId}.md`,
+          exported.content_snapshot,
+          'text/markdown;charset=utf-8',
+        );
+      }
+      showToast(
+        'success',
+        exported.filename
+          ? `Markdown 导出已创建：${exported.filename}`
+          : 'Markdown 导出已创建。',
+      );
+      await refreshReport(state.sessionId, { silent: true });
+    } catch (err: unknown) {
+      const msg = getRequestFailureMessage(err, 'Markdown 导出失败');
+      setReportLoadError(msg);
+      showToast('error', `Markdown 导出失败：${msg}`);
+    } finally {
+      setReportExporting(false);
+    }
+  }, [refreshReport, showToast, state.sessionId]);
+
+  const beginProjectRename = useCallback(() => {
+    if (!state.activeProjectId) return;
+    setProjectNameDraft(currentProject?.name ?? state.activeProjectName ?? '');
+    setIsProjectRenaming(true);
+  }, [currentProject?.name, state.activeProjectId, state.activeProjectName]);
+
+  const cancelProjectRename = useCallback(() => {
+    setProjectNameDraft(currentProject?.name ?? state.activeProjectName ?? '');
+    setIsProjectRenaming(false);
+  }, [currentProject?.name, state.activeProjectName]);
+
+  const commitProjectRename = useCallback(async () => {
+    if (projectRenameSaving) return;
+    if (!state.activeProjectId) {
+      setIsProjectRenaming(false);
+      return;
+    }
+    const nextName = projectNameDraft.trim();
+    const previousName = currentProject?.name ?? state.activeProjectName ?? '';
+    if (!nextName) {
+      showToast('error', '项目名不能为空。');
+      return;
+    }
+    if (nextName === previousName) {
+      setIsProjectRenaming(false);
+      return;
+    }
+    setProjectRenameSaving(true);
+    try {
+      const updated = await updateProject(state.activeProjectId, { name: nextName });
+      setCurrentProject(updated);
+      setProjectNameDraft(updated.name);
+      setIsProjectRenaming(false);
+      showToast('success', '项目名已更新。');
+    } catch (err: unknown) {
+      const msg = getRequestFailureMessage(err, '项目重命名失败');
+      showToast('error', `项目重命名失败：${msg}`);
+    } finally {
+      setProjectRenameSaving(false);
+    }
+  }, [
+    currentProject?.name,
+    projectNameDraft,
+    projectRenameSaving,
+    showToast,
+    state.activeProjectId,
+    state.activeProjectName,
+  ]);
+
   const beginMutation = useCallback(
     (message: string): number | null => {
       if (mutationInFlightRef.current !== null) {
-        reportError('已有请求正在处理中，请等待当前步骤完成。');
+        showDesignerError('已有请求正在处理中，请等待当前步骤完成。');
         return null;
       }
+      setSaveStatus('saving');
       const token = mutationSequenceRef.current + 1;
       mutationSequenceRef.current = token;
       mutationInFlightRef.current = token;
@@ -547,11 +861,12 @@ export default function DesignerView() {
       }, MUTATION_TIMEOUT_MS);
       return token;
     },
-    [clearMutationTimeout, reportError, showToast],
+    [clearMutationTimeout, showDesignerError, showToast],
   );
 
   const setRequestError = useCallback((err: unknown, fallback: string) => {
-    const msg = err instanceof Error ? err.message : fallback;
+    const msg = getRequestFailureMessage(err, fallback);
+    setSaveStatus('error');
     dispatch({ type: 'SET_ERROR', error: msg });
     showToast('error', msg);
   }, [showToast]);
@@ -560,43 +875,147 @@ export default function DesignerView() {
     (operation: string): number | null => {
       if (state.sessionId) return state.sessionId;
       const msg = state.isSessionLoading
-        ? `会话正在创建中，暂不能${operation}。`
-        : `Designer 会话未创建成功，暂不能${operation}。请先重试创建会话。`;
-      reportError(msg);
+        ? isProjectRoute
+          ? `项目设计正在恢复中，暂不能${operation}。`
+          : `Designer 新设计正在准备中，暂不能${operation}。`
+        : isProjectRoute
+          ? `项目设计未恢复成功，暂不能${operation}。请先重试恢复项目设计。`
+          : `Designer 新设计会话未创建成功，暂不能${operation}。请先重试创建新设计。`;
+      showDesignerError(msg);
       return null;
     },
-    [reportError, state.isSessionLoading, state.sessionId],
+    [isProjectRoute, showDesignerError, state.isSessionLoading, state.sessionId],
   );
 
-  const retryCreateSession = useCallback(async () => {
+  const retrySessionLoad = useCallback(async () => {
     const requestId = sessionRequestIdRef.current + 1;
     sessionRequestIdRef.current = requestId;
-    const projectId = readActiveProjectId();
+
+    if (isProjectRoute) {
+      if (!routeProjectId) {
+        dispatch({
+          type: 'SESSION_LOAD_FAILED',
+          error: '无效项目 ID，无法恢复项目设计。',
+        });
+        return;
+      }
+      if (designIdParam && !routeDesignId) {
+        dispatch({
+          type: 'SESSION_LOAD_FAILED',
+          error: '无效设计 ID，无法恢复项目设计。',
+        });
+        return;
+      }
+
+      dispatch({
+        type: 'SESSION_LOAD_STARTED',
+        projectId: routeProjectId,
+        designId: routeDesignId,
+      });
+      setSaveStatus('idle');
+      setReport(null);
+      setReportLoadError(null);
+
+      try {
+        const session = routeDesignId
+          ? await getDesignSession(routeProjectId, routeDesignId)
+          : await getDefaultDesignSession(routeProjectId);
+        if (sessionRequestIdRef.current !== requestId) return;
+        dispatch({
+          type: 'SESSION_HYDRATED',
+          session,
+          projectId: routeProjectId,
+          designId: routeDesignId,
+        });
+        setSaveStatus('saved');
+      } catch (err: unknown) {
+        if (sessionRequestIdRef.current !== requestId) return;
+        const reason = getRequestFailureMessage(err, '项目设计恢复失败');
+        const msg = `项目设计恢复失败：${reason}`;
+        setSaveStatus('error');
+        dispatch({ type: 'SESSION_LOAD_FAILED', error: msg });
+        showToast('error', msg);
+      }
+      return;
+    }
+
     dispatch({
       type: 'SESSION_CREATE_STARTED',
-      projectId: projectId ?? null,
+      projectId: null,
     });
+    setSaveStatus('idle');
+    setReport(null);
+    setReportLoadError(null);
 
     try {
-      const res = await createSession(projectId);
+      const res = await createSession(undefined);
       if (sessionRequestIdRef.current !== requestId) return;
       dispatch({ type: 'SESSION_CREATED', sessionId: res.id });
+      setSaveStatus('saved');
     } catch (err: unknown) {
       if (sessionRequestIdRef.current !== requestId) return;
-      const msg = err instanceof Error ? err.message : 'Failed to create session';
+      const reason = getRequestFailureMessage(err, 'Failed to create new design session');
+      const msg = `Designer 新设计会话创建失败：${reason}`;
+      setSaveStatus('error');
       dispatch({ type: 'SESSION_CREATE_FAILED', error: msg });
       showToast('error', msg);
     }
-  }, [showToast]);
+  }, [designIdParam, isProjectRoute, routeDesignId, routeProjectId, showToast]);
 
-  // Mount: create session
+  // Mount or route change: restore project design, or prepare a new /designer draft.
   useEffect(() => {
-    void retryCreateSession();
+    void retrySessionLoad();
     return () => {
       sessionRequestIdRef.current += 1;
       clearMutationTimeout();
     };
-  }, [clearMutationTimeout, retryCreateSession]);
+  }, [clearMutationTimeout, retrySessionLoad]);
+
+  useEffect(() => {
+    if (!state.sessionId) return;
+    void refreshReport(state.sessionId);
+  }, [refreshReport, state.sessionId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (routeProjectId) {
+      void getProject(routeProjectId)
+        .then((project) => {
+          if (!cancelled) setCurrentProject(project);
+        })
+        .catch(() => {
+          if (!cancelled) setCurrentProject(null);
+        });
+      return () => {
+        cancelled = true;
+      };
+    }
+    setCurrentProject(null);
+    void getProjects()
+      .then((projects) => {
+        if (cancelled) return;
+        const sorted = [...projects]
+          .sort((a, b) => {
+            const aTime = new Date(a.updated_at ?? a.created_at).getTime();
+            const bTime = new Date(b.updated_at ?? b.created_at).getTime();
+            return bTime - aTime;
+          })
+          .slice(0, 3);
+        setRecentProjects(sorted);
+      })
+      .catch(() => {
+        if (!cancelled) setRecentProjects([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [routeProjectId]);
+
+  useEffect(() => {
+    if (isProjectRenaming) return;
+    const name = currentProject?.name ?? state.activeProjectName ?? '';
+    setProjectNameDraft(name);
+  }, [currentProject?.name, isProjectRenaming, state.activeProjectName]);
 
   useEffect(() => {
     stepSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -612,6 +1031,8 @@ export default function DesignerView() {
         if (!isMutationCurrent(mutationToken)) return false;
         dispatch({ type: 'SET_ENVIRONMENT', environment: env });
         dispatch({ type: 'GOTO_STEP', step: 2 });
+        setSaveStatus('saved');
+        void refreshReportAfterStep(sessionId, 1);
         return true;
       } catch (err: unknown) {
         if (isMutationCurrent(mutationToken)) {
@@ -622,7 +1043,14 @@ export default function DesignerView() {
         finishMutation(mutationToken);
       }
     },
-    [beginMutation, finishMutation, isMutationCurrent, requireSession, setRequestError],
+    [
+      beginMutation,
+      finishMutation,
+      isMutationCurrent,
+      refreshReportAfterStep,
+      requireSession,
+      setRequestError,
+    ],
   );
 
   const handleMissionSelect = useCallback(
@@ -636,6 +1064,8 @@ export default function DesignerView() {
         dispatch({ type: 'SET_MISSION', missionId });
         dispatch({ type: 'SET_CHASSIS_CANDIDATES', candidates });
         dispatch({ type: 'GOTO_STEP', step: 3 });
+        setSaveStatus('saved');
+        void refreshReportAfterStep(sessionId, 2);
         return true;
       } catch (err: unknown) {
         if (isMutationCurrent(mutationToken)) {
@@ -646,7 +1076,14 @@ export default function DesignerView() {
         finishMutation(mutationToken);
       }
     },
-    [beginMutation, finishMutation, isMutationCurrent, requireSession, setRequestError],
+    [
+      beginMutation,
+      finishMutation,
+      isMutationCurrent,
+      refreshReportAfterStep,
+      requireSession,
+      setRequestError,
+    ],
   );
 
   const handleChassisSelect = useCallback(
@@ -660,6 +1097,8 @@ export default function DesignerView() {
         dispatch({ type: 'SET_CHASSIS', chassisId });
         dispatch({ type: 'SET_PROTEIN_CANDIDATES', candidates });
         dispatch({ type: 'GOTO_STEP', step: 4 });
+        setSaveStatus('saved');
+        void refreshReportAfterStep(sessionId, 3);
         return true;
       } catch (err: unknown) {
         if (isMutationCurrent(mutationToken)) {
@@ -670,7 +1109,14 @@ export default function DesignerView() {
         finishMutation(mutationToken);
       }
     },
-    [beginMutation, finishMutation, isMutationCurrent, requireSession, setRequestError],
+    [
+      beginMutation,
+      finishMutation,
+      isMutationCurrent,
+      refreshReportAfterStep,
+      requireSession,
+      setRequestError,
+    ],
   );
 
   const handleProteinSelect = useCallback(
@@ -684,6 +1130,8 @@ export default function DesignerView() {
         dispatch({ type: 'SET_PROTEIN', proteinId });
         dispatch({ type: 'SET_EDIT_PLAN_CANDIDATES', candidates });
         dispatch({ type: 'GOTO_STEP', step: 5 });
+        setSaveStatus('saved');
+        void refreshReportAfterStep(sessionId, 4);
         return true;
       } catch (err: unknown) {
         if (isMutationCurrent(mutationToken)) {
@@ -694,7 +1142,14 @@ export default function DesignerView() {
         finishMutation(mutationToken);
       }
     },
-    [beginMutation, finishMutation, isMutationCurrent, requireSession, setRequestError],
+    [
+      beginMutation,
+      finishMutation,
+      isMutationCurrent,
+      refreshReportAfterStep,
+      requireSession,
+      setRequestError,
+    ],
   );
 
   const handleEditPlanSelect = useCallback(
@@ -711,6 +1166,8 @@ export default function DesignerView() {
         if (!isMutationCurrent(mutationToken)) return false;
         dispatch({ type: 'SET_EDIT_PLAN', planId });
         dispatch({ type: 'GOTO_STEP', step: 6 });
+        setSaveStatus('saved');
+        void refreshReportAfterStep(sessionId, 5);
         return true;
       } catch (err: unknown) {
         if (isMutationCurrent(mutationToken)) {
@@ -721,7 +1178,15 @@ export default function DesignerView() {
         finishMutation(mutationToken);
       }
     },
-    [beginMutation, finishMutation, isMutationCurrent, requireSession, setRequestError, state.editPlanCandidates],
+    [
+      beginMutation,
+      finishMutation,
+      isMutationCurrent,
+      refreshReportAfterStep,
+      requireSession,
+      setRequestError,
+      state.editPlanCandidates,
+    ],
   );
 
   const handleSimulate = useCallback(async (): Promise<boolean> => {
@@ -742,7 +1207,9 @@ export default function DesignerView() {
             resolve(false);
             return;
           }
+          setSaveStatus('saved');
           finishMutation(mutationToken);
+          void refreshReportAfterStep(sessionId, 6);
           resolve(true);
         },
         (err) => {
@@ -756,7 +1223,14 @@ export default function DesignerView() {
       // Keep reference to satisfy no-unused-vars via void
       void unsubscribe;
     });
-  }, [beginMutation, finishMutation, isMutationCurrent, requireSession, setRequestError]);
+  }, [
+    beginMutation,
+    finishMutation,
+    isMutationCurrent,
+    refreshReportAfterStep,
+    requireSession,
+    setRequestError,
+  ]);
 
   const rollbackTo = useCallback(
     async (step: number): Promise<boolean> => {
@@ -764,7 +1238,7 @@ export default function DesignerView() {
       const mutationToken = sessionId ? beginMutation('Rolling back...') : null;
       if (!sessionId || !mutationToken) return false;
       if (step < 1 || step > 6) {
-        reportError('无法回退到不存在的步骤。');
+        showDesignerError('无法回退到不存在的步骤。');
         finishMutation(mutationToken);
         return false;
       }
@@ -772,6 +1246,8 @@ export default function DesignerView() {
         await apiRollback(sessionId, step);
         if (!isMutationCurrent(mutationToken)) return false;
         dispatch({ type: 'ROLLBACK_TO', step: step as DesignerStep });
+        setSaveStatus('saved');
+        void refreshReport(sessionId, { silent: true });
         return true;
       } catch (err: unknown) {
         if (isMutationCurrent(mutationToken)) {
@@ -782,7 +1258,15 @@ export default function DesignerView() {
         finishMutation(mutationToken);
       }
     },
-    [beginMutation, finishMutation, isMutationCurrent, requireSession, reportError, setRequestError],
+    [
+      beginMutation,
+      finishMutation,
+      isMutationCurrent,
+      refreshReport,
+      requireSession,
+      showDesignerError,
+      setRequestError,
+    ],
   );
 
   const contextValue: DesignerContextValue = {
@@ -795,6 +1279,37 @@ export default function DesignerView() {
     handleSimulate,
     rollbackTo,
   };
+
+  const activeProjectLabel =
+    currentProject?.name ??
+    state.activeProjectName ??
+    (state.activeProjectId || routeProjectId ? '当前项目' : '未关联项目');
+  const activeDesignLabel = formatDesignLabel(
+    state.activeDesignName,
+    activeProjectLabel,
+    Boolean(state.activeDesignId || routeDesignId),
+  );
+  const designerScopeDescription = isProjectRoute
+    ? routeDesignId
+      ? `已打开「${activeProjectLabel}」中的「${activeDesignLabel}」。`
+      : `已打开「${activeProjectLabel}」的${DEFAULT_DESIGN_LABEL}。`
+    : '直接开始新的 Designer 草稿；首次有效步骤会进入自动保存流程。';
+  const sessionLoadingMessage = isProjectRoute
+    ? '正在恢复项目设计...'
+    : '正在准备 Designer 新设计...';
+  const sessionFailureTitle = isProjectRoute
+    ? '项目设计恢复失败'
+    : 'Designer 新设计创建失败';
+  const sessionLoadingTitle = isProjectRoute
+    ? '正在恢复项目设计'
+    : '正在准备 Designer 新设计';
+  const retrySessionLabel = isProjectRoute ? '重试恢复项目设计' : '重试创建新设计';
+  const latestProject = recentProjects[0] ?? null;
+  const reportButtonLabel = report
+    ? `${report.sections.length} 个章节`
+    : reportLoadError
+      ? '报告需重试'
+      : '报告预览';
 
   const suggestedPrompts = useMemo(() => {
     if (backendSuggestedPrompts.length > 0) {
@@ -842,7 +1357,7 @@ export default function DesignerView() {
       const trimmed = prompt.trim();
       if (!trimmed) return;
       if (isCopilotResponding) {
-        reportError('Copilot 正在生成回复，请稍后再发送。');
+        showDesignerError('Copilot 正在生成回复，请稍后再发送。');
         return;
       }
       const userMessage: CopilotMessage = {
@@ -854,10 +1369,14 @@ export default function DesignerView() {
       setCopilotInput('');
 
       if (!state.sessionId) {
-        reportError(
+        showDesignerError(
           state.isSessionLoading
-            ? '会话正在创建中，Copilot 暂时使用本地规则兜底。'
-            : 'Designer 会话未创建成功，Copilot 暂时使用本地规则兜底。',
+            ? isProjectRoute
+              ? '项目设计正在恢复中，Copilot 暂时使用本地规则兜底。'
+              : 'Designer 新设计正在准备中，Copilot 暂时使用本地规则兜底。'
+            : isProjectRoute
+              ? '项目设计未恢复成功，Copilot 暂时使用本地规则兜底。'
+              : 'Designer 新设计会话未创建成功，Copilot 暂时使用本地规则兜底。',
         );
         const assistantMessage = buildCopilotResponse(trimmed, state);
         setCopilotMessages((prev) => [...prev, assistantMessage]);
@@ -897,7 +1416,7 @@ export default function DesignerView() {
         setIsCopilotResponding(false);
       }
     },
-    [isCopilotResponding, reportError, showToast, state],
+    [isCopilotResponding, isProjectRoute, showDesignerError, showToast, state],
   );
 
   const collapseAfterMutation = useCallback(() => {
@@ -937,7 +1456,7 @@ export default function DesignerView() {
           return;
         case 'select_chassis':
           if (!state.chassisCandidates.some((item) => item.id === action.payload.chassis_id)) {
-            reportError('底盘候选已过期，请重新询问 Copilot 或回到步骤重新生成。');
+            showDesignerError('底盘候选已过期，请重新询问 Copilot 或回到步骤重新生成。');
             setCopilotMessages((prev) =>
               disableAction(prev, action.id, '候选已过期，请重新询问'),
             );
@@ -950,7 +1469,7 @@ export default function DesignerView() {
           return;
         case 'select_protein':
           if (!state.proteinCandidates.some((item) => item.id === action.payload.protein_id)) {
-            reportError('蛋白候选已过期，请重新询问 Copilot 或回到步骤重新生成。');
+            showDesignerError('蛋白候选已过期，请重新询问 Copilot 或回到步骤重新生成。');
             setCopilotMessages((prev) =>
               disableAction(prev, action.id, '候选已过期，请重新询问'),
             );
@@ -967,7 +1486,7 @@ export default function DesignerView() {
               (item) => item.id === action.payload.edit_plan_id,
             )
           ) {
-            reportError('编辑方案候选已过期，请重新询问 Copilot 或回到步骤重新生成。');
+            showDesignerError('编辑方案候选已过期，请重新询问 Copilot 或回到步骤重新生成。');
             setCopilotMessages((prev) =>
               disableAction(prev, action.id, '候选已过期，请重新询问'),
             );
@@ -1006,7 +1525,7 @@ export default function DesignerView() {
       handleMissionSelect,
       handleProteinSelect,
       handleSimulate,
-      reportError,
+      showDesignerError,
       rollbackTo,
       state.chassisCandidates,
       state.editPlanCandidates,
@@ -1022,28 +1541,134 @@ export default function DesignerView() {
       exit="exit"
       className="flex h-full min-h-0 flex-col p-5 md:p-8"
     >
-      <div className="mb-5 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-        <div className="flex items-center gap-4">
+      <div className="mb-5 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+        <div className="flex items-start gap-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-primary/20 bg-primary/10">
             <Dna size={24} className="text-primary" />
           </div>
-          <div>
+          <div className="min-w-0">
             <h1 className="text-3xl font-headline font-semibold tracking-tight text-text">
               {t('designer.title')}
             </h1>
-            <p className="mt-1 text-sm text-text-muted">
-              六步 Wizard 是主流程，Copilot 作为辅助建议区提供可确认动作。
-            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+              {isProjectRenaming ? (
+                <form
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-primary/35 bg-primary/10 px-2.5 py-1.5 text-primary"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    void commitProjectRename();
+                  }}
+                >
+                  <FolderOpen size={13} />
+                  <input
+                    value={projectNameDraft}
+                    onChange={(event) => setProjectNameDraft(event.target.value)}
+                    onBlur={() => void commitProjectRename()}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Escape') {
+                        event.preventDefault();
+                        cancelProjectRename();
+                      }
+                    }}
+                    disabled={projectRenameSaving}
+                    autoFocus
+                    className="w-56 bg-transparent text-xs font-semibold text-text outline-none placeholder:text-text-dim disabled:opacity-60"
+                    placeholder="输入项目名"
+                  />
+                </form>
+              ) : (
+                <button
+                  type="button"
+                  onClick={beginProjectRename}
+                  disabled={!state.activeProjectId}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-text-muted transition-colors hover:border-primary/30 hover:text-text disabled:cursor-default disabled:hover:border-white/10 disabled:hover:text-text-muted"
+                  title={state.activeProjectId ? '点击重命名项目' : undefined}
+                >
+                  <FolderOpen size={13} />
+                  {activeProjectLabel}
+                </button>
+              )}
+              <span className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-text-muted">
+                <Dna size={13} />
+                {activeDesignLabel}
+              </span>
+              <span className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 font-semibold ${SAVE_STATUS_STYLE[saveStatus]}`}>
+                <Save size={13} />
+                {SAVE_STATUS_LABEL[saveStatus]}
+              </span>
+              <button
+                type="button"
+                onClick={handleReportRefresh}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-primary/25 bg-primary/10 px-2.5 py-1.5 font-semibold text-primary transition-colors hover:bg-primary/15"
+              >
+                <FileText size={13} />
+                {reportButtonLabel}
+              </button>
+            </div>
+            <p className="mt-2 max-w-3xl text-sm text-text-muted">{designerScopeDescription}</p>
           </div>
         </div>
-        <div className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-xs text-text-dim">
-          当前步骤：Step {state.currentStep} · {STEP_TITLES[state.currentStep]}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          {!isProjectRoute ? (
+            <button
+              type="button"
+              onClick={() => navigate('/projects')}
+              className="rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-xs font-semibold text-primary transition-colors hover:bg-primary/15"
+            >
+              从项目打开
+            </button>
+          ) : null}
+          <div className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-xs text-text-dim">
+            当前步骤：Step {state.currentStep} · {STEP_TITLES[state.currentStep]}
+          </div>
         </div>
       </div>
 
+      {!isProjectRoute ? (
+        <section className="mb-5 grid gap-3 lg:grid-cols-3">
+          <button
+            type="button"
+            onClick={() => latestProject && navigate(`/projects/${latestProject.id}/designer`)}
+            disabled={!latestProject}
+            className="flex items-center gap-3 rounded-xl border border-white/15 bg-white/[0.035] px-4 py-3 text-left transition-colors hover:border-primary/30 hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Play size={18} className="shrink-0 text-primary" />
+            <span className="min-w-0">
+              <span className="block text-sm font-semibold text-text">继续最近设计</span>
+              <span className="mt-0.5 block truncate text-xs text-text-dim">
+                {latestProject ? latestProject.name : '暂无最近项目'}
+              </span>
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/projects')}
+            className="flex items-center gap-3 rounded-xl border border-white/15 bg-white/[0.035] px-4 py-3 text-left transition-colors hover:border-primary/30 hover:bg-primary/10"
+          >
+            <FolderOpen size={18} className="shrink-0 text-primary" />
+            <span>
+              <span className="block text-sm font-semibold text-text">从项目打开</span>
+              <span className="mt-0.5 block text-xs text-text-dim">查看项目文件夹与已有设计</span>
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => void retrySessionLoad()}
+            disabled={state.isSessionLoading}
+            className="flex items-center gap-3 rounded-xl border border-primary/25 bg-primary/10 px-4 py-3 text-left transition-colors hover:bg-primary/15 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <PlusCircle size={18} className="shrink-0 text-primary" />
+            <span>
+              <span className="block text-sm font-semibold text-text">开始新设计</span>
+              <span className="mt-0.5 block text-xs text-text-dim">直接进入六步主流程</span>
+            </span>
+          </button>
+        </section>
+      ) : null}
+
       {state.isSessionLoading && (
         <div className="mb-4 px-4 py-2 rounded-lg border border-primary/30 bg-primary/10 text-primary text-xs">
-          Creating designer session...
+          {sessionLoadingMessage}
         </div>
       )}
 
@@ -1053,11 +1678,11 @@ export default function DesignerView() {
           {state.sessionError ? (
             <button
               type="button"
-              onClick={() => void retryCreateSession()}
+              onClick={() => void retrySessionLoad()}
               disabled={state.isSessionLoading}
               className="rounded-lg border border-red-400/30 bg-red-400/10 px-3 py-2 font-semibold text-red-100 transition-colors hover:bg-red-400/15 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              重试创建会话
+              {retrySessionLabel}
             </button>
           ) : null}
         </div>
@@ -1069,21 +1694,23 @@ export default function DesignerView() {
             <div className="absolute inset-0 z-30 flex items-center justify-center rounded-2xl border border-white/10 bg-bg/70 px-4 backdrop-blur-sm">
               <div className="max-w-md rounded-xl border border-white/15 bg-surface/95 p-5 text-center shadow-2xl shadow-black/30">
                 <div className="text-base font-semibold text-text">
-                  {state.sessionError ? 'Designer 会话创建失败' : '正在创建 Designer 会话'}
+                  {state.sessionError ? sessionFailureTitle : sessionLoadingTitle}
                 </div>
                 <p className="mt-2 text-sm leading-relaxed text-text-muted">
                   {state.sessionError
                     ? state.sessionError
-                    : '会话准备完成前，Wizard 与 Copilot 暂不可交互。'}
+                    : isProjectRoute
+                      ? '项目设计恢复完成前，Wizard 与 Copilot 暂不可交互。'
+                      : '新设计准备完成前，Wizard 与 Copilot 暂不可交互。'}
                 </p>
                 {state.sessionError ? (
                   <button
                     type="button"
-                    onClick={() => void retryCreateSession()}
+                    onClick={() => void retrySessionLoad()}
                     disabled={state.isSessionLoading}
                     className="mt-4 rounded-lg border border-primary/35 bg-primary/15 px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    重试创建会话
+                    {retrySessionLabel}
                   </button>
                 ) : null}
               </div>
@@ -1132,7 +1759,7 @@ export default function DesignerView() {
               </AnimatePresence>
             </section>
 
-            <section className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
+            <section className="flex shrink-0 flex-col rounded-xl border border-white/10 bg-white/[0.02] p-3">
               <div className="mb-3 flex items-center justify-between gap-3 px-1">
                 <div>
                   <h2 className="text-sm font-semibold text-text">Copilot 辅助区</h2>
@@ -1155,13 +1782,22 @@ export default function DesignerView() {
             </section>
           </main>
 
-          <DesignStateRail
-            panelMode={panelMode}
-            pinnedOpen={pinnedOpen}
-            onPanelModeChange={setPanelMode}
-            onPinnedOpenChange={setPinnedOpen}
-            className="xl:sticky xl:top-6 xl:self-start"
-          />
+          <aside className="flex w-full flex-col gap-3 xl:sticky xl:top-4 xl:max-h-[calc(100vh-2rem)] xl:w-[360px] xl:self-start xl:overflow-y-auto xl:overscroll-contain xl:pr-1 [scrollbar-gutter:stable]">
+            <DesignReportPreview
+              report={report}
+              loading={reportLoading}
+              error={reportLoadError}
+              exporting={reportExporting}
+              onRefresh={handleReportRefresh}
+              onExportMarkdown={handleMarkdownExport}
+            />
+            <DesignStateRail
+              panelMode={panelMode}
+              pinnedOpen={pinnedOpen}
+              onPanelModeChange={setPanelMode}
+              onPinnedOpenChange={setPinnedOpen}
+            />
+          </aside>
         </div>
       </DesignerContext.Provider>
       <DesignerToastViewport toasts={toasts} onDismiss={dismissToast} />

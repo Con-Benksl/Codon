@@ -15,6 +15,7 @@ __pycache__/
 .code-review-graph/
 .local-open-source-archive/
 obsidian-notes
+reports/
 
 # Superpowers brainstorm artifacts
 .superpowers/

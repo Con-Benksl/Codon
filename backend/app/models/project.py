@@ -21,6 +21,7 @@ class Project(Base):
     agent_runs = relationship("AgentRun", back_populates="project", cascade="all, delete-orphan")
     simulations = relationship("Simulation", back_populates="project", cascade="all, delete-orphan")
     exports = relationship("Export", back_populates="project", cascade="all, delete-orphan")
+    design_reports = relationship("DesignReport", back_populates="project", cascade="all, delete-orphan")
     artifacts = relationship("ProjectArtifact", back_populates="project", cascade="all, delete-orphan")
     datasets = relationship("ProjectDataset", back_populates="project", cascade="all, delete-orphan")
     jobs = relationship("ProjectJob", back_populates="project", cascade="all, delete-orphan")

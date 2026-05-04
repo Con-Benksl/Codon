@@ -5,6 +5,7 @@ from app import models  # noqa: F401
 from app.api.v1 import agents, auth, chat, designer, projects, project_runtime
 from app.config import get_settings
 from app.database import Base, engine
+from app.schema_compat import ensure_design_report_schema, ensure_designer_session_schema
 from app.services.llm_client import close_llm_client
 
 settings = get_settings()
@@ -38,6 +39,8 @@ app.include_router(designer.router, prefix="/api/v1/designer", tags=["\u8bbe\u8b
 @app.on_event("startup")
 async def ensure_tables():
     Base.metadata.create_all(bind=engine)
+    ensure_designer_session_schema(engine)
+    ensure_design_report_schema(engine)
 
 
 @app.on_event("shutdown")
