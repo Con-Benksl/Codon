@@ -146,7 +146,7 @@ export default function ChassisStep() {
     >
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-headline text-text tracking-tight">Step 3 · 选择底盘生物</h2>
+          <h2 className="text-3xl font-headline text-text">Step 3 · 选择底盘生物</h2>
           <p className="text-lg text-text-muted mt-2">
             基于环境耐受性与遗传可操作性推荐的候选生物
           </p>
@@ -164,40 +164,40 @@ export default function ChassisStep() {
           variants={stagger(60)}
           initial="hidden"
           animate="show"
-          className="grid grid-cols-1 xl:grid-cols-2 gap-6"
+          className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,28rem),1fr))] gap-6"
         >
           {candidates.map((c) => (
             <motion.article
               key={c.id}
               variants={fadeSlideUp}
               whileHover={{ y: -3 }}
-              className="text-left p-7 rounded-2xl border border-white/20 bg-card-translucent hover:border-primary/40 hover:bg-primary/[0.04] transition-all duration-300"
+              className="min-w-0 text-left p-7 rounded-2xl border border-white/20 bg-card-translucent hover:border-primary/40 hover:bg-primary/[0.04] transition-all duration-300"
             >
-              <div className="flex flex-col sm:flex-row gap-6">
-                <div className="flex-shrink-0 self-center sm:self-start">
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] gap-6">
+                <div className="justify-self-center">
                   <ToleranceRadar tolerance={c.tolerance} />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-2">
-                    <div>
-                      <div className="text-xl font-semibold text-text italic">
+                <div className="min-w-0">
+                  <div className="flex flex-col items-start gap-3 mb-2">
+                    <div className="min-w-0">
+                      <div className="text-xl font-semibold leading-tight text-text italic break-words">
                         {c.scientific_name}
                       </div>
-                      <div className="text-base text-text-muted mt-1">{c.common_name}</div>
+                      <div className="text-base text-text-muted mt-1 break-words">{c.common_name}</div>
                     </div>
                     <span
-                      className={`inline-flex items-center px-3 py-1 text-xs font-semibold uppercase tracking-wider rounded-md border ${STATUS_STYLES[c.chassis_status]}`}
+                      className={`inline-flex shrink-0 items-center whitespace-nowrap px-3 py-1 text-xs font-semibold rounded-md border ${STATUS_STYLES[c.chassis_status]}`}
                     >
                       {STATUS_LABEL[c.chassis_status]}
                     </span>
                   </div>
-                  <p className="text-base text-text-muted leading-relaxed mt-3 line-clamp-3">
+                  <p className="text-base text-text-muted leading-relaxed mt-3 line-clamp-3 break-words">
                     {c.recommendation_reason}
                   </p>
                   <div className="mt-5 space-y-5">
                     <div>
                       <div className="flex items-center justify-between text-sm text-text-dim mb-2">
-                        <span className="uppercase tracking-wider">匹配度</span>
+                        <span>匹配度</span>
                         <span className="text-primary font-mono text-lg tabular-nums font-semibold">
                           {(c.match_score * 100).toFixed(0)}%
                         </span>
@@ -217,7 +217,7 @@ export default function ChassisStep() {
                       onClick={() => {
                         if (!state.isThinking) void handleChassisSelect(c.id);
                       }}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-primary/30 bg-primary/10 text-primary text-sm font-semibold hover:bg-primary/15 hover:border-primary/50 transition-colors"
+                      className="inline-flex items-center gap-2 whitespace-nowrap px-4 py-2 rounded-lg border border-primary/30 bg-primary/10 text-primary text-sm font-semibold hover:bg-primary/15 hover:border-primary/50 transition-colors"
                     >
                       <Check size={16} />
                       选择底盘
