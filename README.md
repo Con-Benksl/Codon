@@ -12,6 +12,7 @@ Codon 将“为一个极端环境设计一株能生存并执行生态修复任�
 
 - [核心能力](#核心能力)
 - [Designer 六步流程](#designer-六步流程)
+- [Analysis 蛋白结构工作台](#analysis-蛋白结构工作台)
 - [项目结构](#项目结构)
 - [技术栈](#技术栈)
 - [快速开始](#快速开始)
@@ -33,6 +34,7 @@ Codon 将“为一个极端环境设计一株能生存并执行生态修复任�
 - **ODE 动态仿真**：使用 `scipy.solve_ivp` 求解种群、环境目标和限制性养分的耦合动态，并通过 SSE 推送 200 步轨迹。
 - **项目化 Designer**：裸 `/designer` 可直接开始设计；首次有效输入后自动保存为草稿 Project / Design / DesignerSession。
 - **持续方案报告**：每一步确认后持续更新 `DesignReport`，支持 Markdown 快照导出。
+- **蛋白结构分析页**：`/analysis` 内置 9EYS PSI 膜蛋白超复合物演示模型，支持 Mol* mmCIF 结构视图、ChimeraX GLB 预览、表示法切换和科研 Dossier 信息面板。
 - **沉浸式前端体验**：React + Three.js DNA 粒子背景、动效路由、项目绑定 Designer 会话和中英文界面。
 
 ## Designer 六步流程
@@ -57,6 +59,17 @@ Codon 将“为一个极端环境设计一株能生存并执行生态修复任�
 - `DesignerSessionState` 会返回 `project_id`、`design_id`、项目名、方案名、候选快照、仿真结果和报告状态所需字段。
 - `DesignReport` 从设计过程开始持续记录，不等六步全部完成后才生成。
 
+## Analysis 蛋白结构工作台
+
+`/analysis` 是答辩演示用的分子结构分析页，当前默认载入 PDB `9EYS`：
+
+- **结构视图**：通过 Mol* 加载 `frontend/public/models/psi_9eys.mmcif`，支持 `Mixed`、`Cartoon`、`Surface`、`Ball-stick` 表示法切换、拖拽旋转、缩放、自动旋转和视角重置。
+- **ChimeraX 预览**：通过 Three.js 加载优化后的 `frontend/public/models/psi_9eys_chimerax.glb`，用于展示 ChimeraX 导出的渲染外观。
+- **Molecular Dossier**：右侧信息栏展示 9EYS / `pdb_00009eys`、EMDB `EMD-50063`、2.01 Å 分辨率、cryo-EM 方法、assembly 指标、论文 DOI / PubMed / funding 等科研上下文。
+- **前端契约**：`frontend/src/lib/protein-models.ts` 目前写死一个 demo record；后续可替换成后端返回的 `{ id, proteinName, structureUrl, previewUrl, format }` 数据。
+
+> 当前模型资产直接放在前端 public 目录中，便于离线演示。后续如果建设蛋白结构数据库，应将 mmCIF / GLB / OBZ 等资源改为后端或对象存储按 protein id 提供。
+
 ## 项目结构
 
 ```text
@@ -66,10 +79,11 @@ Codon/
 │   │   ├── App.tsx                   # 路由、鉴权、全局 DNA 背景
 │   │   ├── api/                      # auth / projects / designer API 客户端
 │   │   ├── auth/                     # 登录态与 token 处理
-│   │   ├── components/               # 通用组件与 Designer step 组件
+│   │   ├── components/               # 通用组件、Designer step 组件与 Analysis viewer
 │   │   ├── i18n/                     # zh / en 本地化
-│   │   ├── lib/                      # motion、DNA 场景和滚动辅助
+│   │   ├── lib/                      # motion、DNA 场景、蛋白模型元数据和滚动辅助
 │   │   └── views/                    # Home、Projects、Designer、Chat、Analysis、Login
+│   ├── public/models/                # 9EYS mmCIF 与 ChimeraX GLB 演示资产
 │   ├── vite.config.ts
 │   └── package.json
 │
@@ -99,7 +113,7 @@ Codon/
 
 | 层 | 技术 |
 |---|---|
-| 前端 | React 19、TypeScript 5.8、Vite 6、React Router 7、Tailwind CSS 4、motion、Three.js、Axios |
+| 前端 | React 19、TypeScript 5.8、Vite 6、React Router 7、Tailwind CSS 4、motion、Three.js、Mol*、Axios |
 | 后端 | Python 3.9+、FastAPI 0.109、SQLAlchemy 2.0、Alembic、Pydantic 2、Uvicorn |
 | 认证 | JWT、`python-jose`、bcrypt、HTTP-only cookie / Bearer token |
 | 数据与任务 | SQLite / PostgreSQL、Redis、Celery |
@@ -147,6 +161,8 @@ npm run dev
 ```
 
 前端默认地址：`http://127.0.0.1:3000`
+
+演示分析页：`http://127.0.0.1:3000/analysis`
 
 ### 3. Docker 可选
 
@@ -202,6 +218,14 @@ cd backend && venv/bin/python -c "from app.main import app; print(app.title)"
 curl -fsS http://127.0.0.1:8000/health
 ```
 
+Analysis 页前端 smoke test 应确认：
+
+1. `/analysis` 可打开。
+2. 默认 Mol* mmCIF 结构 viewer 能加载 9EYS。
+3. `Mixed / Cartoon / Surface / Ball-stick` 表示法按钮可切换。
+4. `ChimeraX 预览` 能切换到 GLB 预览。
+5. `Overview / Assembly / Paper` Dossier tabs 可切换，且无横向溢出。
+
 一次最小 Designer API smoke test 应覆盖：
 
 1. 注册 / 登录用户。
@@ -241,6 +265,9 @@ curl -fsS http://127.0.0.1:8000/health
 | `gene_modules` / `simulations` / `exports` | 设计与仿真产物 |
 | `backend/app/data/*.json` | 环境、任务、底盘、蛋白知识库 |
 | `backend/gene_query_cache.db` | UniProt / NCBI / KEGG 查询缓存，TTL 7 天 |
+| `frontend/public/models/psi_9eys.mmcif` | Analysis 页默认 9EYS mmCIF 结构资产 |
+| `frontend/public/models/psi_9eys_chimerax.glb` | Analysis 页 ChimeraX GLB 预览资产 |
+| `frontend/src/lib/protein-models.ts` | 当前前端蛋白模型 demo record 与科研展示元数据 |
 
 ## 文档
 
@@ -270,6 +297,7 @@ The platform is intended for education, research prototyping, and product demons
 
 - [Key Capabilities](#key-capabilities)
 - [Designer Six-Step Workflow](#designer-six-step-workflow)
+- [Analysis Protein Structure Workstation](#analysis-protein-structure-workstation)
 - [Project Structure](#project-structure)
 - [Technology Stack](#technology-stack)
 - [Quick Start](#quick-start)
@@ -290,6 +318,7 @@ The platform is intended for education, research prototyping, and product demons
 - **ODE simulation**: `scipy.solve_ivp` models population, environment target, and nutrient dynamics, streaming a 200-step trajectory over SSE.
 - **Project-backed Designer**: Bare `/designer` can start immediately; the first valid input auto-saves a draft Project / Design / DesignerSession.
 - **Live design reports**: Each confirmed step updates a `DesignReport`, with Markdown snapshot export support.
+- **Protein structure analysis page**: `/analysis` includes the 9EYS PSI membrane-protein supercomplex demo model with Mol* mmCIF structure viewing, ChimeraX GLB preview, representation switching, and a research-grade Molecular Dossier panel.
 - **Interactive frontend**: React, Three.js DNA particle background, animated routes, project-bound Designer sessions, and bilingual UI.
 
 ## Designer Six-Step Workflow
@@ -314,6 +343,17 @@ The project restore chain is `Project -> Design -> DesignerSession`:
 - `DesignerSessionState` returns `project_id`, `design_id`, project name, design name, candidate snapshots, simulation result, and fields needed by report state.
 - `DesignReport` starts during the design process instead of waiting for all six steps to finish.
 
+## Analysis Protein Structure Workstation
+
+`/analysis` is the molecular-structure analysis page used for the current demonstration. It currently loads PDB `9EYS` by default:
+
+- **Structure view**: Mol* loads `frontend/public/models/psi_9eys.mmcif` and supports `Mixed`, `Cartoon`, `Surface`, and `Ball-stick` representations, drag rotation, zoom, auto-rotate, and reset view.
+- **ChimeraX preview**: Three.js loads the optimized `frontend/public/models/psi_9eys_chimerax.glb` as a fallback look preview for the ChimeraX-exported rendering asset.
+- **Molecular Dossier**: The right panel presents 9EYS / `pdb_00009eys`, EMDB `EMD-50063`, 2.01 Å resolution, cryo-EM method, assembly metrics, paper DOI / PubMed / funding, and other research context.
+- **Frontend contract**: `frontend/src/lib/protein-models.ts` currently contains a single demo record. It can later be replaced by a backend response shaped around `{ id, proteinName, structureUrl, previewUrl, format }`.
+
+> The current structure assets are stored directly under the frontend public directory for offline demonstrations. A later protein-structure database should serve mmCIF / GLB / OBZ assets by protein id from the backend or object storage.
+
 ## Project Structure
 
 ```text
@@ -323,10 +363,11 @@ Codon/
 │   │   ├── App.tsx                   # Routing, auth guard, global DNA background
 │   │   ├── api/                      # auth / projects / designer API clients
 │   │   ├── auth/                     # Auth state and token handling
-│   │   ├── components/               # Shared components and Designer step components
+│   │   ├── components/               # Shared components, Designer steps, and Analysis viewers
 │   │   ├── i18n/                     # zh / en localization
-│   │   ├── lib/                      # motion, DNA scenes, scroll helpers
+│   │   ├── lib/                      # motion, DNA scenes, protein model metadata, scroll helpers
 │   │   └── views/                    # Home, Projects, Designer, Chat, Analysis, Login
+│   ├── public/models/                # 9EYS mmCIF and ChimeraX GLB demo assets
 │   ├── vite.config.ts
 │   └── package.json
 │
@@ -356,7 +397,7 @@ Codon/
 
 | Layer | Technologies |
 |---|---|
-| Frontend | React 19, TypeScript 5.8, Vite 6, React Router 7, Tailwind CSS 4, motion, Three.js, Axios |
+| Frontend | React 19, TypeScript 5.8, Vite 6, React Router 7, Tailwind CSS 4, motion, Three.js, Mol*, Axios |
 | Backend | Python 3.9+, FastAPI 0.109, SQLAlchemy 2.0, Alembic, Pydantic 2, Uvicorn |
 | Auth | JWT, `python-jose`, bcrypt, HTTP-only cookie / Bearer token |
 | Data and jobs | SQLite / PostgreSQL, Redis, Celery |
@@ -404,6 +445,8 @@ npm run dev
 ```
 
 Default frontend URL: `http://127.0.0.1:3000`
+
+Demo analysis page: `http://127.0.0.1:3000/analysis`
 
 ### 3. Optional Docker
 
@@ -459,6 +502,14 @@ cd backend && venv/bin/python -c "from app.main import app; print(app.title)"
 curl -fsS http://127.0.0.1:8000/health
 ```
 
+The Analysis page frontend smoke test should confirm:
+
+1. `/analysis` opens.
+2. The default Mol* mmCIF structure viewer loads 9EYS.
+3. `Mixed / Cartoon / Surface / Ball-stick` representation buttons switch views.
+4. `ChimeraX 预览` switches to the GLB preview.
+5. `Overview / Assembly / Paper` Dossier tabs switch without horizontal overflow.
+
 A minimal Designer API smoke test should cover:
 
 1. Register / log in a user.
@@ -498,6 +549,9 @@ Legacy Railway and Sealos deployment files have been removed from the open-sourc
 | `gene_modules` / `simulations` / `exports` | Design and simulation artifacts |
 | `backend/app/data/*.json` | Environment, mission, chassis, protein knowledge bases |
 | `backend/gene_query_cache.db` | UniProt / NCBI / KEGG query cache, 7-day TTL |
+| `frontend/public/models/psi_9eys.mmcif` | Default 9EYS mmCIF structure asset for the Analysis page |
+| `frontend/public/models/psi_9eys_chimerax.glb` | ChimeraX GLB preview asset for the Analysis page |
+| `frontend/src/lib/protein-models.ts` | Current frontend protein model demo record and research metadata |
 
 ## Documentation
 
