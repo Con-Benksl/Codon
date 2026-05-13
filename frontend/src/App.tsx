@@ -91,6 +91,14 @@ function AnimatedRoutes() {
               } />
             </Route>
 
+            <Route element={<AppLayout />}>
+              <Route path="analysis" element={
+                <Suspense fallback={<RouteLoadingFallback />}>
+                  <AnalysisView />
+                </Suspense>
+              } />
+            </Route>
+
             <Route element={<RequireAuth />}>
               <Route element={<AppLayout />}>
                 <Route path="projects" element={
@@ -116,11 +124,6 @@ function AnimatedRoutes() {
                 <Route path="chat" element={
                   <Suspense fallback={<RouteLoadingFallback />}>
                     <ChatView />
-                  </Suspense>
-                } />
-                <Route path="analysis" element={
-                  <Suspense fallback={<RouteLoadingFallback />}>
-                    <AnalysisView />
                   </Suspense>
                 } />
               </Route>
