@@ -16,6 +16,8 @@ __pycache__/
 .local-open-source-archive/
 obsidian-notes
 reports/
+ops/*.local.env
+ops/.tmp/
 
 # Superpowers brainstorm artifacts
 .superpowers/
